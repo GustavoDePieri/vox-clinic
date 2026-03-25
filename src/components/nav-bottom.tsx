@@ -15,20 +15,20 @@ export function NavBottom() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full border-t bg-background z-50 md:hidden">
-      <div className="grid grid-cols-4">
+    <nav className="fixed bottom-0 left-0 w-full border-t border-border/50 bg-background/80 backdrop-blur-xl z-50 md:hidden">
+      <div className="grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
+              className={`flex flex-col items-center justify-center gap-1 py-3 transition-all duration-200 ${
                 isActive ? "text-vox-primary" : "text-muted-foreground"
               }`}
             >
-              <item.icon className="size-5" />
-              <span className="text-xs">{item.label}</span>
+              <item.icon className={`size-5 ${isActive ? "scale-110" : ""} transition-transform duration-200`} />
+              <span className={`text-[10px] font-medium ${isActive ? "text-vox-primary" : ""}`}>{item.label}</span>
             </Link>
           )
         })}

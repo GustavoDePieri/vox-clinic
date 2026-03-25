@@ -15,21 +15,21 @@ export function NavSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden md:flex w-56 flex-col border-r py-4">
-      <nav className="flex flex-col gap-1">
+    <aside className="hidden md:flex w-56 flex-col border-r border-border/50 py-6">
+      <nav className="flex flex-col gap-0.5 px-3">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`mx-2 flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-vox-primary/10 text-vox-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-vox-primary/10 text-vox-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               }`}
             >
-              <item.icon className="size-5" />
+              <item.icon className={`size-[18px] ${isActive ? "text-vox-primary" : ""}`} />
               {item.label}
             </Link>
           )

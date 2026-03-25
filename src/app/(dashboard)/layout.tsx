@@ -24,16 +24,16 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-full flex flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
           <div className="flex items-center gap-3">
-            <span className="text-lg font-semibold tracking-tight text-vox-primary">
+            <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-vox-primary to-vox-primary/70 bg-clip-text text-transparent">
               VoxClinic
             </span>
             {user.clinicName && (
               <>
-                <span className="text-muted-foreground">/</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-border">/</span>
+                <span className="text-sm font-medium text-muted-foreground">
                   {user.clinicName}
                 </span>
               </>
@@ -52,7 +52,7 @@ export default async function DashboardLayout({
       <div className="flex flex-1">
         <NavSidebar />
         <main className="flex-1">
-          <div className="mx-auto max-w-5xl px-4 py-6 pb-20 md:pb-6">{children}</div>
+          <div className="mx-auto max-w-5xl px-5 py-8 pb-24 md:pb-8">{children}</div>
         </main>
       </div>
       <NavBottom />
