@@ -70,8 +70,19 @@ export async function generateWorkspace(
 
   const config = await generateWorkspaceSuggestions(profession, answers)
 
-  const user = await db.user.findUnique({ where: { clerkId: userId } })
-  if (!user) throw new Error("User not found")
+  // Upsert user — in local dev the Clerk webhook may not reach localhost,
+  // so we ensure the user record exists before creating the workspace.
+  const clerkClient = await import("@clerk/nextjs/server").then((m) => m.clerkClient())
+  const clerkUser = await clerkClient.users.getUser(userId)
+  const user = await db.user.upsert({
+    where: { clerkId: userId },
+    update: {},
+    create: {
+      clerkId: userId,
+      email: clerkUser.emailAddresses[0]?.emailAddress ?? "",
+      name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || "Usuario",
+    },
+  })
 
   const jsonData = {
     procedures: (config.procedures ?? []) as any,
