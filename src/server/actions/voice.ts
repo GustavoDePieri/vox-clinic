@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { uploadAudio } from "@/lib/storage"
 import { transcribeAudio } from "@/lib/openai"
+import { preprocessAudio } from "@/lib/audio-preprocessing"
 import { extractEntities } from "@/lib/claude"
 import { logAudit } from "@/lib/audit"
 import { recordConsent } from "@/lib/consent"
@@ -33,22 +34,25 @@ export async function processVoiceRegistration(formData: FormData) {
   // 1. Upload to Supabase Storage (returns path, not public URL)
   const audioPath = await uploadAudio(buffer, audioFile.name || "recording.webm")
 
-  // 2. Transcribe via Whisper (with workspace procedure names as vocabulary hints)
+  // 2. Preprocess audio for transcription (silence removal + speed up)
+  const { buffer: processedBuffer } = await preprocessAudio(buffer, audioFile.name || "recording.webm")
+
+  // 3. Transcribe the processed (smaller) audio via Whisper
   const workspaceProcedureNames = (user.workspace.procedures as any[]).map((p: any) => p.name)
   const { text: transcript } = await transcribeAudio(
-    buffer,
-    audioFile.name || "recording.webm",
+    processedBuffer,
+    "processed.mp3",  // always MP3 after preprocessing
     workspaceProcedureNames
   )
 
-  // 3. Extract entities via Claude
+  // 4. Extract entities via Claude
   const workspaceConfig = {
     customFields: user.workspace.customFields as any[],
     procedures: user.workspace.procedures as any[],
   }
   const extractedData: ExtractedPatientData = await extractEntities(transcript, workspaceConfig)
 
-  // 4. Create Recording in database
+  // 5. Create Recording in database
   const recording = await db.recording.create({
     data: {
       workspaceId: user.workspace.id,
@@ -60,7 +64,7 @@ export async function processVoiceRegistration(formData: FormData) {
     },
   })
 
-  // 5. Log audit and record consent
+  // 6. Log audit and record consent
   await logAudit({
     workspaceId: user.workspace.id,
     userId,

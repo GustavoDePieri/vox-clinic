@@ -22,7 +22,11 @@ const MIME_TYPES: Record<string, string> = {
 export async function transcribeAudio(
   audioBuffer: Buffer,
   filename: string,
-  vocabularyHints?: string[]
+  vocabularyHints?: string[],
+  // Default to whisper-1 for safety. Can switch to 'gpt-4o-mini-transcribe' for
+  // cheaper transcription (~50% cost reduction), but verify API parameter compatibility
+  // first — gpt-4o-mini-transcribe may not support response_format: 'verbose_json' or prompt.
+  model: string = 'whisper-1'
 ): Promise<{ text: string; duration: number | null }> {
   const ext = filename.split('.').pop()?.toLowerCase() ?? 'webm'
   const mimeType = MIME_TYPES[ext] ?? 'audio/webm'
@@ -36,16 +40,37 @@ export async function transcribeAudio(
     prompt = `${prompt} ${hints}.`
   }
 
-  const response = await openai.audio.transcriptions.create({
-    model: 'whisper-1',
-    file,
-    language: 'pt',
-    response_format: 'verbose_json',
-    prompt,
-  })
+  try {
+    const response = await openai.audio.transcriptions.create({
+      model,
+      file,
+      language: 'pt',
+      response_format: 'verbose_json',
+      prompt,
+    })
 
-  return {
-    text: response.text,
-    duration: response.duration ?? null,
+    return {
+      text: response.text,
+      duration: response.duration ?? null,
+    }
+  } catch (err) {
+    // Fallback to whisper-1 if the requested model fails (e.g. gpt-4o-mini-transcribe
+    // may not support all parameters like response_format or prompt)
+    if (model !== 'whisper-1') {
+      console.warn(`Transcription with ${model} failed, falling back to whisper-1:`, err)
+      const fallbackResponse = await openai.audio.transcriptions.create({
+        model: 'whisper-1',
+        file,
+        language: 'pt',
+        response_format: 'verbose_json',
+        prompt,
+      })
+
+      return {
+        text: fallbackResponse.text,
+        duration: fallbackResponse.duration ?? null,
+      }
+    }
+    throw err
   }
 }

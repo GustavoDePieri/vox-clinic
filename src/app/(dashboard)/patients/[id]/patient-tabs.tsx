@@ -556,7 +556,15 @@ function GravacoesTab({
 }) {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const audioRef = React.useRef<HTMLAudioElement | null>(null)
+
+  function handleSpeedChange(speed: number) {
+    setPlaybackSpeed(speed)
+    if (audioRef.current) {
+      audioRef.current.playbackRate = speed
+    }
+  }
 
   async function handlePlay(rec: PatientData["recordings"][number]) {
     // If already playing this one, pause it
@@ -585,6 +593,7 @@ function GravacoesTab({
         setPlayingId(null)
         audioRef.current = null
       }
+      audio.playbackRate = playbackSpeed
       await audio.play()
       setPlayingId(rec.id)
     } catch {
@@ -667,6 +676,26 @@ function GravacoesTab({
                   : rec.status}
             </Badge>
           </CardContent>
+          {playingId === rec.id && (
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground mr-1">Velocidade:</span>
+                {[1, 1.25, 1.5, 2].map((speed) => (
+                  <button
+                    key={speed}
+                    onClick={() => handleSpeedChange(speed)}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-medium transition-colors ${
+                      playbackSpeed === speed
+                        ? "bg-vox-primary text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          )}
           {rec.transcript && (
             <CardContent className="pt-0">
               <p className="text-xs text-muted-foreground line-clamp-3">
