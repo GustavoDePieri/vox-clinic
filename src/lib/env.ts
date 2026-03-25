@@ -23,6 +23,14 @@ const envSchema = z.object({
     .string()
     .optional()
     .default(''),
+  RESEND_API_KEY: z
+    .string()
+    .optional()
+    .default(''),
+  CRON_SECRET: z
+    .string()
+    .optional()
+    .default(''),
 })
 
 function validateEnv() {

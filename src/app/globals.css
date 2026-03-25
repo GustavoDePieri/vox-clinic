@@ -146,3 +146,54 @@
     @apply text-2xl font-semibold;
   }
 }
+
+/* Print styles for patient report */
+@media print {
+  /* Hide navigation and non-content elements */
+  nav,
+  header,
+  .print\\:hidden,
+  [data-sidebar],
+  [data-nav-bottom] {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  /* Remove layout padding/margins for clean print */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Page break handling */
+  section {
+    break-inside: avoid;
+  }
+
+  table {
+    break-inside: auto;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  /* Ensure borders print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Clean page margins */
+  @page {
+    margin: 1.5cm 2cm;
+    size: A4;
+  }
+}

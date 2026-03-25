@@ -2,7 +2,8 @@ import { getPatient } from "@/server/actions/patient"
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { AlertTriangle, FileText } from "lucide-react"
 import Link from "next/link"
 import { PatientTabs } from "./patient-tabs"
 
@@ -47,16 +48,24 @@ export default async function PatientPage({
             </p>
           )}
         </div>
-        {patient.alerts.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {patient.alerts.map((alert, i) => (
-              <Badge key={i} variant="destructive">
-                <AlertTriangle className="size-3 mr-1" />
-                {alert}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Link href={`/patients/${patient.id}/report`} target="_blank">
+            <Button variant="outline" size="sm">
+              <FileText className="size-4" />
+              Relatorio
+            </Button>
+          </Link>
+          {patient.alerts.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {patient.alerts.map((alert, i) => (
+                <Badge key={i} variant="destructive">
+                  <AlertTriangle className="size-3 mr-1" />
+                  {alert}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <PatientTabs patient={patient} customFields={customFields} />

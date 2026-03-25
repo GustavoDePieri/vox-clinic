@@ -71,6 +71,7 @@ model Appointment {
   aiSummary    String?
   audioUrl     String?
   transcript   String?
+  status       String      @default("completed")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   recordings   Recording[]

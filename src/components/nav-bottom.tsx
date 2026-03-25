@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Mic, Settings } from "lucide-react"
+import { LayoutDashboard, Users, CalendarDays, Mic, Settings } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/patients", label: "Pacientes", icon: Users },
+  { href: "/calendar", label: "Agenda", icon: CalendarDays },
   { href: "/appointments/new", label: "Consulta", icon: Mic },
   { href: "/settings", label: "Config", icon: Settings },
 ]
@@ -16,7 +17,7 @@ export function NavBottom() {
 
   return (
     <nav className="fixed bottom-0 left-0 w-full border-t border-border/50 bg-background/80 backdrop-blur-xl z-50 md:hidden">
-      <div className="grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+      <div className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
