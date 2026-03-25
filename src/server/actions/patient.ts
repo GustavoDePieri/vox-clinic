@@ -3,6 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
+import { getSignedAudioUrl } from "@/lib/storage"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
@@ -133,6 +134,7 @@ export async function getPatient(patientId: string) {
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
+          audioUrl: true,
           duration: true,
           transcript: true,
           createdAt: true,
@@ -234,4 +236,10 @@ export async function createPatient(formData: FormData) {
   })
 
   redirect(`/patients/${patient.id}`)
+}
+
+export async function getAudioPlaybackUrl(audioPath: string) {
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  return getSignedAudioUrl(audioPath)
 }

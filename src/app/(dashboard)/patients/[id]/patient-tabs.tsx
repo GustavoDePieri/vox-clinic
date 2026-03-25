@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,8 +16,11 @@ import {
   User,
   Phone,
   Mail,
+  Play,
+  Pause,
+  Loader2,
 } from "lucide-react"
-import { updatePatient } from "@/server/actions/patient"
+import { updatePatient, getAudioPlaybackUrl } from "@/server/actions/patient"
 
 type PatientData = {
   id: string
@@ -44,6 +47,7 @@ type PatientData = {
   }[]
   recordings: {
     id: string
+    audioUrl: string
     duration: number | null
     transcript: string | null
     createdAt: Date
@@ -339,6 +343,56 @@ function GravacoesTab({
 }: {
   recordings: PatientData["recordings"]
 }) {
+  const [playingId, setPlayingId] = useState<string | null>(null)
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const audioRef = React.useRef<HTMLAudioElement | null>(null)
+
+  async function handlePlay(rec: PatientData["recordings"][number]) {
+    // If already playing this one, pause it
+    if (playingId === rec.id && audioRef.current) {
+      audioRef.current.pause()
+      setPlayingId(null)
+      return
+    }
+
+    // Stop any current playback
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+
+    setLoadingId(rec.id)
+    try {
+      const signedUrl = await getAudioPlaybackUrl(rec.audioUrl)
+      const audio = new Audio(signedUrl)
+      audioRef.current = audio
+      audio.onended = () => {
+        setPlayingId(null)
+        audioRef.current = null
+      }
+      audio.onerror = () => {
+        setPlayingId(null)
+        audioRef.current = null
+      }
+      await audio.play()
+      setPlayingId(rec.id)
+    } catch {
+      // Failed to load audio
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [])
+
   if (recordings.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-8 text-center">
@@ -371,9 +425,20 @@ function GravacoesTab({
         <Card key={rec.id}>
           <CardContent className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-full bg-vox-primary/10">
-                <Mic className="size-4 text-vox-primary" />
-              </div>
+              <button
+                onClick={() => handlePlay(rec)}
+                disabled={loadingId === rec.id}
+                className="flex size-9 items-center justify-center rounded-full bg-vox-primary/10 hover:bg-vox-primary/20 transition-colors"
+                aria-label={playingId === rec.id ? "Pausar" : "Reproduzir"}
+              >
+                {loadingId === rec.id ? (
+                  <Loader2 className="size-4 text-vox-primary animate-spin" />
+                ) : playingId === rec.id ? (
+                  <Pause className="size-4 text-vox-primary" fill="currentColor" />
+                ) : (
+                  <Play className="size-4 text-vox-primary ml-0.5" fill="currentColor" />
+                )}
+              </button>
               <div>
                 <p className="text-sm font-medium">{formatDate(rec.createdAt)}</p>
                 <p className="text-xs text-muted-foreground">
