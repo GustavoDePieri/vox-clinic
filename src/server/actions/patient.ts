@@ -4,8 +4,9 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
 import { getSignedAudioUrl } from "@/lib/storage"
+import { logAudit } from "@/lib/audit"
 
-async function getWorkspaceId() {
+async function getWorkspaceContext() {
   const { userId } = await auth()
   if (!userId) throw new Error("Unauthorized")
 
@@ -15,7 +16,12 @@ async function getWorkspaceId() {
   })
   if (!user?.workspace) throw new Error("Workspace not configured")
 
-  return user.workspace.id
+  return { workspaceId: user.workspace.id, clerkId: userId }
+}
+
+async function getWorkspaceId() {
+  const { workspaceId } = await getWorkspaceContext()
+  return workspaceId
 }
 
 export async function searchPatients(query: string) {
@@ -26,6 +32,7 @@ export async function searchPatients(query: string) {
   const patients = await db.patient.findMany({
     where: {
       workspaceId,
+      isActive: true,
       name: { contains: query, mode: "insensitive" },
     },
     select: {
@@ -46,7 +53,7 @@ export async function getRecentPatients() {
   const workspaceId = await getWorkspaceId()
 
   const patients = await db.patient.findMany({
-    where: { workspaceId },
+    where: { workspaceId, isActive: true },
     select: {
       id: true,
       name: true,
@@ -70,6 +77,7 @@ export async function getPatients(query?: string, page: number = 1, pageSize: nu
     db.patient.findMany({
       where: {
         workspaceId,
+        isActive: true,
         ...(query?.trim()
           ? { name: { contains: query, mode: "insensitive" as const } }
           : {}),
@@ -88,6 +96,7 @@ export async function getPatients(query?: string, page: number = 1, pageSize: nu
     db.patient.count({
       where: {
         workspaceId,
+        isActive: true,
         ...(query?.trim()
           ? { name: { contains: query, mode: "insensitive" as const } }
           : {}),
@@ -180,7 +189,7 @@ export async function updatePatient(
     alerts?: string[]
   }
 ) {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId, clerkId } = await getWorkspaceContext()
 
   const existing = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
@@ -198,11 +207,19 @@ export async function updatePatient(
     },
   })
 
+  await logAudit({
+    workspaceId,
+    userId: clerkId,
+    action: "patient.updated",
+    entityType: "Patient",
+    entityId: patientId,
+  })
+
   return updated
 }
 
 export async function createPatient(formData: FormData) {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId, clerkId } = await getWorkspaceContext()
 
   const name = formData.get("name") as string
   const document = formData.get("document") as string | null
@@ -235,7 +252,39 @@ export async function createPatient(formData: FormData) {
     },
   })
 
+  await logAudit({
+    workspaceId,
+    userId: clerkId,
+    action: "patient.created",
+    entityType: "Patient",
+    entityId: patient.id,
+  })
+
   redirect(`/patients/${patient.id}`)
+}
+
+export async function deactivatePatient(patientId: string) {
+  const { workspaceId, clerkId } = await getWorkspaceContext()
+
+  const existing = await db.patient.findFirst({
+    where: { id: patientId, workspaceId },
+  })
+  if (!existing) throw new Error("Paciente nao encontrado")
+
+  await db.patient.update({
+    where: { id: patientId },
+    data: { isActive: false },
+  })
+
+  await logAudit({
+    workspaceId,
+    userId: clerkId,
+    action: "patient.deactivated",
+    entityType: "Patient",
+    entityId: patientId,
+  })
+
+  return { success: true }
 }
 
 export async function getAudioPlaybackUrl(audioPath: string) {

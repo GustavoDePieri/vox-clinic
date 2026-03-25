@@ -3,6 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { generateWorkspaceSuggestions } from "@/lib/claude"
+import { logAudit } from "@/lib/audit"
 import type { WorkspaceConfig, Procedure, CustomField, AnamnesisQuestion, Category } from "@/types"
 
 async function getAuthenticatedUser() {
@@ -113,6 +114,15 @@ export async function generateWorkspace(
     })
 
     return ws
+  })
+
+  // Log audit for workspace creation
+  await logAudit({
+    workspaceId: workspace.id,
+    userId,
+    action: "workspace.created",
+    entityType: "Workspace",
+    entityId: workspace.id,
   })
 
   return workspace

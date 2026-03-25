@@ -48,6 +48,7 @@ model Patient {
   birthDate    DateTime?
   customData   Json          @default("{}")
   alerts       Json          @default("[]")
+  isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   appointments Appointment[]
@@ -101,5 +102,34 @@ model Recording {
 
   @@index([workspaceId])
   @@index([appointmentId])
+  @@index([patientId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  action      String   // "patient.created", "patient.updated", "appointment.created", etc.
+  entityType  String   // "Patient", "Appointment", "Recording"
+  entityId    String
+  details     Json?    // optional before/after snapshot
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model ConsentRecord {
+  id          String   @id @default(cuid())
+  workspaceId String
+  patientId   String?
+  recordingId String?
+  consentType String   // "audio_recording", "data_processing"
+  givenAt     DateTime @default(now())
+  givenBy     String   // clerkId of the professional who obtained consent
+  details     String?
+
+  @@index([workspaceId])
   @@index([patientId])
 }

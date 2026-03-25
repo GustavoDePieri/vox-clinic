@@ -5,6 +5,8 @@ import { db } from "@/lib/db"
 import { uploadAudio } from "@/lib/storage"
 import { transcribeAudio } from "@/lib/openai"
 import { extractEntities } from "@/lib/claude"
+import { logAudit } from "@/lib/audit"
+import { recordConsent } from "@/lib/consent"
 import type { ExtractedPatientData } from "@/types"
 
 export async function processVoiceRegistration(formData: FormData) {
@@ -56,6 +58,22 @@ export async function processVoiceRegistration(formData: FormData) {
       status: "processed",
       fileSize: audioFile.size,
     },
+  })
+
+  // 5. Log audit and record consent
+  await logAudit({
+    workspaceId: user.workspace.id,
+    userId,
+    action: "recording.created",
+    entityType: "Recording",
+    entityId: recording.id,
+  })
+
+  await recordConsent({
+    workspaceId: user.workspace.id,
+    recordingId: recording.id,
+    consentType: "audio_recording",
+    givenBy: userId,
   })
 
   return {
@@ -140,6 +158,23 @@ export async function confirmPatientRegistration(data: ConfirmPatientData) {
     })
 
     return { patient, appointment }
+  })
+
+  // Log audit for patient and appointment creation
+  await logAudit({
+    workspaceId,
+    userId,
+    action: "patient.created",
+    entityType: "Patient",
+    entityId: result.patient.id,
+  })
+
+  await logAudit({
+    workspaceId,
+    userId,
+    action: "appointment.created",
+    entityType: "Appointment",
+    entityId: result.appointment.id,
   })
 
   return {
