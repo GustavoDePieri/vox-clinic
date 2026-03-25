@@ -116,6 +116,7 @@ export async function confirmConsultation(data: {
   summary: AppointmentSummary
   audioPath: string
   transcript: string
+  price?: number
 }) {
   const { userId } = await auth()
   if (!userId) throw new Error("Unauthorized")
@@ -146,6 +147,7 @@ export async function confirmConsultation(data: {
         aiSummary: JSON.stringify(data.summary),
         audioUrl: data.audioPath,
         transcript: data.transcript,
+        price: data.price ?? null,
       },
     })
 

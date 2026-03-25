@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState, useTransition } from "react"
-import { Check, Loader2, Plus, X } from "lucide-react"
+import { Check, Loader2, Plus, X, Users, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { getWorkspace, updateWorkspace } from "@/server/actions/workspace"
 
 type Procedure = { id: string; name: string; category: string }
@@ -243,6 +244,36 @@ export default function SettingsPage() {
               Nenhum campo customizado configurado.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Team */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="size-5" />
+            Equipe
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-xl border px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-full bg-vox-primary/10">
+                <Crown className="size-4 text-vox-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{clinicName || "Voce"}</p>
+                <p className="text-xs text-muted-foreground">Proprietario</p>
+              </div>
+            </div>
+            <Badge variant="secondary">owner</Badge>
+          </div>
+          <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 px-4 py-6 text-center">
+            <Users className="size-8 mx-auto mb-2 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">
+              Em breve: convide membros da sua equipe
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

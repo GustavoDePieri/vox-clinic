@@ -450,6 +450,13 @@ export default function OnboardingPage() {
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
+                    onClick={() => setStep(3)}
+                    size="lg"
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={handleRegenerate}
                     disabled={isGenerating}
                     size="lg"

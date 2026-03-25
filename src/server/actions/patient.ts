@@ -33,7 +33,11 @@ export async function searchPatients(query: string) {
     where: {
       workspaceId,
       isActive: true,
-      name: { contains: query, mode: "insensitive" },
+      OR: [
+        { name: { contains: query, mode: "insensitive" } },
+        { phone: { contains: query } },
+        { document: { contains: query } },
+      ],
     },
     select: {
       id: true,
@@ -79,7 +83,13 @@ export async function getPatients(query?: string, page: number = 1, pageSize: nu
         workspaceId,
         isActive: true,
         ...(query?.trim()
-          ? { name: { contains: query, mode: "insensitive" as const } }
+          ? {
+            OR: [
+              { name: { contains: query, mode: "insensitive" as const } },
+              { phone: { contains: query } },
+              { document: { contains: query } },
+            ],
+          }
           : {}),
       },
       orderBy: { updatedAt: "desc" },
@@ -98,7 +108,13 @@ export async function getPatients(query?: string, page: number = 1, pageSize: nu
         workspaceId,
         isActive: true,
         ...(query?.trim()
-          ? { name: { contains: query, mode: "insensitive" as const } }
+          ? {
+            OR: [
+              { name: { contains: query, mode: "insensitive" as const } },
+              { phone: { contains: query } },
+              { document: { contains: query } },
+            ],
+          }
           : {}),
       },
     }),
@@ -171,6 +187,7 @@ export async function getPatient(patientId: string) {
       procedures: a.procedures as string[],
       notes: a.notes,
       aiSummary: a.aiSummary,
+      status: a.status,
       recordings: a.recordings,
     })),
     recordings: patient.recordings,

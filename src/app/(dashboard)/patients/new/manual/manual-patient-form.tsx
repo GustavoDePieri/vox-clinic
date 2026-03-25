@@ -75,8 +75,10 @@ export function ManualPatientForm({
   const [cpf, setCPF] = useState("")
   const [cpfError, setCPFError] = useState("")
   const [phone, setPhone] = useState("+55 ")
+  const [phoneError, setPhoneError] = useState("")
   const [customData, setCustomData] = useState<Record<string, unknown>>({})
   const [birthDateDisplay, setBirthDateDisplay] = useState("")
+  const [birthDateError, setBirthDateError] = useState("")
 
   const handleCPFChange = (value: string) => {
     const formatted = formatCPF(value)
@@ -89,6 +91,17 @@ export function ManualPatientForm({
     }
   }
 
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value)
+    setPhone(formatted)
+    const digits = value.replace(/\D/g, "")
+    if (digits.length > 0 && digits.length < 10) {
+      setPhoneError("Telefone deve ter pelo menos 10 digitos")
+    } else {
+      setPhoneError("")
+    }
+  }
+
   const handleBirthDateChange = (value: string) => {
     // Mask DD/MM/AAAA
     const digits = value.replace(/\D/g, "").slice(0, 8)
@@ -97,6 +110,29 @@ export function ManualPatientForm({
     if (digits.length > 4)
       display = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
     setBirthDateDisplay(display)
+
+    // Validate when full date is entered
+    if (digits.length === 8) {
+      const dd = parseInt(digits.slice(0, 2))
+      const mm = parseInt(digits.slice(2, 4))
+      const yyyy = parseInt(digits.slice(4, 8))
+      const date = new Date(yyyy, mm - 1, dd)
+      const today = new Date()
+      const minDate = new Date()
+      minDate.setFullYear(today.getFullYear() - 130)
+
+      if (date > today) {
+        setBirthDateError("Data de nascimento nao pode ser no futuro")
+      } else if (date < minDate) {
+        setBirthDateError("Data de nascimento deve estar nos ultimos 130 anos")
+      } else if (date.getDate() !== dd || date.getMonth() !== mm - 1 || date.getFullYear() !== yyyy) {
+        setBirthDateError("Data invalida")
+      } else {
+        setBirthDateError("")
+      }
+    } else {
+      setBirthDateError("")
+    }
   }
 
   // Convert DD/MM/YYYY to ISO for the server
@@ -156,9 +192,13 @@ export function ManualPatientForm({
                 id="phone"
                 name="phone"
                 value={phone}
-                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="+55 (11) 99999-9999"
+                aria-invalid={!!phoneError}
               />
+              {phoneError && (
+                <p className="text-xs text-vox-error">{phoneError}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -179,6 +219,9 @@ export function ManualPatientForm({
                 onChange={(e) => handleBirthDateChange(e.target.value)}
                 placeholder="DD/MM/AAAA"
               />
+              {birthDateError && (
+                <p className="text-xs text-vox-error">{birthDateError}</p>
+              )}
               <input type="hidden" name="birthDate" value={birthDateISO} />
             </div>
           </div>
@@ -276,7 +319,7 @@ export function ManualPatientForm({
         </Button>
         <Button
           type="submit"
-          disabled={isPending || !!cpfError}
+          disabled={isPending || !!cpfError || !!phoneError || !!birthDateError}
           className="bg-vox-primary text-white hover:bg-vox-primary/90"
         >
           {isPending ? "Salvando..." : "Cadastrar Paciente"}

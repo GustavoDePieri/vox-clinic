@@ -12,10 +12,12 @@ export function QuickSearch() {
     { id: string; name: string; phone: string | null }[]
   >([])
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleSearch = useCallback((value: string) => {
     setQuery(value)
+    setError(null)
     if (!value.trim()) {
       setResults([])
       return
@@ -23,8 +25,13 @@ export function QuickSearch() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       startTransition(async () => {
-        const patients = await searchPatients(value)
-        setResults(patients)
+        try {
+          const patients = await searchPatients(value)
+          setResults(patients)
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Erro ao buscar pacientes.")
+          setResults([])
+        }
       })
     }, 300)
   }, [])
@@ -40,7 +47,10 @@ export function QuickSearch() {
           className="pl-8"
         />
       </div>
-      {query.trim() && (
+      {error && (
+        <p className="mt-1 text-xs text-vox-error">{error}</p>
+      )}
+      {query.trim() && !error && (
         <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border bg-popover p-1 shadow-md">
           {isPending ? (
             <p className="px-2 py-1.5 text-sm text-muted-foreground">

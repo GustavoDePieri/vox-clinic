@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import {
   Calendar,
   FileText,
@@ -19,8 +20,15 @@ import {
   Play,
   Pause,
   Loader2,
+  Plus,
+  X,
+  CheckCircle,
+  XCircle,
 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import { updatePatient, getAudioPlaybackUrl } from "@/server/actions/patient"
+import { updateAppointmentStatus } from "@/server/actions/appointment"
+import Link from "next/link"
 
 type PatientData = {
   id: string
@@ -38,6 +46,7 @@ type PatientData = {
     procedures: string[]
     notes: string | null
     aiSummary: string | null
+    status: string
     recordings: {
       id: string
       duration: number | null
@@ -59,6 +68,7 @@ const tabs = [
   { id: "resumo" as const, label: "Resumo", icon: User },
   { id: "historico" as const, label: "Historico", icon: Calendar },
   { id: "gravacoes" as const, label: "Gravacoes", icon: Mic },
+  { id: "anamnese" as const, label: "Anamnese", icon: FileText },
 ]
 
 type CustomFieldDef = {
@@ -68,8 +78,15 @@ type CustomFieldDef = {
   required: boolean
 }
 
-export function PatientTabs({ patient, customFields }: { patient: PatientData; customFields?: CustomFieldDef[] }) {
-  const [activeTab, setActiveTab] = useState<"resumo" | "historico" | "gravacoes">("resumo")
+type AnamnesisQuestionDef = {
+  id: string
+  question: string
+  type: string
+  options?: string[]
+}
+
+export function PatientTabs({ patient, customFields, anamnesisTemplate }: { patient: PatientData; customFields?: CustomFieldDef[]; anamnesisTemplate?: AnamnesisQuestionDef[] }) {
+  const [activeTab, setActiveTab] = useState<"resumo" | "historico" | "gravacoes" | "anamnese">("resumo")
 
   return (
     <div className="space-y-4">
@@ -95,8 +112,9 @@ export function PatientTabs({ patient, customFields }: { patient: PatientData; c
       </div>
 
       {activeTab === "resumo" && <ResumoTab patient={patient} customFields={customFields} />}
-      {activeTab === "historico" && <HistoricoTab appointments={patient.appointments} />}
+      {activeTab === "historico" && <HistoricoTab appointments={patient.appointments} patientId={patient.id} />}
       {activeTab === "gravacoes" && <GravacoesTab recordings={patient.recordings} />}
+      {activeTab === "anamnese" && <AnamneseTab patient={patient} anamnesisTemplate={anamnesisTemplate ?? []} />}
     </div>
   )
 }
@@ -106,6 +124,15 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
   const [name, setName] = useState(patient.name)
   const [phone, setPhone] = useState(patient.phone ?? "")
   const [email, setEmail] = useState(patient.email ?? "")
+  const [document, setDocument] = useState(patient.document ?? "")
+  const [birthDate, setBirthDate] = useState(
+    patient.birthDate ? new Date(patient.birthDate).toISOString().split("T")[0] : ""
+  )
+  const [customData, setCustomData] = useState<Record<string, unknown>>(
+    patient.customData ?? {}
+  )
+  const [alerts, setAlerts] = useState<string[]>(patient.alerts ?? [])
+  const [newAlert, setNewAlert] = useState("")
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
@@ -115,11 +142,31 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
         name,
         phone: phone || null,
         email: email || null,
+        document: document || null,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        customData,
+        alerts,
       })
       setIsEditing(false)
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleAddAlert = () => {
+    const trimmed = newAlert.trim()
+    if (trimmed && !alerts.includes(trimmed)) {
+      setAlerts([...alerts, trimmed])
+      setNewAlert("")
+    }
+  }
+
+  const handleRemoveAlert = (index: number) => {
+    setAlerts(alerts.filter((_, i) => i !== index))
+  }
+
+  const updateCustomField = (fieldId: string, value: unknown) => {
+    setCustomData((prev) => ({ ...prev, [fieldId]: value }))
   }
 
   const formatDate = (date: Date | null) => {
@@ -154,7 +201,11 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
           </div>
           <div className="space-y-1.5">
             <Label>CPF</Label>
-            <p className="text-sm">{patient.document || "-"}</p>
+            {isEditing ? (
+              <Input value={document} onChange={(e) => setDocument(e.target.value)} placeholder="000.000.000-00" />
+            ) : (
+              <p className="text-sm">{patient.document || "-"}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5">
@@ -182,7 +233,15 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
           </div>
           <div className="space-y-1.5">
             <Label>Data de Nascimento</Label>
-            <p className="text-sm">{formatDate(patient.birthDate)}</p>
+            {isEditing ? (
+              <Input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+              />
+            ) : (
+              <p className="text-sm">{formatDate(patient.birthDate)}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Cadastrado em</Label>
@@ -190,35 +249,109 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
           </div>
         </div>
 
-        {patient.alerts.length > 0 && (
-          <div className="rounded-lg border border-vox-error/30 bg-vox-error/5 p-3 space-y-1.5">
-            <p className="text-sm font-medium text-vox-error">Alertas</p>
+        <div className="rounded-lg border border-vox-error/30 bg-vox-error/5 p-3 space-y-1.5">
+          <p className="text-sm font-medium text-vox-error">Alertas</p>
+          {isEditing ? (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                {alerts.map((alert, i) => (
+                  <Badge key={i} variant="destructive" className="flex items-center gap-1">
+                    {alert}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAlert(i)}
+                      className="ml-0.5 hover:opacity-70"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newAlert}
+                  onChange={(e) => setNewAlert(e.target.value)}
+                  placeholder="Novo alerta..."
+                  className="flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      handleAddAlert()
+                    }
+                  }}
+                />
+                <Button type="button" size="sm" variant="outline" onClick={handleAddAlert}>
+                  <Plus className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+          ) : alerts.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {patient.alerts.map((alert, i) => (
+              {alerts.map((alert, i) => (
                 <Badge key={i} variant="destructive">
                   {alert}
                 </Badge>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-xs text-muted-foreground">Nenhum alerta</p>
+          )}
+        </div>
 
         {/* Custom fields from workspace */}
-        {customFields && customFields.length > 0 && Object.keys(patient.customData).length > 0 && (
+        {customFields && customFields.length > 0 && (
           <div className="space-y-3">
             <p className="text-sm font-medium">Dados Complementares</p>
             <div className="grid gap-3 sm:grid-cols-2">
               {customFields.map((field) => {
-                const value = patient.customData[field.id]
-                if (value === undefined || value === null || value === "") return null
+                const value = customData[field.id]
+                if (!isEditing && (value === undefined || value === null || value === "")) return null
                 return (
                   <div key={field.id} className="space-y-1">
                     <Label className="text-xs text-muted-foreground">{field.name}</Label>
-                    <p className="text-sm">
-                      {field.type === "boolean"
-                        ? value ? "Sim" : "Nao"
-                        : String(value)}
-                    </p>
+                    {isEditing ? (
+                      field.type === "boolean" ? (
+                        <div className="flex items-center gap-2 pt-1">
+                          <Switch
+                            checked={!!value}
+                            onCheckedChange={(checked) => updateCustomField(field.id, checked)}
+                          />
+                          <span className="text-sm">{value ? "Sim" : "Nao"}</span>
+                        </div>
+                      ) : field.type === "select" && Array.isArray((field as any).options) ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {((field as any).options as string[]).map((option) => (
+                            <Button
+                              key={option}
+                              type="button"
+                              size="sm"
+                              variant={value === option ? "default" : "outline"}
+                              onClick={() => updateCustomField(field.id, option)}
+                              className="text-xs"
+                            >
+                              {option}
+                            </Button>
+                          ))}
+                        </div>
+                      ) : (
+                        <Input
+                          type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                          value={value !== undefined && value !== null ? String(value) : ""}
+                          onChange={(e) =>
+                            updateCustomField(
+                              field.id,
+                              field.type === "number" ? (e.target.value ? Number(e.target.value) : "") : e.target.value
+                            )
+                          }
+                        />
+                      )
+                    ) : (
+                      <p className="text-sm">
+                        {field.type === "boolean"
+                          ? value ? "Sim" : "Nao"
+                          : String(value)}
+                      </p>
+                    )}
                   </div>
                 )
               })}
@@ -232,17 +365,39 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
 
 function HistoricoTab({
   appointments,
+  patientId,
 }: {
   appointments: PatientData["appointments"]
+  patientId: string
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({})
 
-  if (appointments.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        Nenhum atendimento registrado.
-      </p>
-    )
+  async function handleStatusChange(appointmentId: string, newStatus: string) {
+    setUpdatingId(appointmentId)
+    try {
+      await updateAppointmentStatus(appointmentId, newStatus)
+      setLocalStatuses((prev) => ({ ...prev, [appointmentId]: newStatus }))
+    } catch {
+      // Failed to update status
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const statusLabels: Record<string, string> = {
+    scheduled: "Agendado",
+    completed: "Concluido",
+    cancelled: "Cancelado",
+    no_show: "Faltou",
+  }
+
+  const statusColors: Record<string, string> = {
+    scheduled: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    completed: "bg-green-100 text-green-700 border-green-200",
+    cancelled: "bg-red-100 text-red-700 border-red-200",
+    no_show: "bg-amber-100 text-amber-700 border-amber-200",
   }
 
   const formatDate = (date: Date) =>
@@ -255,85 +410,141 @@ function HistoricoTab({
     })
 
   return (
-    <div className="relative space-y-0">
-      {/* Timeline line */}
-      <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Link href={`/appointments/new?patientId=${patientId}`}>
+          <Button size="sm" className="bg-vox-primary text-white hover:bg-vox-primary/90">
+            <Plus className="size-4" />
+            Nova Consulta
+          </Button>
+        </Link>
+      </div>
 
-      {appointments.map((apt) => {
-        const isExpanded = expandedId === apt.id
-        return (
-          <div key={apt.id} className="relative pl-10 pb-4">
-            {/* Timeline dot */}
-            <div className="absolute left-[13px] top-3 size-2.5 rounded-full bg-vox-primary ring-2 ring-background" />
+      {appointments.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          Nenhum atendimento registrado.
+        </p>
+      ) : (
+        <div className="relative space-y-0">
+          {/* Timeline line */}
+          <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
 
-            <Card>
-              <button
-                className="w-full text-left"
-                onClick={() =>
-                  setExpandedId(isExpanded ? null : apt.id)
-                }
-              >
-                <CardHeader className="flex-row items-center justify-between py-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">
-                      {formatDate(apt.date)}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {apt.procedures.map((proc, i) => (
-                        <Badge key={i} variant="secondary">
-                          {proc}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  {isExpanded ? (
-                    <ChevronUp className="size-4 text-muted-foreground shrink-0" />
-                  ) : (
-                    <ChevronDown className="size-4 text-muted-foreground shrink-0" />
-                  )}
-                </CardHeader>
-              </button>
-              {isExpanded && (
-                <CardContent className="pt-0 space-y-3">
-                  {apt.aiSummary && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Resumo IA
-                      </p>
-                      <p className="text-sm">{apt.aiSummary}</p>
-                    </div>
-                  )}
-                  {apt.notes && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Notas
-                      </p>
-                      <p className="text-sm">{apt.notes}</p>
-                    </div>
-                  )}
-                  {apt.recordings.length > 0 && (
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Gravacoes vinculadas
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {apt.recordings.map((rec) => (
-                          <Badge key={rec.id} variant="outline">
-                            <Mic className="size-3 mr-1" />
-                            {rec.duration
-                              ? `${Math.floor(rec.duration / 60)}min`
-                              : "N/A"}
+          {appointments.map((apt) => {
+            const isExpanded = expandedId === apt.id
+            const currentStatus = localStatuses[apt.id] ?? apt.status
+            const isScheduled = currentStatus === "scheduled"
+            return (
+              <div key={apt.id} className="relative pl-10 pb-4">
+                {/* Timeline dot */}
+                <div className="absolute left-[13px] top-3 size-2.5 rounded-full bg-vox-primary ring-2 ring-background" />
+
+                <Card>
+                  <button
+                    className="w-full text-left"
+                    onClick={() =>
+                      setExpandedId(isExpanded ? null : apt.id)
+                    }
+                  >
+                    <CardHeader className="flex-row items-center justify-between py-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">
+                            {formatDate(apt.date)}
+                          </p>
+                          <Badge variant="outline" className={statusColors[currentStatus] ?? ""}>
+                            {statusLabels[currentStatus] ?? currentStatus}
                           </Badge>
-                        ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {apt.procedures.map((proc, i) => (
+                            <Badge key={i} variant="secondary">
+                              {proc}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                      {isExpanded ? (
+                        <ChevronUp className="size-4 text-muted-foreground shrink-0" />
+                      ) : (
+                        <ChevronDown className="size-4 text-muted-foreground shrink-0" />
+                      )}
+                    </CardHeader>
+                  </button>
+                  {isExpanded && (
+                    <CardContent className="pt-0 space-y-3">
+                      {apt.aiSummary && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Resumo IA
+                          </p>
+                          <p className="text-sm">{apt.aiSummary}</p>
+                        </div>
+                      )}
+                      {apt.notes && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Notas
+                          </p>
+                          <p className="text-sm">{apt.notes}</p>
+                        </div>
+                      )}
+                      {apt.recordings.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Gravacoes vinculadas
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {apt.recordings.map((rec) => (
+                              <Badge key={rec.id} variant="outline">
+                                <Mic className="size-3 mr-1" />
+                                {rec.duration
+                                  ? `${Math.floor(rec.duration / 60)}min`
+                                  : "N/A"}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {isScheduled && (
+                        <div className="flex gap-2 pt-2 border-t">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                            onClick={() => handleStatusChange(apt.id, "completed")}
+                            disabled={updatingId === apt.id}
+                          >
+                            {updatingId === apt.id ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle className="size-3.5" />
+                            )}
+                            Concluir
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                            onClick={() => handleStatusChange(apt.id, "cancelled")}
+                            disabled={updatingId === apt.id}
+                          >
+                            {updatingId === apt.id ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <XCircle className="size-3.5" />
+                            )}
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
                   )}
-                </CardContent>
-              )}
-            </Card>
-          </div>
-        )
-      })}
+                </Card>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -466,5 +677,124 @@ function GravacoesTab({
         </Card>
       ))}
     </div>
+  )
+}
+
+function AnamneseTab({
+  patient,
+  anamnesisTemplate,
+}: {
+  patient: PatientData
+  anamnesisTemplate: AnamnesisQuestionDef[]
+}) {
+  const existingAnamnesis = (patient.customData?.anamnesis as Record<string, string>) ?? {}
+  const [answers, setAnswers] = useState<Record<string, string>>(existingAnamnesis)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  function setAnswer(questionId: string, value: string) {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }))
+    setSaved(false)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const updatedCustomData = { ...patient.customData, anamnesis: answers }
+      await updatePatient(patient.id, { customData: updatedCustomData })
+      setSaved(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (anamnesisTemplate.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground py-8 text-center">
+        Nenhum modelo de anamnese configurado no workspace.
+      </p>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle>Anamnese</CardTitle>
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          size="sm"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Salvando...
+            </>
+          ) : saved ? (
+            "Salvo"
+          ) : (
+            "Salvar"
+          )}
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {anamnesisTemplate.map((q, i) => (
+          <div key={q.id} className="space-y-2">
+            <Label className="text-sm font-medium">
+              {i + 1}. {q.question}
+            </Label>
+
+            {q.type === "text" && (
+              <Textarea
+                value={answers[q.id] ?? ""}
+                onChange={(e) => setAnswer(q.id, e.target.value)}
+                placeholder="Digite sua resposta..."
+                rows={3}
+              />
+            )}
+
+            {q.type === "boolean" && (
+              <div className="flex gap-3">
+                {["Sim", "Nao"].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setAnswer(q.id, opt)}
+                    className={cn(
+                      "rounded-xl border px-6 py-2.5 text-sm font-medium transition-all",
+                      answers[q.id] === opt
+                        ? "border-vox-primary bg-vox-primary/5 text-vox-primary"
+                        : "border-border text-foreground hover:border-vox-primary/30"
+                    )}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {q.type === "select" && q.options && (
+              <div className="flex flex-wrap gap-2">
+                {q.options.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setAnswer(q.id, opt)}
+                    className={cn(
+                      "rounded-xl border px-4 py-2 text-sm transition-all",
+                      answers[q.id] === opt
+                        ? "border-vox-primary bg-vox-primary/5 text-vox-primary font-medium"
+                        : "border-border text-foreground hover:border-vox-primary/30"
+                    )}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   )
 }

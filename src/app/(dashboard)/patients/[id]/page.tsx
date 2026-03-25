@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle, FileText } from "lucide-react"
 import Link from "next/link"
 import { PatientTabs } from "./patient-tabs"
+import { ExportButton } from "./export-button"
+import { DeactivateButton } from "./deactivate-button"
 
 export default async function PatientPage({
   params,
@@ -20,10 +22,11 @@ export default async function PatientPage({
   const user = userId
     ? await db.user.findUnique({
         where: { clerkId: userId },
-        include: { workspace: { select: { customFields: true } } },
+        include: { workspace: { select: { customFields: true, anamnesisTemplate: true } } },
       })
     : null
   const customFields = (user?.workspace?.customFields as any[]) ?? []
+  const anamnesisTemplate = (user?.workspace?.anamnesisTemplate as any[]) ?? []
 
   return (
     <div className="space-y-6">
@@ -49,12 +52,14 @@ export default async function PatientPage({
           )}
         </div>
         <div className="flex items-center gap-2">
+          <ExportButton patientId={patient.id} patientName={patient.name} />
           <Link href={`/patients/${patient.id}/report`} target="_blank">
             <Button variant="outline" size="sm">
               <FileText className="size-4" />
               Relatorio
             </Button>
           </Link>
+          <DeactivateButton patientId={patient.id} />
           {patient.alerts.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {patient.alerts.map((alert, i) => (
@@ -68,7 +73,7 @@ export default async function PatientPage({
         </div>
       </div>
 
-      <PatientTabs patient={patient} customFields={customFields} />
+      <PatientTabs patient={patient} customFields={customFields} anamnesisTemplate={anamnesisTemplate} />
     </div>
   )
 }

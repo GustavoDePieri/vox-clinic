@@ -16,6 +16,47 @@ async function getWorkspaceId() {
   return user.workspace.id
 }
 
+export async function getAppointments(page: number = 1, status?: string) {
+  const workspaceId = await getWorkspaceId()
+  const pageSize = 20
+  const skip = (page - 1) * pageSize
+
+  const where: { workspaceId: string; status?: string } = { workspaceId }
+  if (status && status !== "all") {
+    where.status = status
+  }
+
+  const [appointments, total] = await Promise.all([
+    db.appointment.findMany({
+      where,
+      include: {
+        patient: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { date: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    db.appointment.count({ where }),
+  ])
+
+  return {
+    appointments: appointments.map((a) => ({
+      id: a.id,
+      date: a.date.toISOString(),
+      patient: a.patient,
+      procedures: a.procedures as string[],
+      notes: a.notes,
+      aiSummary: a.aiSummary,
+      status: a.status,
+    })),
+    total,
+    totalPages: Math.ceil(total / pageSize),
+    page,
+  }
+}
+
 export async function getAppointmentsByDateRange(startDate: string, endDate: string) {
   const workspaceId = await getWorkspaceId()
 

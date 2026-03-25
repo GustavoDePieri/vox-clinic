@@ -31,14 +31,20 @@ export function PatientListSearch({
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(initialTotalPages)
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const doSearch = useCallback((value: string, p: number = 1) => {
+    setError(null)
     startTransition(async () => {
-      const data = await getPatients(value || undefined, p)
-      setPatients(data.patients)
-      setTotalPages(data.totalPages)
-      setPage(data.page)
+      try {
+        const data = await getPatients(value || undefined, p)
+        setPatients(data.patients)
+        setTotalPages(data.totalPages)
+        setPage(data.page)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro ao buscar pacientes.")
+      }
     })
   }, [])
 
@@ -68,6 +74,12 @@ export function PatientListSearch({
           className="pl-8"
         />
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-vox-error/30 bg-vox-error/5 p-3 text-sm text-vox-error">
+          {error}
+        </div>
+      )}
 
       {isPending ? (
         <p className="text-sm text-muted-foreground">Buscando...</p>

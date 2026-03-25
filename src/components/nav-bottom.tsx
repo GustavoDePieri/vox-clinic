@@ -2,14 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, CalendarDays, Mic, Settings } from "lucide-react"
+import { LayoutDashboard, Users, CalendarDays, Mic, DollarSign } from "lucide-react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/patients", label: "Pacientes", icon: Users },
   { href: "/calendar", label: "Agenda", icon: CalendarDays },
   { href: "/appointments/new", label: "Consulta", icon: Mic },
-  { href: "/settings", label: "Config", icon: Settings },
+  { href: "/financial", label: "Financeiro", icon: DollarSign },
 ]
 
 export function NavBottom() {

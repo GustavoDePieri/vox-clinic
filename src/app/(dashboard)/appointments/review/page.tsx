@@ -34,6 +34,7 @@ export default function AppointmentReviewPage() {
   const [observations, setObservations] = useState("")
   const [recommendations, setRecommendations] = useState("")
   const [nextAppointment, setNextAppointment] = useState("")
+  const [price, setPrice] = useState("")
 
   useEffect(() => {
     if (!recordingId) {
@@ -71,12 +72,14 @@ export default function AppointmentReviewPage() {
         recommendations,
         nextAppointment: nextAppointment || null,
       }
+      const parsedPrice = parseFloat(price)
       const result = await confirmConsultation({
         recordingId,
         patientId,
         summary,
         audioPath,
         transcript,
+        price: !isNaN(parsedPrice) && parsedPrice > 0 ? parsedPrice : undefined,
       })
       router.push(`/patients/${result.patientId}`)
     } catch (err) {
@@ -264,6 +267,29 @@ export default function AppointmentReviewPage() {
               {nextAppointment || "Nao especificada"}
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Valor da Consulta</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">R$</span>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0,00"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-40"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            Opcional. Informe o valor cobrado nesta consulta.
+          </p>
         </CardContent>
       </Card>
 

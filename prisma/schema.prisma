@@ -19,6 +19,7 @@ model User {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   workspace          Workspace?
+  memberships        WorkspaceMember[]
 }
 
 model Workspace {
@@ -35,6 +36,7 @@ model Workspace {
   patients          Patient[]
   appointments      Appointment[]
   recordings        Recording[]
+  members           WorkspaceMember[]
 }
 
 model Patient {
@@ -72,6 +74,7 @@ model Appointment {
   aiSummary    String?
   audioUrl     String?
   transcript   String?
+  price        Float?      // valor da consulta em BRL
   status       String      @default("completed")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -132,4 +135,18 @@ model ConsentRecord {
 
   @@index([workspaceId])
   @@index([patientId])
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String   @default("member") // "owner", "admin", "member"
+  invitedAt   DateTime @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
 }

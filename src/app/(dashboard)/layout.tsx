@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { UserButton } from "@clerk/nextjs"
 import { NavSidebar } from "@/components/nav-sidebar"
 import { NavBottom } from "@/components/nav-bottom"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default async function DashboardLayout({
   children,
@@ -39,14 +40,17 @@ export default async function DashboardLayout({
               </>
             )}
           </div>
-          <UserButton
-            signInUrl="/sign-in"
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8",
-              },
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserButton
+              signInUrl="/sign-in"
+              appearance={{
+                elements: {
+                  avatarBox: "w-8 h-8",
+                },
+              }}
+            />
+          </div>
         </div>
       </header>
       <div className="flex flex-1">
