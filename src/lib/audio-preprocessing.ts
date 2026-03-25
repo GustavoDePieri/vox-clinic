@@ -1,11 +1,11 @@
 import ffmpeg from 'fluent-ffmpeg'
-import ffmpegStatic from 'ffmpeg-static'
 import { Readable, PassThrough } from 'stream'
+import path from 'path'
 
-// Set ffmpeg binary path
-if (ffmpegStatic) {
-  ffmpeg.setFfmpegPath(ffmpegStatic)
-}
+// Resolve ffmpeg binary path — ffmpeg-static may return incorrect path on Windows
+// so we resolve it relative to node_modules
+const ffmpegPath = path.join(process.cwd(), 'node_modules', 'ffmpeg-static', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg')
+ffmpeg.setFfmpegPath(ffmpegPath)
 
 interface PreprocessOptions {
   speed?: number        // 1.0 - 2.0, default 1.4
