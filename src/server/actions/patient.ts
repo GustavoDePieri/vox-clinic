@@ -134,6 +134,7 @@ export async function getPatients(
       document: p.document,
       email: p.email,
       insurance: p.insurance,
+      source: p.source,
       tags: p.tags,
       alerts: p.alerts as string[],
       lastAppointment: p.appointments[0]?.date ?? null,
@@ -191,6 +192,7 @@ export async function getPatient(patientId: string) {
     address: patient.address as Record<string, string> | null,
     insurance: patient.insurance,
     guardian: patient.guardian,
+    source: patient.source,
     tags: patient.tags,
     medicalHistory: patient.medicalHistory as Record<string, unknown>,
     customData: patient.customData as Record<string, unknown>,
@@ -222,6 +224,7 @@ export async function updatePatient(
     address?: Record<string, string> | null
     insurance?: string | null
     guardian?: string | null
+    source?: string | null
     tags?: string[]
     medicalHistory?: Record<string, unknown>
     customData?: Record<string, unknown>
@@ -272,6 +275,7 @@ export async function createPatient(formData: FormData) {
   const gender = formData.get("gender") as string | null
   const insurance = formData.get("insurance") as string | null
   const guardian = formData.get("guardian") as string | null
+  const source = formData.get("source") as string | null
   const customDataRaw = formData.get("customData") as string | null
   const addressRaw = formData.get("address") as string | null
 
@@ -300,6 +304,7 @@ export async function createPatient(formData: FormData) {
       address,
       insurance: insurance?.trim() || null,
       guardian: guardian?.trim() || null,
+      source: source?.trim() || null,
       customData,
       alerts: [],
     },

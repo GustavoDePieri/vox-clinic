@@ -254,6 +254,24 @@ export function ManualPatientForm({
               <Label htmlFor="guardian">Responsavel</Label>
               <Input id="guardian" name="guardian" placeholder="Nome do responsavel (menores)" />
             </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="source">Origem</Label>
+              <select
+                id="source"
+                name="source"
+                className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">Nao informado</option>
+                <option value="instagram">Instagram</option>
+                <option value="google">Google</option>
+                <option value="facebook">Facebook</option>
+                <option value="indicacao">Indicacao</option>
+                <option value="convenio">Convenio</option>
+                <option value="site">Site</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
           </div>
         </CardContent>
       </Card>

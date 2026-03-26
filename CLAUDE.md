@@ -62,8 +62,11 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
   - `/settings/whatsapp` — WhatsApp Business API setup wizard (5-step: intro, connect, verify, templates, done)
 - `src/app/onboarding/` — 4-step wizard (profession → questions → clinic → AI preview)
 - `src/app/api/webhooks/clerk/` — User sync webhook
-- `src/app/api/reminders/` — Cron-triggered appointment reminders
-- `src/app/api/whatsapp/webhook/` — WhatsApp webhook (GET for Meta verification, POST for incoming messages/status updates)
+- `src/app/api/reminders/` — Cron-triggered appointment reminders (email + WhatsApp with interactive confirm/cancel buttons)
+- `src/app/api/birthdays/` — Cron-triggered birthday messages (WhatsApp preferred, email fallback)
+- `src/app/api/export/patients/` — Excel export of all active patients
+- `src/app/api/export/reports/` — Excel export of reports data (multi-sheet: Resumo, Mensal, Procedimentos)
+- `src/app/api/whatsapp/webhook/` — WhatsApp webhook (GET for Meta verification, POST for incoming messages/status updates/appointment confirmations)
 
 ### Command Palette (Cmd+K)
 - `src/components/command-palette.tsx` — Global search accessible from any page
@@ -116,6 +119,11 @@ All actions authenticate via `auth()` from `@clerk/nextjs/server` and scope quer
   - Empty transcript guard: throws if < 10 chars
 - `src/lib/schemas.ts` — Zod schemas: `ExtractedPatientDataSchema`, `WorkspaceConfigSchema`, `AppointmentSummarySchema`
 - `src/lib/storage.ts` — `uploadAudio`, `getSignedAudioUrl` (5min), `getAudioBuffer`
+- `src/lib/export-xlsx.ts` — `generateXlsx(data, sheetName)` and `generateXlsxMultiSheet(sheets)` for Excel export via `xlsx` library
+
+### Excel Export API Routes
+- `src/app/api/export/patients/route.ts` — GET, auth via Clerk, exports all active patients as .xlsx with columns: Nome, CPF, RG, Telefone, Email, Data Nascimento, Sexo, Convenio, Origem, Tags, Cadastrado em, Ultimo Atendimento
+- `src/app/api/export/reports/route.ts` — GET, auth via Clerk, accepts `period` query param (3m/6m/12m), exports multi-sheet .xlsx (Resumo, Mensal, Procedimentos)
 
 ### Confirmation-before-save Pattern
 AI-extracted data is NEVER saved automatically to the final record:
@@ -167,7 +175,7 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 
 - **User**: clerkId, profession, clinicName, onboardingComplete → has one Workspace
 - **Workspace**: professionType, customFields, procedures, anamnesisTemplate, categories → has many Patients, Appointments, Recordings
-- **Patient**: belongs to Workspace. name, document (CPF, unique per workspace), rg, gender, address (JSON: street/number/complement/neighborhood/city/state/zipCode), insurance (convenio), guardian (responsavel), tags (String[]), medicalHistory (JSON: allergies/chronicDiseases/medications/bloodType/notes), customData, alerts, isActive (soft delete). Has many Appointments, Recordings, TreatmentPlans
+- **Patient**: belongs to Workspace. name, document (CPF, unique per workspace), rg, gender, address (JSON: street/number/complement/neighborhood/city/state/zipCode), insurance (convenio), guardian (responsavel), source (origin: instagram/google/indicacao/convenio/site/facebook/outro), tags (String[]), medicalHistory (JSON: allergies/chronicDiseases/medications/bloodType/notes), customData, alerts, isActive (soft delete). Has many Appointments, Recordings, TreatmentPlans
 - **Appointment**: links Patient + Workspace. date, procedures, notes, aiSummary, audioUrl, transcript, status (scheduled/completed/cancelled/no_show)
 - **TreatmentPlan**: links Patient + Workspace. name, procedures, totalSessions, completedSessions, status (active/completed/cancelled/paused), notes, startDate, estimatedEndDate, completedAt
 - **Notification**: workspaceId, userId, type (appointment_soon/appointment_missed/treatment_complete/system), title, body, entityType, entityId, read. Polling-based (60s)
@@ -195,6 +203,8 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 4. **Duplicate patient detection & merge**: By CPF (normalized, both formatted/unformatted) and by name (case-insensitive contains). `@@unique([workspaceId, document])` enforces at DB level. `mergePatients()` allows merging two records: keeps target, transfers all related records (appointments, recordings, documents, treatment plans), merges tags/alerts/medicalHistory (union), fills missing fields from source, then soft-deletes source. UI via MergeDialog on patient detail page.
 5. **Soft delete for patients**: `isActive` flag. `getPatients` filters `isActive: true`. Records retained for CFM 20-year requirement.
 6. **Appointment conflict detection**: `checkAppointmentConflicts()` checks ±30min window. `scheduleAppointment()` rejects with `CONFLICT:` prefix error. UI shows confirm dialog, `forceSchedule: true` bypasses.
+7. **Automated appointment reminders**: Cron sends reminders 24h before. WhatsApp (preferred, with interactive confirm/cancel buttons) → email fallback. Patient can confirm via button click or text reply ("sim"/"nao"). Webhook processes button_reply IDs (`confirm_<id>`, `cancel_<id>`) and text replies to update appointment status.
+8. **Birthday messages**: Daily cron checks birthDate (month+day match). WhatsApp preferred → email fallback. Runs via `/api/birthdays` with CRON_SECRET auth.
 
 ### Security & Privacy (LGPD)
 6. **LGPD consent**: Required before audio recording (enforced in RecordButton). ConsentRecord stored in database.

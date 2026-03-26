@@ -242,6 +242,89 @@ async function handleIncomingMessage(
     },
     update: {},
   })
+
+  // Handle appointment confirmation/cancellation via interactive button replies
+  await handleAppointmentConfirmation(workspaceId, message, content)
+}
+
+async function handleAppointmentConfirmation(
+  workspaceId: string,
+  message: IncomingMessage,
+  content: string
+) {
+  // Check for button replies from reminder messages
+  const buttonId =
+    message.interactive?.button_reply?.id ||
+    message.button?.payload ||
+    null
+
+  if (!buttonId) {
+    // Also handle text replies: "sim", "confirmo", "ok" = confirm; "nao", "cancelar" = cancel
+    const normalized = content.toLowerCase().trim()
+    const phone = message.from
+
+    if (["sim", "confirmo", "ok", "confirmar"].includes(normalized)) {
+      await updateNextAppointmentByPhone(workspaceId, phone, "scheduled")
+      return
+    }
+    if (["nao", "não", "cancelar", "cancelo"].includes(normalized)) {
+      await updateNextAppointmentByPhone(workspaceId, phone, "cancelled")
+      return
+    }
+    return
+  }
+
+  // Interactive button: confirm_<appointmentId> or cancel_<appointmentId>
+  if (buttonId.startsWith("confirm_")) {
+    const appointmentId = buttonId.replace("confirm_", "")
+    await db.appointment.updateMany({
+      where: { id: appointmentId, workspaceId, status: "scheduled" },
+      data: { status: "scheduled" }, // keep scheduled = confirmed
+    })
+    console.log(`[WhatsApp] Appointment ${appointmentId} confirmed via button`)
+  } else if (buttonId.startsWith("cancel_")) {
+    const appointmentId = buttonId.replace("cancel_", "")
+    await db.appointment.updateMany({
+      where: { id: appointmentId, workspaceId, status: "scheduled" },
+      data: { status: "cancelled" },
+    })
+    console.log(`[WhatsApp] Appointment ${appointmentId} cancelled via button`)
+  }
+}
+
+async function updateNextAppointmentByPhone(
+  workspaceId: string,
+  phone: string,
+  newStatus: string
+) {
+  // Find the patient by phone, then their next scheduled appointment
+  const patient = await db.patient.findFirst({
+    where: {
+      workspaceId,
+      isActive: true,
+      phone: { contains: phone.slice(-8) }, // match last 8 digits
+    },
+  })
+  if (!patient) return
+
+  const nextAppointment = await db.appointment.findFirst({
+    where: {
+      patientId: patient.id,
+      workspaceId,
+      status: "scheduled",
+      date: { gte: new Date() },
+    },
+    orderBy: { date: "asc" },
+  })
+  if (!nextAppointment) return
+
+  await db.appointment.update({
+    where: { id: nextAppointment.id },
+    data: { status: newStatus },
+  })
+  console.log(
+    `[WhatsApp] Appointment ${nextAppointment.id} ${newStatus} via text reply from ${phone}`
+  )
 }
 
 async function handleStatusUpdate(status: MessageStatus) {

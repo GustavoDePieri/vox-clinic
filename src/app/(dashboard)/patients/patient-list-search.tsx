@@ -16,6 +16,7 @@ type PatientItem = {
   document: string | null
   email: string | null
   insurance: string | null
+  source: string | null
   tags: string[]
   alerts: string[]
   lastAppointment: Date | null

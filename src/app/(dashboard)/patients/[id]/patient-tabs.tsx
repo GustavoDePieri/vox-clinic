@@ -71,6 +71,7 @@ type PatientData = {
   address: Record<string, string> | null
   insurance: string | null
   guardian: string | null
+  source: string | null
   tags: string[]
   medicalHistory: Record<string, unknown>
   customData: Record<string, unknown>
@@ -173,6 +174,16 @@ const genderLabels: Record<string, string> = {
   nao_informado: "Nao informado",
 }
 
+const sourceLabels: Record<string, string> = {
+  instagram: "Instagram",
+  google: "Google",
+  facebook: "Facebook",
+  indicacao: "Indicacao",
+  convenio: "Convenio",
+  site: "Site",
+  outro: "Outro",
+}
+
 function ResumoTab({ patient, customFields }: { patient: PatientData; customFields?: CustomFieldDef[] }) {
   const [isEditing, setIsEditing] = useState(false)
   const [name, setName] = useState(patient.name)
@@ -186,6 +197,7 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
   const [gender, setGender] = useState(patient.gender ?? "")
   const [insurance, setInsurance] = useState(patient.insurance ?? "")
   const [guardian, setGuardian] = useState(patient.guardian ?? "")
+  const [source, setSource] = useState(patient.source ?? "")
   const [address, setAddress] = useState<Record<string, string>>(patient.address ?? {})
   const [tags, setTags] = useState<string[]>(patient.tags ?? [])
   const [newTag, setNewTag] = useState("")
@@ -211,6 +223,7 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
         gender: gender || null,
         insurance: insurance || null,
         guardian: guardian || null,
+        source: source || null,
         address: Object.values(address).some(v => v) ? address : null,
         tags,
         medicalHistory,
@@ -372,6 +385,23 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
               <Input value={guardian} onChange={(e) => setGuardian(e.target.value)} placeholder="Nome do responsavel" />
             ) : (
               <p className="text-sm">{patient.guardian || "-"}</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Origem</Label>
+            {isEditing ? (
+              <select value={source} onChange={(e) => setSource(e.target.value)} className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
+                <option value="">Nao informado</option>
+                <option value="instagram">Instagram</option>
+                <option value="google">Google</option>
+                <option value="facebook">Facebook</option>
+                <option value="indicacao">Indicacao</option>
+                <option value="convenio">Convenio</option>
+                <option value="site">Site</option>
+                <option value="outro">Outro</option>
+              </select>
+            ) : (
+              <p className="text-sm">{patient.source ? sourceLabels[patient.source] || patient.source : "-"}</p>
             )}
           </div>
           <div className="space-y-1.5">

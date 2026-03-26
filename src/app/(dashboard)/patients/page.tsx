@@ -1,6 +1,6 @@
 import { getPatients, getAllPatientTags } from "@/server/actions/patient"
 import { Badge } from "@/components/ui/badge"
-import { Users, Plus, Mic } from "lucide-react"
+import { Users, Plus, Mic, Download } from "lucide-react"
 import Link from "next/link"
 import { PatientListSearch } from "./patient-list-search"
 
@@ -25,6 +25,14 @@ export default async function PatientsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/api/export/patients"
+            download
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border/50 bg-card px-3.5 py-2 text-sm font-medium transition-all hover:bg-accent hover:border-border/70 active:scale-[0.98]"
+          >
+            <Download className="size-3.5 text-muted-foreground" />
+            Exportar Excel
+          </a>
           <Link
             href="/patients/new/voice"
             className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border/50 bg-card px-3.5 py-2 text-sm font-medium transition-all hover:bg-accent hover:border-border/70 active:scale-[0.98]"

@@ -98,17 +98,22 @@ export async function sendAppointmentMessage({ appointmentId, channel }: SendRem
   }
 
   if (channel === "whatsapp") {
-    // WhatsApp Business API integration point
-    // When configured, this would send via the API
-    const config = await getMessagingConfig()
-    if (!config.whatsappEnabled) {
-      throw new Error("WhatsApp nao configurado. Configure a API key em Configuracoes > Mensagens.")
-    }
     if (!appointment.patient.phone) throw new Error("Paciente nao tem telefone cadastrado")
 
-    // TODO: Implement actual WhatsApp API call when user provides credentials
-    // For now, throw descriptive error
-    throw new Error("Integracao WhatsApp em desenvolvimento. Configure sua API key do WhatsApp Business nas configuracoes.")
+    const waConfig = await db.whatsAppConfig.findFirst({
+      where: { workspaceId, isActive: true },
+    })
+    if (!waConfig) {
+      throw new Error("WhatsApp nao configurado. Configure em Configuracoes > WhatsApp.")
+    }
+
+    const { WhatsAppClient } = await import("@/lib/whatsapp/client")
+    const { decrypt } = await import("@/lib/crypto")
+    const waClient = new WhatsAppClient(decrypt(waConfig.accessToken), waConfig.phoneNumberId)
+    const phone = appointment.patient.phone.replace(/\D/g, "")
+
+    await waClient.sendText(phone, message)
+    return { sent: true, channel: "whatsapp" }
   }
 
   if (channel === "sms") {

@@ -53,6 +53,7 @@ model Patient {
   address        Json?         // { street, number, complement, neighborhood, city, state, zipCode }
   insurance      String?       // convenio / plano de saude
   guardian       String?       // responsavel (para menores)
+  source         String?       // instagram, google, indicacao, convenio, site, facebook, outro
   tags           String[]      @default([])
   medicalHistory Json          @default("{}") // { allergies: [], chronicDiseases: [], medications: [], bloodType, notes }
   customData     Json          @default("{}")

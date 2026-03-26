@@ -14,6 +14,7 @@ import {
   UserCheck,
   UserX,
   Stethoscope,
+  Download,
 } from "lucide-react"
 import {
   BarChart,
@@ -105,20 +106,30 @@ export default function ReportsPage() {
             Analise de desempenho da clinica
           </p>
         </div>
-        <div className="flex rounded-xl bg-muted/50 p-0.5">
-          {(["3m", "6m", "12m"] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                period === p
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {p === "3m" ? "3 Meses" : p === "6m" ? "6 Meses" : "1 Ano"}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/export/reports?period=${period}`}
+            download
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border/50 bg-card px-3.5 py-1.5 text-xs font-medium transition-all hover:bg-accent hover:border-border/70 active:scale-[0.98]"
+          >
+            <Download className="size-3.5 text-muted-foreground" />
+            Exportar Excel
+          </a>
+          <div className="flex rounded-xl bg-muted/50 p-0.5">
+            {(["3m", "6m", "12m"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  period === p
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {p === "3m" ? "3 Meses" : p === "6m" ? "6 Meses" : "1 Ano"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
