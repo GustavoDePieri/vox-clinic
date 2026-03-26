@@ -99,8 +99,8 @@ export default async function ReceiptPage({
             <h2 className="text-base font-semibold mb-3 text-foreground">
               Procedimentos Realizados
             </h2>
-            <div className="border border-border rounded-lg overflow-hidden print:border-gray-300">
-              <table className="w-full text-sm">
+            <div className="border border-border rounded-xl overflow-hidden print:border-gray-300 overflow-x-auto print:overflow-visible">
+              <table className="w-full text-sm min-w-[400px] print:min-w-0">
                 <thead>
                   <tr className="bg-muted/50 print:bg-gray-100">
                     <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">

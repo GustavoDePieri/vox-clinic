@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { importPatients } from "@/server/actions/import"
+import { Breadcrumb } from "@/components/breadcrumb"
 import Link from "next/link"
 
 type PatientField = "name" | "document" | "phone" | "email" | "birthDate"
@@ -167,15 +168,7 @@ export default function ImportPage() {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/settings">
-          <Button variant="ghost" size="sm" className="gap-1.5">
-            <ArrowLeft className="size-4" />
-            Configuracoes
-          </Button>
-        </Link>
-      </div>
+      <Breadcrumb items={[{ label: "Configurações", href: "/settings" }, { label: "Importar Pacientes" }]} />
 
       <div>
         <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">

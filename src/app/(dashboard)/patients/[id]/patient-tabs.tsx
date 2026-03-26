@@ -51,6 +51,7 @@ import {
   getDocumentSignedUrl,
   deletePatientDocument,
 } from "@/server/actions/document"
+import { toast } from "sonner"
 import Link from "next/link"
 
 type PatientData = {
@@ -117,13 +118,16 @@ export function PatientTabs({ patient, customFields, anamnesisTemplate }: { pati
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 rounded-lg bg-muted p-1 overflow-x-auto">
+      <div className="flex gap-1 rounded-xl bg-muted p-1 overflow-x-auto" role="tablist" aria-label="Abas do paciente">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`panel-${tab.id}`}
               className={cn(
                 "flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
                 activeTab === tab.id
@@ -138,12 +142,14 @@ export function PatientTabs({ patient, customFields, anamnesisTemplate }: { pati
         })}
       </div>
 
-      {activeTab === "resumo" && <ResumoTab patient={patient} customFields={customFields} />}
-      {activeTab === "historico" && <HistoricoTab appointments={patient.appointments} patientId={patient.id} />}
-      {activeTab === "tratamentos" && <TratamentosTab patientId={patient.id} />}
-      {activeTab === "documentos" && <DocumentosTab patientId={patient.id} />}
-      {activeTab === "gravacoes" && <GravacoesTab recordings={patient.recordings} />}
-      {activeTab === "anamnese" && <AnamneseTab patient={patient} anamnesisTemplate={anamnesisTemplate ?? []} />}
+      <div role="tabpanel" id={`panel-${activeTab}`} aria-label={tabs.find(t => t.id === activeTab)?.label}>
+        {activeTab === "resumo" && <ResumoTab patient={patient} customFields={customFields} />}
+        {activeTab === "historico" && <HistoricoTab appointments={patient.appointments} patientId={patient.id} />}
+        {activeTab === "tratamentos" && <TratamentosTab patientId={patient.id} />}
+        {activeTab === "documentos" && <DocumentosTab patientId={patient.id} />}
+        {activeTab === "gravacoes" && <GravacoesTab recordings={patient.recordings} />}
+        {activeTab === "anamnese" && <AnamneseTab patient={patient} anamnesisTemplate={anamnesisTemplate ?? []} />}
+      </div>
     </div>
   )
 }
@@ -177,6 +183,9 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
         alerts,
       })
       setIsEditing(false)
+      toast.success("Paciente atualizado com sucesso")
+    } catch {
+      toast.error("Erro ao salvar alterações")
     } finally {
       setSaving(false)
     }
@@ -408,8 +417,9 @@ function HistoricoTab({
     try {
       await updateAppointmentStatus(appointmentId, newStatus)
       setLocalStatuses((prev) => ({ ...prev, [appointmentId]: newStatus }))
+      toast.success("Status da consulta atualizado")
     } catch {
-      // Failed to update status
+      toast.error("Erro ao atualizar status da consulta")
     } finally {
       setUpdatingId(null)
     }
@@ -423,10 +433,10 @@ function HistoricoTab({
   }
 
   const statusColors: Record<string, string> = {
-    scheduled: "bg-teal-100 text-teal-700 border-teal-200",
-    completed: "bg-green-100 text-green-700 border-green-200",
-    cancelled: "bg-red-100 text-red-700 border-red-200",
-    no_show: "bg-amber-100 text-amber-700 border-amber-200",
+    scheduled: "bg-vox-primary/10 text-vox-primary border-vox-primary/20",
+    completed: "bg-vox-success/10 text-vox-success border-vox-success/20",
+    cancelled: "bg-vox-error/10 text-vox-error border-vox-error/20",
+    no_show: "bg-vox-warning/10 text-vox-warning border-vox-warning/20",
   }
 
   const formatDate = (date: Date) =>
@@ -442,7 +452,7 @@ function HistoricoTab({
     <div className="space-y-4">
       <div className="flex justify-end">
         <Link href={`/appointments/new?patientId=${patientId}`}>
-          <Button size="sm" className="bg-vox-primary text-white hover:bg-vox-primary/90">
+          <Button size="sm" className="bg-vox-primary text-white hover:bg-vox-primary/90 active:scale-[0.98]">
             <Plus className="size-4" />
             Nova Consulta
           </Button>
@@ -778,6 +788,9 @@ function AnamneseTab({
       const updatedCustomData = { ...patient.customData, anamnesis: answers }
       await updatePatient(patient.id, { customData: updatedCustomData })
       setSaved(true)
+      toast.success("Anamnese salva com sucesso")
+    } catch {
+      toast.error("Erro ao salvar anamnese")
     } finally {
       setSaving(false)
     }
@@ -937,8 +950,9 @@ function TratamentosTab({ patientId }: { patientId: string }) {
       setFormName(""); setFormSessions(""); setFormNotes("")
       setShowForm(false)
       loadPlans()
+      toast.success("Plano de tratamento criado")
     } catch (err: any) {
-      alert(err.message || "Erro ao criar plano")
+      toast.error(err.message || "Erro ao criar plano")
     } finally {
       setFormSaving(false)
     }
@@ -949,8 +963,9 @@ function TratamentosTab({ patientId }: { patientId: string }) {
     try {
       await addSessionToTreatment(planId)
       loadPlans()
+      toast.success("Sessão registrada")
     } catch (err: any) {
-      alert(err.message || "Erro ao registrar sessao")
+      toast.error(err.message || "Erro ao registrar sessão")
     } finally {
       setActionLoading(null)
     }
@@ -961,8 +976,9 @@ function TratamentosTab({ patientId }: { patientId: string }) {
     try {
       await updateTreatmentPlanStatus(planId, status)
       loadPlans()
+      toast.success("Status do plano atualizado")
     } catch (err: any) {
-      alert(err.message || "Erro ao atualizar status")
+      toast.error(err.message || "Erro ao atualizar status")
     } finally {
       setActionLoading(null)
     }
@@ -974,8 +990,9 @@ function TratamentosTab({ patientId }: { patientId: string }) {
     try {
       await deleteTreatmentPlan(planId)
       loadPlans()
+      toast.success("Plano de tratamento excluído")
     } catch (err: any) {
-      alert(err.message || "Erro ao excluir plano")
+      toast.error(err.message || "Erro ao excluir plano")
     } finally {
       setActionLoading(null)
     }
@@ -1257,8 +1274,9 @@ function DocumentosTab({ patientId }: { patientId: string }) {
         await uploadPatientDocument(fd, patientId)
       }
       loadDocs()
+      toast.success("Documento enviado com sucesso")
     } catch (err: any) {
-      alert(err.message || "Erro ao fazer upload")
+      toast.error(err.message || "Erro ao fazer upload")
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
@@ -1280,8 +1298,9 @@ function DocumentosTab({ patientId }: { patientId: string }) {
     try {
       await deletePatientDocument(docId)
       loadDocs()
+      toast.success("Documento excluído")
     } catch (err: any) {
-      alert(err.message || "Erro ao excluir")
+      toast.error(err.message || "Erro ao excluir documento")
     } finally {
       setDeleting(null)
     }

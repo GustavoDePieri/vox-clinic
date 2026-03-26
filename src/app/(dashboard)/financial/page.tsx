@@ -19,6 +19,7 @@ import {
   getWorkspaceProcedures,
   updateProcedurePrice,
 } from "@/server/actions/financial"
+import { toast } from "sonner"
 import type { Procedure } from "@/types"
 
 const formatBRL = (value: number) =>
@@ -71,8 +72,9 @@ export default function FinancialPage() {
     setSavingProcedure(procedureId)
     try {
       await updateProcedurePrice(procedureId, price)
+      toast.success("Preço atualizado")
     } catch {
-      // silently handle
+      toast.error("Erro ao atualizar preço")
     } finally {
       setSavingProcedure(null)
     }
@@ -111,7 +113,7 @@ export default function FinancialPage() {
         <div className="flex rounded-xl bg-muted/50 p-0.5">
           <button
             onClick={() => setPeriod("month")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
               period === "month"
                 ? "bg-background shadow-sm text-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -121,7 +123,7 @@ export default function FinancialPage() {
           </button>
           <button
             onClick={() => setPeriod("year")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
               period === "year"
                 ? "bg-background shadow-sm text-foreground"
                 : "text-muted-foreground hover:text-foreground"

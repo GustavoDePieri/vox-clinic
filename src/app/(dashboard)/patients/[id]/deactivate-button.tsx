@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import { deactivatePatient } from "@/server/actions/patient"
+import { toast } from "sonner"
 
 export function DeactivateButton({ patientId }: { patientId: string }) {
   const [showConfirm, setShowConfirm] = useState(false)
@@ -15,8 +16,10 @@ export function DeactivateButton({ patientId }: { patientId: string }) {
     setLoading(true)
     try {
       await deactivatePatient(patientId)
+      toast.success("Paciente desativado")
       router.push("/patients")
     } catch {
+      toast.error("Erro ao desativar paciente")
       setLoading(false)
       setShowConfirm(false)
     }

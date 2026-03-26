@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { getRecordingForReview, confirmConsultation } from "@/server/actions/consultation"
+import { Breadcrumb } from "@/components/breadcrumb"
 import type { AppointmentSummary } from "@/types"
 
 export default function AppointmentReviewPage() {
@@ -150,6 +151,7 @@ export default function AppointmentReviewPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumb items={[{ label: "Agenda", href: "/calendar" }, { label: "Revisão" }]} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

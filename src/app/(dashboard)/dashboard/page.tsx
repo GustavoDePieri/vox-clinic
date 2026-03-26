@@ -77,7 +77,8 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/appointments/new"
-            className="mt-3 sm:mt-0 inline-flex items-center gap-2 rounded-xl bg-vox-primary px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-vox-primary/20 transition-all hover:bg-vox-primary/90 hover:shadow-xl hover:shadow-vox-primary/25 active:scale-[0.98]"
+            aria-label="Nova Consulta"
+            className="mt-3 sm:mt-0 inline-flex items-center gap-2 rounded-xl bg-vox-primary px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-vox-primary/20 transition-all hover:bg-vox-primary/90 hover:shadow-xl hover:shadow-vox-primary/25 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
           >
             <Mic className="size-4" />
             Nova Consulta
@@ -170,7 +171,8 @@ export default async function DashboardPage() {
               </CardTitle>
               <Link
                 href="/calendar"
-                className="text-xs text-vox-primary hover:underline flex items-center gap-1"
+                aria-label="Ver agenda completa"
+                className="text-xs text-vox-primary hover:underline flex items-center gap-1 rounded focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
               >
                 Ver agenda <ArrowRight className="size-3" />
               </Link>
@@ -186,7 +188,8 @@ export default async function DashboardPage() {
                   </p>
                   <Link
                     href="/appointments/new"
-                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-vox-primary hover:underline"
+                    aria-label="Registrar consulta"
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-vox-primary hover:underline rounded focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
                   >
                     <Stethoscope className="size-3" />
                     Registrar consulta
@@ -198,7 +201,8 @@ export default async function DashboardPage() {
                     <Link
                       key={apt.id}
                       href={`/patients/${apt.patient.id}`}
-                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-all"
+                      aria-label={`Consulta de ${apt.patient.name} as ${formatTime(apt.date)}`}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/50 transition-all focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
                     >
                       <div className="flex size-9 items-center justify-center rounded-lg bg-vox-primary/10 text-[11px] font-bold text-vox-primary tabular-nums shrink-0">
                         {formatTime(apt.date)}
@@ -232,7 +236,8 @@ export default async function DashboardPage() {
               </CardTitle>
               <Link
                 href="/calendar"
-                className="text-xs text-vox-primary hover:underline flex items-center gap-1"
+                aria-label="Ver toda atividade recente"
+                className="text-xs text-vox-primary hover:underline flex items-center gap-1 rounded focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
               >
                 Ver tudo <ArrowRight className="size-3" />
               </Link>
@@ -248,7 +253,8 @@ export default async function DashboardPage() {
                     <Link
                       key={apt.id}
                       href={`/patients/${apt.patient.id}`}
-                      className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-muted/50 transition-all"
+                      aria-label={`Atendimento de ${apt.patient.name} em ${formatDateShort(apt.date)}`}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-muted/50 transition-all focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
                     >
                       <span className="text-[11px] text-muted-foreground w-12 shrink-0 tabular-nums">
                         {formatDateShort(apt.date)}
@@ -300,7 +306,8 @@ export default async function DashboardPage() {
             <CardContent className="space-y-1.5">
               <Link
                 href="/appointments/new"
-                className="group flex items-center gap-3 rounded-xl bg-vox-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-vox-primary/15 transition-all hover:bg-vox-primary/90 hover:shadow-md hover:shadow-vox-primary/20 active:scale-[0.98]"
+                aria-label="Nova Consulta"
+                className="group flex items-center gap-3 rounded-xl bg-vox-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-vox-primary/15 transition-all hover:bg-vox-primary/90 hover:shadow-md hover:shadow-vox-primary/20 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
               >
                 <Stethoscope className="size-4" />
                 Nova Consulta
@@ -308,7 +315,8 @@ export default async function DashboardPage() {
               </Link>
               <Link
                 href="/patients/new/voice"
-                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:border-border active:scale-[0.98]"
+                aria-label="Cadastro por Voz"
+                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:border-border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
               >
                 <Mic className="size-4 text-vox-primary" />
                 Cadastro por Voz
@@ -316,7 +324,8 @@ export default async function DashboardPage() {
               </Link>
               <Link
                 href="/patients/new"
-                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:border-border active:scale-[0.98]"
+                aria-label="Novo Paciente"
+                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:border-border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
               >
                 <Users className="size-4 text-muted-foreground" />
                 Novo Paciente
@@ -324,7 +333,8 @@ export default async function DashboardPage() {
               </Link>
               <Link
                 href="/calendar"
-                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:border-border active:scale-[0.98]"
+                aria-label="Agendar Consulta"
+                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:border-border active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
               >
                 <CalendarDays className="size-4 text-muted-foreground" />
                 Agendar Consulta
@@ -355,7 +365,8 @@ export default async function DashboardPage() {
               </CardTitle>
               <Link
                 href="/patients"
-                className="text-xs text-vox-primary hover:underline"
+                aria-label="Ver todos os pacientes"
+                className="text-xs text-vox-primary hover:underline rounded focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
               >
                 Ver todos
               </Link>
@@ -374,7 +385,8 @@ export default async function DashboardPage() {
                     <li key={patient.id}>
                       <Link
                         href={`/patients/${patient.id}`}
-                        className="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm hover:bg-muted/50 transition-all"
+                        aria-label={`Ver paciente ${patient.name}`}
+                        className="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm hover:bg-muted/50 transition-all focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
                       >
                         <div className="flex size-7 items-center justify-center rounded-full bg-vox-primary/10 text-[10px] font-bold text-vox-primary shrink-0">
                           {patient.name.charAt(0)}

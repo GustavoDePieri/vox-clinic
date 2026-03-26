@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { getWorkspace, updateWorkspace } from "@/server/actions/workspace"
+import { toast } from "sonner"
 import Link from "next/link"
 import {
   getTeamMembers,
@@ -179,9 +180,12 @@ export default function SettingsPage() {
       setSaved(true)
       setInitialData({ clinicName, procedures, customFields })
       setHasChanges(false)
+      toast.success("Configurações salvas com sucesso")
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar configuracoes")
+      const msg = err instanceof Error ? err.message : "Erro ao salvar configurações"
+      setError(msg)
+      toast.error("Erro ao salvar configurações")
     } finally {
       setSaving(false)
     }
@@ -976,8 +980,9 @@ function MessagingTab() {
       setWhatsappKey("")
       setTwilioSid("")
       setTwilioToken("")
+      toast.success("Configurações de mensageria salvas")
     } catch (err: any) {
-      alert(err.message || "Erro ao salvar")
+      toast.error(err.message || "Erro ao salvar configurações de mensageria")
     } finally {
       setSaving(false)
     }

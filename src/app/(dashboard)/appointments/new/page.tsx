@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { searchPatients, getRecentPatients } from "@/server/actions/patient"
 import { processConsultation } from "@/server/actions/consultation"
+import { Breadcrumb } from "@/components/breadcrumb"
 
 type Patient = {
   id: string
@@ -101,6 +102,7 @@ export default function NewAppointmentPage() {
   if (step === "select-patient") {
     return (
       <div className="space-y-5">
+        <Breadcrumb items={[{ label: "Agenda", href: "/calendar" }, { label: "Nova Consulta" }]} />
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Nova Consulta</h1>
           <p className="text-sm text-muted-foreground mt-0.5">

@@ -6,10 +6,10 @@ import Link from "next/link"
 import { AppointmentsFilter } from "./appointments-filter"
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  scheduled: { label: "Agendado", className: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-  completed: { label: "Concluido", className: "bg-green-100 text-green-700 border-green-200" },
-  cancelled: { label: "Cancelado", className: "bg-red-100 text-red-700 border-red-200" },
-  no_show: { label: "Faltou", className: "bg-amber-100 text-amber-700 border-amber-200" },
+  scheduled: { label: "Agendado", className: "bg-vox-primary/10 text-vox-primary border-vox-primary/20" },
+  completed: { label: "Concluido", className: "bg-vox-success/10 text-vox-success border-vox-success/20" },
+  cancelled: { label: "Cancelado", className: "bg-vox-error/10 text-vox-error border-vox-error/20" },
+  no_show: { label: "Faltou", className: "bg-vox-warning/10 text-vox-warning border-vox-warning/20" },
 }
 
 export default async function AppointmentsPage({
@@ -44,7 +44,7 @@ export default async function AppointmentsPage({
         </h1>
         <Link
           href="/appointments/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-vox-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-vox-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
         >
           <CalendarDays className="size-3.5" />
           Nova Consulta
@@ -113,7 +113,8 @@ export default async function AppointmentsPage({
           {page > 1 ? (
             <Link
               href={`/appointments?page=${page - 1}${status !== "all" ? `&status=${status}` : ""}`}
-              className="text-sm font-medium text-vox-primary hover:underline"
+              aria-label="Pagina anterior"
+              className="text-sm font-medium text-vox-primary hover:underline rounded focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
             >
               Anterior
             </Link>
@@ -126,7 +127,8 @@ export default async function AppointmentsPage({
           {page < data.totalPages ? (
             <Link
               href={`/appointments?page=${page + 1}${status !== "all" ? `&status=${status}` : ""}`}
-              className="text-sm font-medium text-vox-primary hover:underline"
+              aria-label="Proxima pagina"
+              className="text-sm font-medium text-vox-primary hover:underline rounded focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
             >
               Proximo
             </Link>

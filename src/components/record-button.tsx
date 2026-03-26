@@ -221,13 +221,13 @@ export function RecordButton({
             <div className="flex gap-3">
               <button
                 onClick={handleConsentDecline}
-                className="flex-1 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                className="flex-1 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors active:scale-[0.98]"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConsentAccept}
-                className="flex-1 rounded-lg bg-vox-primary px-4 py-2 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors"
+                className="flex-1 rounded-xl bg-vox-primary px-4 py-2 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
               >
                 Concordo e Gravar
               </button>

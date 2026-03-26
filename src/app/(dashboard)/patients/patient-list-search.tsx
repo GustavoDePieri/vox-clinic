@@ -78,6 +78,7 @@ export function PatientListSearch({
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar paciente por nome..."
+          aria-label="Buscar paciente"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           className="pl-9 h-10"
@@ -113,7 +114,7 @@ export function PatientListSearch({
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {patients.map((patient) => (
-            <Link key={patient.id} href={`/patients/${patient.id}`}>
+            <Link key={patient.id} href={`/patients/${patient.id}`} aria-label={`Ver paciente ${patient.name}`} className="rounded-2xl focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none">
               <Card className="group h-full hover:border-border hover:shadow-[0_2px_8px_0_rgb(0_0_0/0.04)] transition-all cursor-pointer border-border/50">
                 <CardContent className="flex items-center gap-3 py-3">
                   {/* Avatar with initials */}
@@ -158,6 +159,7 @@ export function PatientListSearch({
             size="sm"
             onClick={() => handlePageChange(page - 1)}
             disabled={page <= 1 || isPending}
+            aria-label="Pagina anterior"
             className="gap-1"
           >
             <ChevronLeft className="size-3.5" />
@@ -171,6 +173,7 @@ export function PatientListSearch({
             size="sm"
             onClick={() => handlePageChange(page + 1)}
             disabled={page >= totalPages || isPending}
+            aria-label="Proxima pagina"
             className="gap-1"
           >
             Proximo

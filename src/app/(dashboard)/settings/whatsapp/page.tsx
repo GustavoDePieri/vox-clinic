@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { saveWhatsAppConfig, checkWhatsAppHealth } from "@/server/actions/whatsapp"
+import { Breadcrumb } from "@/components/breadcrumb"
 
 // ============================================
 // WhatsApp Setup Wizard
@@ -45,18 +46,7 @@ export default function WhatsAppSetupPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push("/settings")}
-          className="gap-1.5"
-        >
-          <ArrowLeft className="size-4" />
-          Configuracoes
-        </Button>
-      </div>
+      <Breadcrumb items={[{ label: "Configurações", href: "/settings" }, { label: "WhatsApp" }]} />
 
       <div className="mx-auto max-w-2xl space-y-6">
         {/* Progress */}

@@ -149,7 +149,7 @@ export default async function PatientReportPage({
               <h2 className="text-lg font-semibold mb-3 text-foreground">
                 Alertas
               </h2>
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4 print:bg-white print:border-red-400">
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 print:bg-white print:border-red-400">
                 <ul className="space-y-1.5">
                   {patient.alerts.map((alert, i) => (
                     <li
@@ -175,8 +175,8 @@ export default async function PatientReportPage({
                 Nenhuma consulta registrada.
               </p>
             ) : (
-              <div className="border border-border rounded-lg overflow-hidden print:border-gray-300">
-                <table className="w-full text-sm">
+              <div className="border border-border rounded-xl overflow-hidden print:border-gray-300 overflow-x-auto print:overflow-visible">
+                <table className="w-full text-sm min-w-[500px] print:min-w-0">
                   <thead>
                     <tr className="bg-muted/50 print:bg-gray-100">
                       <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
@@ -233,7 +233,7 @@ export default async function PatientReportPage({
                   .map((apt) => (
                     <div
                       key={apt.id}
-                      className="border border-border rounded-lg p-4 print:border-gray-300"
+                      className="border border-border rounded-xl p-4 print:border-gray-300"
                     >
                       <p className="text-xs font-medium text-muted-foreground mb-2">
                         {formatDate(apt.date)}

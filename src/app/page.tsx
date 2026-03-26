@@ -31,13 +31,13 @@ export default async function Home() {
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
             href="/sign-in"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-vox-primary px-6 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors"
+            className="inline-flex h-9 items-center justify-center rounded-xl bg-vox-primary px-6 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
           >
             Entrar
           </Link>
           <Link
             href="/sign-up"
-            className="inline-flex h-10 items-center justify-center rounded-lg border px-6 text-sm font-medium hover:bg-muted transition-colors"
+            className="inline-flex h-9 items-center justify-center rounded-xl border px-6 text-sm font-medium hover:bg-muted transition-colors active:scale-[0.98]"
           >
             Criar conta
           </Link>

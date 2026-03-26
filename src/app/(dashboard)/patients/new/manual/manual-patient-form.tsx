@@ -289,7 +289,7 @@ export function ManualPatientForm({
                   {field.type === "select" && field.options && (
                     <select
                       id={`custom-${field.id}`}
-                      className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       value={(customData[field.id] as string) ?? ""}
                       onChange={(e) =>
                         handleCustomFieldChange(field.id, e.target.value)

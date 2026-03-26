@@ -145,7 +145,7 @@ export function CommandPalette() {
       {/* Trigger button in header */}
       <button
         onClick={() => setOpen(true)}
-        className="hidden sm:flex items-center gap-2 rounded-lg border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        className="hidden sm:flex items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
       >
         <Search className="size-3.5" />
         <span>Buscar...</span>
@@ -157,7 +157,7 @@ export function CommandPalette() {
       {/* Mobile trigger */}
       <button
         onClick={() => setOpen(true)}
-        className="flex sm:hidden items-center justify-center size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+        className="flex sm:hidden items-center justify-center size-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
         aria-label="Buscar"
       >
         <Search className="size-4" />
@@ -166,7 +166,7 @@ export function CommandPalette() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           showCloseButton={false}
-          className="top-[20%] translate-y-0 sm:max-w-lg p-0 gap-0 overflow-hidden"
+          className="top-[20%] translate-y-0 max-w-[calc(100vw-2rem)] sm:max-w-lg p-0 gap-0 overflow-hidden"
         >
           <DialogTitle className="sr-only">Busca global</DialogTitle>
 
@@ -214,7 +214,7 @@ export function CommandPalette() {
                       key={patient.id}
                       onClick={() => navigate(`/patients/${patient.id}`)}
                       onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
                         selectedIndex === idx
                           ? "bg-vox-primary/10 text-vox-primary"
                           : "text-foreground hover:bg-muted/50"
@@ -257,7 +257,7 @@ export function CommandPalette() {
                       key={page.id}
                       onClick={() => navigate(page.href)}
                       onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
                         selectedIndex === idx
                           ? "bg-vox-primary/10 text-vox-primary"
                           : "text-foreground hover:bg-muted/50"
@@ -287,7 +287,7 @@ export function CommandPalette() {
                       key={action.id}
                       onClick={() => navigate(action.href)}
                       onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
                         selectedIndex === idx
                           ? "bg-vox-primary/10 text-vox-primary"
                           : "text-foreground hover:bg-muted/50"

@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mic, FileText } from "lucide-react"
+import { Breadcrumb } from "@/components/breadcrumb"
 import Link from "next/link"
 
 export default function NewPatientPage() {
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: "Pacientes", href: "/patients" }, { label: "Novo Paciente" }]} />
       <h1 className="text-2xl font-semibold tracking-tight">
         Novo Paciente
       </h1>

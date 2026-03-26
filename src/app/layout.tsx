@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
 import Script from "next/script";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,6 +39,7 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col">
           {children}
+          <Toaster position="top-right" richColors />
           <Script
             id="sw-register"
             strategy="afterInteractive"

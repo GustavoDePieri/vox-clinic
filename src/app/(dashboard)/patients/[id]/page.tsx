@@ -43,13 +43,16 @@ export default async function PatientPage({
   return (
     <div className="space-y-5">
       {/* Breadcrumb */}
-      <Link
-        href="/patients"
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ChevronLeft className="size-3.5" />
-        Pacientes
-      </Link>
+      <nav aria-label="Navegacao">
+        <Link
+          href="/patients"
+          aria-label="Voltar para lista de pacientes"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+        >
+          <ChevronLeft className="size-3.5" />
+          Pacientes
+        </Link>
+      </nav>
 
       {/* ─── Patient Hero ─── */}
       <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-vox-primary/[0.06] via-card to-vox-primary/[0.03] p-5">

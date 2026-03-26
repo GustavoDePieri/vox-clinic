@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, Users, CalendarDays, Mic, Settings } from "lucide-react"
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/patients", label: "Pacientes", icon: Users },
   { href: "/appointments/new", label: "Consulta", icon: Mic, accent: true },
   { href: "/calendar", label: "Agenda", icon: CalendarDays },
@@ -35,7 +35,7 @@ export function NavBottom() {
               ) : (
                 <item.icon className={`size-5 ${isActive ? "scale-110" : ""} transition-transform duration-200`} />
               )}
-              <span className={`text-[10px] font-medium ${isActive ? "text-vox-primary" : ""}`}>{item.label}</span>
+              <span className={`text-[10px] font-medium truncate max-w-full ${isActive ? "text-vox-primary" : ""}`}>{item.label}</span>
             </Link>
           )
         })}

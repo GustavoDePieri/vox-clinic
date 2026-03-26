@@ -34,6 +34,17 @@ import {
   rescheduleAppointment,
 } from "@/server/actions/appointment"
 import { searchPatients } from "@/server/actions/patient"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // ────────────────────── Types ──────────────────────
 
@@ -174,6 +185,7 @@ export default function CalendarPage() {
   const [isPending, startTransition] = useTransition()
   const [loading, setLoading] = useState(true)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const router = useRouter()
 
   // Schedule form
@@ -308,7 +320,7 @@ export default function CalendarPage() {
       const msg = err.message || "Erro ao agendar consulta"
       if (msg.startsWith("CONFLICT:")) {
         if (confirm(msg.replace("CONFLICT:", ""))) handleSchedule(true)
-      } else alert(msg)
+      } else toast.error(msg)
     }
   }
 
@@ -318,14 +330,19 @@ export default function CalendarPage() {
   }
 
   async function handleStatusChange(appointmentId: string, status: string) {
-    try { await updateAppointmentStatus(appointmentId, status); loadAppointments() }
-    catch (err: any) { alert(err.message || "Erro ao atualizar status") }
+    try { await updateAppointmentStatus(appointmentId, status); loadAppointments(); toast.success("Status atualizado") }
+    catch (err: any) { toast.error(err.message || "Erro ao atualizar status") }
   }
 
-  async function handleDelete(appointmentId: string) {
-    if (!confirm("Tem certeza que deseja excluir esta consulta?")) return
-    try { await deleteAppointment(appointmentId); loadAppointments() }
-    catch (err: any) { alert(err.message || "Erro ao excluir consulta") }
+  function handleDelete(appointmentId: string) {
+    setDeleteTarget(appointmentId)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    try { await deleteAppointment(deleteTarget); loadAppointments(); toast.success("Consulta excluída") }
+    catch (err: any) { toast.error(err.message || "Erro ao excluir consulta") }
+    finally { setDeleteTarget(null) }
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -376,13 +393,13 @@ export default function CalendarPage() {
       {/* ─── Header ─── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={navigatePrev} className="flex size-8 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground">
+          <button onClick={navigatePrev} className="flex size-8 items-center justify-center rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground">
             <ChevronLeft className="size-4" />
           </button>
           <h1 className="text-base font-semibold tracking-tight min-w-[200px] text-center">
             {getTitle()}
           </h1>
-          <button onClick={navigateNext} className="flex size-8 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground">
+          <button onClick={navigateNext} className="flex size-8 items-center justify-center rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground">
             <ChevronRight className="size-4" />
           </button>
           <Button variant="outline" size="sm" onClick={goToday} className="ml-1 text-[11px] h-7 px-2.5">
@@ -414,7 +431,7 @@ export default function CalendarPage() {
                     setCurrentDate(new Date(year, month, selectedDay ?? new Date().getDate()))
                   }
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all ${
                   view === key ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -460,8 +477,9 @@ export default function CalendarPage() {
       {!loading && view === "week" && (
         <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <Card className="rounded-2xl border border-border/40 overflow-hidden">
+           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             {/* Day headers */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/40">
+            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/40 min-w-[600px]">
               <div className="py-2" />
               {weekDays.map((d) => {
                 const today = isToday(d)
@@ -483,7 +501,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Time grid */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[calc(100vh-280px)] overflow-y-auto">
+            <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[calc(100vh-280px)] overflow-y-auto min-w-[600px]">
               {HOURS.map((hour) => (
                 <div key={hour} className="contents">
                   {/* Hour label */}
@@ -522,6 +540,7 @@ export default function CalendarPage() {
                 </div>
               ))}
             </div>
+           </div>
           </Card>
 
           {/* Drag overlay */}
@@ -674,6 +693,23 @@ export default function CalendarPage() {
           )}
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir consulta</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta consulta? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-vox-error text-white hover:bg-vox-error/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -711,7 +747,7 @@ function ScheduleForm(props: {
           ) : (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-              <Input placeholder="Buscar paciente por nome..." value={props.patientQuery} onChange={(e) => props.setPatientQuery(e.target.value)} className="pl-9 rounded-xl text-sm" />
+              <Input placeholder="Buscar paciente por nome..." aria-label="Buscar paciente por nome" value={props.patientQuery} onChange={(e) => props.setPatientQuery(e.target.value)} className="pl-9 rounded-xl text-sm" />
               {(props.patientResults.length > 0 || props.searchingPatients) && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border/60 rounded-xl shadow-lg z-10 overflow-hidden">
                   {props.searchingPatients ? (
