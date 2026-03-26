@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
 import { getSignedAudioUrl } from "@/lib/storage"
 import { logAudit } from "@/lib/audit"
+import { unstable_cache } from "next/cache"
 
 async function getWorkspaceContext() {
   const { userId } = await auth()
@@ -24,33 +25,41 @@ async function getWorkspaceId() {
   return workspaceId
 }
 
+const getCachedSearchResults = unstable_cache(
+  async (workspaceId: string, query: string) => {
+    const patients = await db.patient.findMany({
+      where: {
+        workspaceId,
+        isActive: true,
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { phone: { contains: query } },
+          { document: { contains: query } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        document: true,
+        updatedAt: true,
+      },
+      orderBy: { name: "asc" },
+      take: 10,
+    })
+
+    return patients
+  },
+  ["patient-search"],
+  { revalidate: 60 }
+)
+
 export async function searchPatients(query: string) {
   const workspaceId = await getWorkspaceId()
 
   if (!query.trim()) return []
 
-  const patients = await db.patient.findMany({
-    where: {
-      workspaceId,
-      isActive: true,
-      OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { phone: { contains: query } },
-        { document: { contains: query } },
-      ],
-    },
-    select: {
-      id: true,
-      name: true,
-      phone: true,
-      document: true,
-      updatedAt: true,
-    },
-    orderBy: { name: "asc" },
-    take: 10,
-  })
-
-  return patients
+  return getCachedSearchResults(workspaceId, query)
 }
 
 export async function getRecentPatients() {

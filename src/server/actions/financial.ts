@@ -136,17 +136,29 @@ export async function updateProcedurePrice(procedureId: string, price: number) {
   })
   if (!user?.workspace) throw new Error("Workspace not configured")
 
-  const procedures = (user.workspace.procedures as unknown as Procedure[]) ?? []
-  const updatedProcedures = procedures.map((p) =>
-    p.id === procedureId ? { ...p, price } : p
-  )
+  const workspaceId = user.workspace.id
+  const MAX_RETRIES = 3
 
-  await db.workspace.update({
-    where: { id: user.workspace.id },
-    data: { procedures: updatedProcedures as unknown as any },
-  })
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const workspace = await db.workspace.findUniqueOrThrow({
+      where: { id: workspaceId },
+      select: { procedures: true, updatedAt: true },
+    })
 
-  return { success: true }
+    const procedures = (workspace.procedures as unknown as Procedure[]) ?? []
+    const updatedProcedures = procedures.map((p) =>
+      p.id === procedureId ? { ...p, price } : p
+    )
+
+    const result = await db.workspace.updateMany({
+      where: { id: workspaceId, updatedAt: workspace.updatedAt },
+      data: { procedures: updatedProcedures as unknown as any },
+    })
+
+    if (result.count > 0) return { success: true }
+  }
+
+  throw new Error("Nao foi possivel atualizar o preco. Tente novamente.")
 }
 
 export async function getWorkspaceProcedures() {

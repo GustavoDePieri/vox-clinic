@@ -146,9 +146,10 @@ async function handleIncomingMessage(
     },
   })
 
-  // Salva a mensagem
-  await db.whatsAppMessage.create({
-    data: {
+  // Salva a mensagem (upsert para idempotencia em retries do webhook)
+  await db.whatsAppMessage.upsert({
+    where: { waMessageId: message.id },
+    create: {
       conversationId: conversation.id,
       workspaceId,
       waMessageId: message.id,
@@ -158,6 +159,7 @@ async function handleIncomingMessage(
       mediaUrl: extractMediaId(message),
       status: "delivered",
     },
+    update: {},
   })
 }
 

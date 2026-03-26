@@ -44,19 +44,21 @@ export async function updateWorkspace(data: {
 
   const { clinicName, ...workspaceData } = data
 
-  if (Object.keys(workspaceData).length > 0) {
-    await db.workspace.update({
-      where: { id: user.workspace.id },
-      data: workspaceData,
-    })
-  }
+  await db.$transaction(async (tx) => {
+    if (Object.keys(workspaceData).length > 0) {
+      await tx.workspace.update({
+        where: { id: user.workspace!.id },
+        data: workspaceData,
+      })
+    }
 
-  if (clinicName !== undefined) {
-    await db.user.update({
-      where: { id: user.id },
-      data: { clinicName },
-    })
-  }
+    if (clinicName !== undefined) {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { clinicName },
+      })
+    }
+  })
 
   return { success: true }
 }

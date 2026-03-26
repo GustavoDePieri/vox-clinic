@@ -85,7 +85,8 @@ export async function generateUpcomingNotifications() {
   const created: string[] = []
   for (const apt of upcoming) {
     // Check if notification already exists for this appointment
-    const existing = await db.notification.findFirst({
+    const time = apt.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    const created_notif = await db.notification.findFirst({
       where: {
         workspaceId,
         userId,
@@ -94,9 +95,8 @@ export async function generateUpcomingNotifications() {
         type: "appointment_soon",
       },
     })
-    if (existing) continue
+    if (created_notif) continue
 
-    const time = apt.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
     await db.notification.create({
       data: {
         workspaceId,
@@ -123,7 +123,7 @@ export async function generateUpcomingNotifications() {
   })
 
   for (const apt of missed) {
-    const existing = await db.notification.findFirst({
+    const existingMissed = await db.notification.findFirst({
       where: {
         workspaceId,
         userId,
@@ -132,7 +132,7 @@ export async function generateUpcomingNotifications() {
         type: "appointment_missed",
       },
     })
-    if (existing) continue
+    if (existingMissed) continue
 
     await db.notification.create({
       data: {

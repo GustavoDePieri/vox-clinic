@@ -90,21 +90,31 @@ export async function createTreatmentPlan(data: {
 export async function addSessionToTreatment(planId: string) {
   const { userId, workspaceId } = await getAuthContext()
 
-  // Atomic increment inside transaction to prevent lost updates
   const updated = await db.$transaction(async (tx) => {
-    const plan = await tx.treatmentPlan.findFirst({
-      where: { id: planId, workspaceId },
-    })
+    // Lock the row to prevent concurrent session increments
+    const rows = await tx.$queryRawUnsafe<Array<{
+      id: string
+      completedSessions: number
+      totalSessions: number
+      status: string
+    }>>(
+      `SELECT id, "completedSessions", "totalSessions", status FROM "TreatmentPlan" WHERE id = $1 AND "workspaceId" = $2 FOR UPDATE`,
+      planId,
+      workspaceId
+    )
+
+    const plan = rows[0]
     if (!plan) throw new Error("Plano de tratamento nao encontrado")
     if (plan.status !== "active") throw new Error("Plano nao esta ativo")
     if (plan.completedSessions >= plan.totalSessions) throw new Error("Todas as sessoes ja foram concluidas")
 
-    const isComplete = plan.completedSessions + 1 >= plan.totalSessions
+    const newCompleted = plan.completedSessions + 1
+    const isComplete = newCompleted >= plan.totalSessions
 
     return tx.treatmentPlan.update({
       where: { id: planId },
       data: {
-        completedSessions: { increment: 1 },
+        completedSessions: newCompleted,
         status: isComplete ? "completed" : "active",
         completedAt: isComplete ? new Date() : null,
       },

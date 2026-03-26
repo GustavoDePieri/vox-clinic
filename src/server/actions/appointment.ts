@@ -133,31 +133,54 @@ export async function scheduleAppointment(data: {
   })
   if (!patient) throw new Error("Paciente nao encontrado")
 
-  // Check for conflicts unless force-scheduled
-  if (!data.forceSchedule) {
-    const conflicts = await checkAppointmentConflicts(data.date)
-    if (conflicts.length > 0) {
-      const names = conflicts.map((c) => c.patient.name).join(", ")
-      throw new Error(
-        `CONFLICT:Ja existe consulta proxima a este horario (${names}). Deseja agendar mesmo assim?`
-      )
-    }
-  }
+  const targetDate = new Date(data.date)
 
-  const appointment = await db.appointment.create({
-    data: {
-      workspaceId,
-      patientId: data.patientId,
-      date: new Date(data.date),
-      notes: data.notes || null,
-      procedures: data.procedures || [],
-      status: "scheduled",
-    },
-    include: {
-      patient: {
-        select: { id: true, name: true },
+  // Atomic conflict check + create to prevent double-booking
+  const appointment = await db.$transaction(async (tx) => {
+    // Advisory lock on workspaceId + hour window to serialize scheduling
+    const hourKey = `${workspaceId}-${targetDate.toISOString().slice(0, 13)}`
+    const lockId = hashStringToInt(hourKey)
+    await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
+
+    if (!data.forceSchedule) {
+      const windowMs = 30 * 60 * 1000
+      const windowStart = new Date(targetDate.getTime() - windowMs)
+      const windowEnd = new Date(targetDate.getTime() + windowMs)
+
+      const conflicts = await tx.appointment.findMany({
+        where: {
+          workspaceId,
+          status: { in: ["scheduled", "completed"] },
+          date: { gte: windowStart, lte: windowEnd },
+        },
+        include: {
+          patient: { select: { id: true, name: true } },
+        },
+      })
+
+      if (conflicts.length > 0) {
+        const names = conflicts.map((c) => c.patient.name).join(", ")
+        throw new Error(
+          `CONFLICT:Ja existe consulta proxima a este horario (${names}). Deseja agendar mesmo assim?`
+        )
+      }
+    }
+
+    return tx.appointment.create({
+      data: {
+        workspaceId,
+        patientId: data.patientId,
+        date: targetDate,
+        notes: data.notes || null,
+        procedures: data.procedures || [],
+        status: "scheduled",
       },
-    },
+      include: {
+        patient: {
+          select: { id: true, name: true },
+        },
+      },
+    })
   })
 
   return {
@@ -168,6 +191,15 @@ export async function scheduleAppointment(data: {
     notes: appointment.notes,
     status: appointment.status,
   }
+}
+
+function hashStringToInt(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash + char) | 0
+  }
+  return hash
 }
 
 export async function updateAppointmentStatus(appointmentId: string, status: string) {

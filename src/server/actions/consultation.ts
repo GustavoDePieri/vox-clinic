@@ -142,12 +142,18 @@ export async function confirmConsultation(data: {
 
   const workspaceId = user.workspace.id
 
-  // Atomic: Create Appointment + link Recording (with double-confirm guard)
+  // Atomic: Create Appointment + link Recording (with double-confirm guard via FOR UPDATE)
   const result = await db.$transaction(async (tx) => {
-    // Guard: check recording not already confirmed
-    const recording = await tx.recording.findUnique({
-      where: { id: data.recordingId },
-    })
+    // Lock the recording row to prevent concurrent double-confirms
+    const rows = await tx.$queryRawUnsafe<Array<{
+      id: string
+      appointmentId: string | null
+    }>>(
+      `SELECT id, "appointmentId" FROM "Recording" WHERE id = $1 FOR UPDATE`,
+      data.recordingId
+    )
+
+    const recording = rows[0]
     if (!recording) throw new Error("Recording not found")
     if (recording.appointmentId) throw new Error("Consulta ja confirmada")
 
