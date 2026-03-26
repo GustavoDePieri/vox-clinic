@@ -54,19 +54,24 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
   - `/appointments/[id]/receipt` — Print-friendly receipt (Ctrl+P → PDF)
   - `/patients/new/voice` — Voice registration flow
   - `/patients/new/manual` — Manual registration form
-  - `/calendar` — Week/day/month/list views with scheduling, conflict detection, and drag & drop rescheduling (week view, via @dnd-kit/core)
+  - `/calendar` — Week/day/month/list views with scheduling, conflict detection, drag & drop rescheduling (week view, via @dnd-kit/core), time blocking (BlockedSlot), recurring appointments (weekly/biweekly)
   - `/appointments/new` — Record consultation for existing patient
   - `/appointments/review` — Review AI summary before confirming
-  - `/settings` — Workspace config (procedures, custom fields, clinic name)
+  - `/prescriptions/[id]` — Print-friendly prescription page (medications table, Ctrl+P → PDF)
+  - `/certificates/[id]` — Print-friendly medical certificate page (atestado/declaracao/encaminhamento/laudo, Ctrl+P → PDF)
+  - `/settings` — Workspace config (procedures with duration, custom fields, clinic name)
   - `/settings/import` — CSV patient import with column mapping
   - `/settings/whatsapp` — WhatsApp Business API setup wizard (5-step: intro, connect, verify, templates, done)
 - `src/app/onboarding/` — 4-step wizard (profession → questions → clinic → AI preview)
 - `src/app/api/webhooks/clerk/` — User sync webhook
 - `src/app/api/reminders/` — Cron-triggered appointment reminders (email + WhatsApp with interactive confirm/cancel buttons)
 - `src/app/api/birthdays/` — Cron-triggered birthday messages (WhatsApp preferred, email fallback)
+- `src/app/api/nps/` — NPS survey API (GET survey by token, POST submit score+comment, public/token-based)
+- `src/app/api/nps/send/` — Cron-triggered NPS survey sending after completed appointments
 - `src/app/api/export/patients/` — Excel export of all active patients
 - `src/app/api/export/reports/` — Excel export of reports data (multi-sheet: Resumo, Mensal, Procedimentos)
 - `src/app/api/whatsapp/webhook/` — WhatsApp webhook (GET for Meta verification, POST for incoming messages/status updates/appointment confirmations)
+- `src/app/nps/[token]/` — Public NPS survey page (no auth, token-based access, 0-10 score + comment)
 
 ### Command Palette (Cmd+K)
 - `src/components/command-palette.tsx` — Global search accessible from any page
@@ -88,9 +93,12 @@ All data mutations use Server Actions with `"use server"` directive:
 - `voice.ts` — processVoiceRegistration, confirmPatientRegistration (in $transaction), checkDuplicatePatient
 - `consultation.ts` — processConsultation, getRecordingForReview (server-side data fetch), confirmConsultation (in $transaction with double-confirm guard)
 - `patient.ts` — getPatients (paginated, filters isActive, supports tag/insurance filters), getPatient, updatePatient, createPatient, searchPatients (name/CPF/phone/email/insurance), getRecentPatients, getAudioPlaybackUrl, deactivatePatient (soft delete), mergePatients (atomic merge with $transaction), getAllPatientTags
-- `appointment.ts` — getAppointmentsByDateRange, scheduleAppointment, updateAppointmentStatus, deleteAppointment
+- `appointment.ts` — getAppointmentsByDateRange, scheduleAppointment, scheduleRecurringAppointments (weekly/biweekly, 2-52 occurrences, atomic $transaction), checkAppointmentConflicts (returns { appointments, blockedSlots }), updateAppointmentStatus, rescheduleAppointment, deleteAppointment
 - `receipt.ts` — generateReceiptData
-- `reports.ts` — getReportsData (analytics: monthly revenue, patient trends, procedure ranking, hour heatmap, return rate, no-show rate)
+- `prescription.ts` — createPrescription, getPrescription, getPatientPrescriptions, deletePrescription
+- `certificate.ts` — createCertificate (auto-generates content for atestado/declaracao), getCertificate, getPatientCertificates, deleteCertificate
+- `blocked-slot.ts` — getBlockedSlots (expands weekly recurring), createBlockedSlot, deleteBlockedSlot
+- `reports.ts` — getReportsData (analytics: monthly revenue, patient trends, procedure ranking, hour heatmap, return rate, no-show rate, patient ranking by frequency/revenue, NPS score)
 - `dashboard.ts` — getDashboardData (stats, today's agenda, recent activity, trends)
 - `reminder.ts` — sendAppointmentReminder, sendBulkReminders
 - `treatment.ts` — getTreatmentPlans, createTreatmentPlan, addSessionToTreatment, updateTreatmentPlanStatus, deleteTreatmentPlan
@@ -102,6 +110,14 @@ All data mutations use Server Actions with `"use server"` directive:
 - `whatsapp.ts` — getWhatsAppConfig, saveWhatsAppConfig, disconnectWhatsApp, fetchConversations, fetchMessages, sendTextMessage, sendTemplateMessage, markConversationAsRead, fetchTemplates, checkWhatsAppHealth
 
 All actions authenticate via `auth()` from `@clerk/nextjs/server` and scope queries to the user's workspace.
+
+### Key Components
+- `src/components/create-prescription-dialog.tsx` — Modal with dynamic medication rows (add/remove), submits and opens print page
+- `src/components/create-certificate-dialog.tsx` — Modal with type selector (atestado/declaracao/encaminhamento/laudo), conditional fields, auto-generated content
+- `src/components/record-button.tsx` — Audio recording with LGPD consent modal
+- `src/components/command-palette.tsx` — Cmd+K global search
+- `src/components/notification-bell.tsx` — In-app notification dropdown
+- `src/app/(dashboard)/patients/[id]/merge-dialog.tsx` — Patient merge search + confirm
 
 ### AI Pipeline
 - `src/lib/openai.ts` — `transcribeAudio(buffer, filename, vocabularyHints?)` via Whisper API
@@ -136,6 +152,7 @@ All multi-step mutations are wrapped in `db.$transaction()`:
 - `confirmConsultation`: Recording.findUnique (double-confirm guard) → Appointment.create → Recording.update
 - `generateWorkspace`: User.upsert → Workspace.upsert → User.update (onboardingComplete)
 - `mergePatients`: Move appointments/recordings/documents/treatmentPlans → Merge tags/alerts/medicalHistory → Fill missing fields → Soft-delete merged patient
+- `scheduleRecurringAppointments`: Creates 2-52 appointments atomically (weekly/biweekly pattern)
 
 ### Audio Recording
 `src/components/record-button.tsx` — Client component using MediaRecorder API. Props:
@@ -169,7 +186,7 @@ const workspaceId = user.workspace.id
 ```
 
 ### JSONB for Dynamic Fields
-Workspace stores profession-specific config as JSON: `customFields`, `procedures`, `anamnesisTemplate`, `categories`. Patient stores `customData` and `alerts` as JSON. This avoids schema changes per profession.
+Workspace stores profession-specific config as JSON: `customFields`, `procedures` (each with id, name, category, price?, duration? in minutes), `anamnesisTemplate`, `categories`. Patient stores `customData`, `alerts`, and `medicalHistory` as JSON. This avoids schema changes per profession.
 
 ## Key Domain Entities (Prisma)
 
@@ -185,6 +202,10 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 - **WhatsAppConversation**: workspaceId, configId, contactPhone, contactName, lastMessageAt, lastMessagePreview, status (open/closed/pending/bot), assignedTo, tags, unreadCount. `@@unique([workspaceId, contactPhone, configId])`
 - **WhatsAppMessage**: conversationId, workspaceId, waMessageId (unique), direction (inbound/outbound), type, content, mediaUrl, status (pending/sent/delivered/read/failed)
 - **Recording**: audioUrl, transcript, aiExtractedData, status (pending/processed), workspaceId, errorMessage, fileSize, duration
+- **Prescription**: patientId, workspaceId, appointmentId?, medications (JSON: [{ name, dosage, frequency, duration, notes }]), notes. Print-to-PDF via `/prescriptions/[id]`
+- **MedicalCertificate**: patientId, workspaceId, type (atestado/declaracao_comparecimento/encaminhamento/laudo), content (auto-generated for standard types), days?, cid?. Print-to-PDF via `/certificates/[id]`
+- **BlockedSlot**: workspaceId, title, startDate, endDate, allDay, recurring (null=one-time, "weekly"=repeats). Shown as gray bars in calendar
+- **NpsSurvey**: workspaceId, patientId, appointmentId? (unique), score (0-10), comment, token (unique, public access), sentAt, answeredAt. Public survey page at `/nps/[token]`
 - **AuditLog**: workspaceId, userId, action, entityType, entityId, details (Json)
 - **ConsentRecord**: workspaceId, patientId?, recordingId?, consentType, givenBy, givenAt
 
@@ -231,14 +252,17 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 ## UI/UX
 
 - Mobile-first, minimal interface. RecordButton is the primary UI element.
-- Palette: teal/verde-agua primary (#14B8A6), Geist Sans font, 12px base radius, Lucide icons.
+- Palette: teal/verde-agua primary (#14B8A6), Inter font (latin-ext for pt-BR), JetBrains Mono for code/data, 10px base radius, Lucide icons.
 - Subtle cool-tinted background, cards with border/shadow instead of hard rings.
 - Fields with AI confidence < 0.8 highlighted in amber (border-vox-warning).
 - All UI in Brazilian Portuguese (pt-BR). Dates DD/MM/AAAA, phone +55 DDD, CPF validation.
 - Navigation: sidebar on desktop (w-56, 5 items), bottom nav on mobile (grid-cols-5).
 - Dashboard: stat cards (4), today's agenda, recent activity, quick actions sidebar.
-- Calendar: month grid + list view, scheduling, quick status actions. Week view supports drag & drop rescheduling (@dnd-kit/core) — drag appointment pills to a different time slot to reschedule.
-- Patient reports: print-friendly page with @media print styles (Ctrl+P → PDF).
+- Calendar: month/week/day/list views, scheduling, quick status actions. Week view supports drag & drop rescheduling (@dnd-kit/core). Time blocking (gray bars for lunch/holidays/etc). Recurring appointments (weekly/biweekly).
+- Patient detail: hero with tags/insurance, action buttons (Prescricao, Atestado, Exportar, Relatorio, Mesclar, Desativar).
+- Prescriptions & certificates: print-friendly pages (Ctrl+P → PDF).
+- Reports: KPI cards (revenue, appointments, return rate, no-show, NPS), charts (revenue, new patients, status pie), rankings (top patients by frequency/revenue), procedure ranking, hour heatmap. Excel export.
+- NPS survey: public token-based page at `/nps/[token]` with 0-10 score grid + comment.
 - Audio playback: signed URL player in patient recordings tab.
 - Error states shown to users (no silent catches). Toast/banner pattern.
 
@@ -255,7 +279,8 @@ Required (validated by `src/lib/env.ts`):
 Optional:
 - `CLERK_WEBHOOK_SECRET` — For webhook signature verification (not needed in local dev)
 - `RESEND_API_KEY` — For email reminders (graceful fallback if missing)
-- `CRON_SECRET` — For authenticating cron-triggered reminder endpoint
+- `CRON_SECRET` — For authenticating cron-triggered endpoints (reminders, birthdays, NPS)
+- `NEXT_PUBLIC_APP_URL` — Base URL for public links (NPS survey URLs). Defaults to `https://app.voxclinic.com`
 - `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — For Meta webhook verification handshake
 - `NEXT_PUBLIC_META_APP_ID` — Meta App ID for Facebook Embedded Signup
 - `NEXT_PUBLIC_META_CONFIG_ID` — Meta config ID for Embedded Signup flow
