@@ -6,6 +6,7 @@ import { NavSidebar } from "@/components/nav-sidebar"
 import { NavBottom } from "@/components/nav-bottom"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CommandPalette } from "@/components/command-palette"
+import { NotificationBell } from "@/components/notification-bell"
 
 export default async function DashboardLayout({
   children,
@@ -52,6 +53,7 @@ export default async function DashboardLayout({
           </div>
           <div className="flex items-center gap-1.5">
             <CommandPalette />
+            <NotificationBell />
             <ThemeToggle />
             <UserButton
               signInUrl="/sign-in"

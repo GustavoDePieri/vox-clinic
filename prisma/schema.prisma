@@ -56,6 +56,7 @@ model Patient {
   appointments    Appointment[]
   recordings      Recording[]
   treatmentPlans  TreatmentPlan[]
+  documents       PatientDocument[]
 
   @@unique([workspaceId, document])
   @@index([workspaceId])
@@ -158,6 +159,38 @@ model TreatmentPlan {
   @@index([patientId])
   @@index([workspaceId])
   @@index([workspaceId, status])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String   // clerkId of the recipient
+  type        String   // "appointment_soon", "appointment_missed", "treatment_complete", "system"
+  title       String
+  body        String?
+  entityType  String?  // "Appointment", "Patient", "TreatmentPlan"
+  entityId    String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, userId, read])
+  @@index([createdAt])
+}
+
+model PatientDocument {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  workspaceId String
+  name        String   // original filename
+  url         String   // storage path
+  type        String   // "image", "pdf", "other"
+  mimeType    String?
+  fileSize    Int?
+  createdAt   DateTime @default(now())
+
+  @@index([patientId])
+  @@index([workspaceId])
 }
 
 model WorkspaceMember {
