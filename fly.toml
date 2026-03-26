@@ -10,6 +10,8 @@ primary_region = 'gru'
   [build.args]
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_aG9seS1tYWNhcXVlLTYyLmNsZXJrLmFjY291bnRzLmRldiQ"
     NEXT_PUBLIC_SUPABASE_URL = "https://dqesokhmqzphhytxxjyb.supabase.co"
+    NEXT_PUBLIC_META_APP_ID = "4567474470243553"
+    NEXT_PUBLIC_META_CONFIG_ID = "1713174803323501"
 
 [http_service]
   internal_port = 3000
