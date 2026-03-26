@@ -89,11 +89,41 @@ export async function getAppointmentsByDateRange(startDate: string, endDate: str
   }))
 }
 
+export async function checkAppointmentConflicts(date: string) {
+  const workspaceId = await getWorkspaceId()
+  const targetDate = new Date(date)
+
+  // Check for appointments within ±30 minutes
+  const windowMs = 30 * 60 * 1000
+  const windowStart = new Date(targetDate.getTime() - windowMs)
+  const windowEnd = new Date(targetDate.getTime() + windowMs)
+
+  const conflicts = await db.appointment.findMany({
+    where: {
+      workspaceId,
+      status: { in: ["scheduled", "completed"] },
+      date: { gte: windowStart, lte: windowEnd },
+    },
+    include: {
+      patient: { select: { id: true, name: true } },
+    },
+    orderBy: { date: "asc" },
+  })
+
+  return conflicts.map((a) => ({
+    id: a.id,
+    date: a.date.toISOString(),
+    patient: a.patient,
+    status: a.status,
+  }))
+}
+
 export async function scheduleAppointment(data: {
   patientId: string
   date: string
   notes?: string
   procedures?: string[]
+  forceSchedule?: boolean
 }) {
   const workspaceId = await getWorkspaceId()
 
@@ -102,6 +132,17 @@ export async function scheduleAppointment(data: {
     where: { id: data.patientId, workspaceId },
   })
   if (!patient) throw new Error("Paciente nao encontrado")
+
+  // Check for conflicts unless force-scheduled
+  if (!data.forceSchedule) {
+    const conflicts = await checkAppointmentConflicts(data.date)
+    if (conflicts.length > 0) {
+      const names = conflicts.map((c) => c.patient.name).join(", ")
+      throw new Error(
+        `CONFLICT:Ja existe consulta proxima a este horario (${names}). Deseja agendar mesmo assim?`
+      )
+    }
+  }
 
   const appointment = await db.appointment.create({
     data: {

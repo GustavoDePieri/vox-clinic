@@ -191,7 +191,7 @@ export default function CalendarPage() {
     })
   }
 
-  async function handleSchedule() {
+  async function handleSchedule(forceSchedule = false) {
     if (!selectedPatient || !scheduleDate || !scheduleTime) return
     const dateTime = new Date(`${scheduleDate}T${scheduleTime}:00`)
     try {
@@ -199,12 +199,22 @@ export default function CalendarPage() {
         patientId: selectedPatient.id,
         date: dateTime.toISOString(),
         notes: scheduleNotes || undefined,
+        forceSchedule,
       })
       setShowScheduleForm(false)
       resetScheduleForm()
       loadAppointments()
     } catch (err: any) {
-      alert(err.message || "Erro ao agendar consulta")
+      const msg = err.message || "Erro ao agendar consulta"
+      // Handle conflict: ask user to confirm
+      if (msg.startsWith("CONFLICT:")) {
+        const conflictMsg = msg.replace("CONFLICT:", "")
+        if (confirm(conflictMsg)) {
+          handleSchedule(true)
+        }
+      } else {
+        alert(msg)
+      }
     }
   }
 
@@ -420,7 +430,7 @@ export default function CalendarPage() {
               Cancelar
             </Button>
             <Button
-              onClick={handleSchedule}
+              onClick={() => handleSchedule()}
               disabled={!selectedPatient || !scheduleDate || !scheduleTime}
               className="bg-vox-primary hover:bg-vox-primary/90 text-white rounded-xl text-xs"
             >
