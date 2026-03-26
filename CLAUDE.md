@@ -53,7 +53,7 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
   - `/patients/[id]/report` — Print-friendly patient report (Ctrl+P → PDF)
   - `/patients/new/voice` — Voice registration flow
   - `/patients/new/manual` — Manual registration form
-  - `/calendar` — Month/list view agenda with scheduling
+  - `/calendar` — Week/day/month/list views with scheduling and conflict detection
   - `/appointments/new` — Record consultation for existing patient
   - `/appointments/review` — Review AI summary before confirming
   - `/settings` — Workspace config (procedures, custom fields, clinic name)
