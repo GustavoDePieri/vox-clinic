@@ -98,24 +98,87 @@ export async function checkAppointmentConflicts(date: string) {
   const windowStart = new Date(targetDate.getTime() - windowMs)
   const windowEnd = new Date(targetDate.getTime() + windowMs)
 
-  const conflicts = await db.appointment.findMany({
+  const [appointmentConflicts, blockedSlots] = await Promise.all([
+    db.appointment.findMany({
+      where: {
+        workspaceId,
+        status: { in: ["scheduled", "completed"] },
+        date: { gte: windowStart, lte: windowEnd },
+      },
+      include: {
+        patient: { select: { id: true, name: true } },
+      },
+      orderBy: { date: "asc" },
+    }),
+    // Check blocked slots that overlap with the target time
+    db.blockedSlot.findMany({
+      where: {
+        workspaceId,
+        startDate: { lte: windowEnd },
+        endDate: { gte: windowStart },
+      },
+    }),
+  ])
+
+  // Also check recurring weekly blocked slots
+  const recurringSlots = await db.blockedSlot.findMany({
     where: {
       workspaceId,
-      status: { in: ["scheduled", "completed"] },
-      date: { gte: windowStart, lte: windowEnd },
+      recurring: "weekly",
+      startDate: { lte: windowEnd },
     },
-    include: {
-      patient: { select: { id: true, name: true } },
-    },
-    orderBy: { date: "asc" },
   })
 
-  return conflicts.map((a) => ({
-    id: a.id,
-    date: a.date.toISOString(),
-    patient: a.patient,
-    status: a.status,
-  }))
+  const blockedConflicts: Array<{ id: string; title: string; startDate: string; endDate: string; type: "blocked" }> = []
+
+  // One-time blocked slots
+  for (const slot of blockedSlots) {
+    if (!slot.recurring) {
+      blockedConflicts.push({
+        id: slot.id,
+        title: slot.title,
+        startDate: slot.startDate.toISOString(),
+        endDate: slot.endDate.toISOString(),
+        type: "blocked",
+      })
+    }
+  }
+
+  // Expand recurring weekly slots to check if any occurrence overlaps
+  for (const slot of recurringSlots) {
+    const slotStart = new Date(slot.startDate)
+    const slotEnd = new Date(slot.endDate)
+    const durationMs = slotEnd.getTime() - slotStart.getTime()
+
+    const diffMs = windowStart.getTime() - slotStart.getTime()
+    const weeksOffset = Math.max(0, Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)))
+
+    for (let i = 0; i < 3; i++) {
+      const occStart = new Date(slotStart.getTime() + (weeksOffset + i) * 7 * 24 * 60 * 60 * 1000)
+      const occEnd = new Date(occStart.getTime() + durationMs)
+      if (occStart.getTime() > windowEnd.getTime()) break
+      if (occEnd.getTime() >= windowStart.getTime() && occStart.getTime() <= windowEnd.getTime()) {
+        blockedConflicts.push({
+          id: slot.id,
+          title: slot.title,
+          startDate: occStart.toISOString(),
+          endDate: occEnd.toISOString(),
+          type: "blocked",
+        })
+        break
+      }
+    }
+  }
+
+  return {
+    appointments: appointmentConflicts.map((a) => ({
+      id: a.id,
+      date: a.date.toISOString(),
+      patient: a.patient,
+      status: a.status,
+    })),
+    blockedSlots: blockedConflicts,
+  }
 }
 
 export async function scheduleAppointment(data: {
@@ -252,4 +315,61 @@ export async function deleteAppointment(appointmentId: string) {
   })
 
   return { success: true }
+}
+
+export async function scheduleRecurringAppointments(data: {
+  patientId: string
+  startDate: string
+  notes?: string
+  procedures?: string[]
+  recurrence: "weekly" | "biweekly"
+  occurrences: number
+}) {
+  const workspaceId = await getWorkspaceId()
+
+  if (data.occurrences < 2 || data.occurrences > 52) {
+    throw new Error("Numero de ocorrencias deve ser entre 2 e 52")
+  }
+
+  // Verify patient belongs to workspace
+  const patient = await db.patient.findFirst({
+    where: { id: data.patientId, workspaceId },
+  })
+  if (!patient) throw new Error("Paciente nao encontrado")
+
+  const intervalDays = data.recurrence === "weekly" ? 7 : 14
+  const baseDate = new Date(data.startDate)
+
+  const dates: Date[] = []
+  for (let i = 0; i < data.occurrences; i++) {
+    const d = new Date(baseDate.getTime() + i * intervalDays * 24 * 60 * 60 * 1000)
+    dates.push(d)
+  }
+
+  const appointments = await db.$transaction(
+    dates.map((date) =>
+      db.appointment.create({
+        data: {
+          workspaceId,
+          patientId: data.patientId,
+          date,
+          notes: data.notes || null,
+          procedures: data.procedures || [],
+          status: "scheduled",
+        },
+        include: {
+          patient: { select: { id: true, name: true } },
+        },
+      })
+    )
+  )
+
+  return appointments.map((a) => ({
+    id: a.id,
+    date: a.date.toISOString(),
+    patient: a.patient,
+    procedures: a.procedures as string[],
+    notes: a.notes,
+    status: a.status,
+  }))
 }

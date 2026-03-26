@@ -19,6 +19,9 @@ import {
   Loader2,
   Calendar as CalendarIcon,
   Sun,
+  Ban,
+  Repeat,
+  Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -29,11 +32,18 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   getAppointmentsByDateRange,
   scheduleAppointment,
+  scheduleRecurringAppointments,
   updateAppointmentStatus,
   deleteAppointment,
   rescheduleAppointment,
 } from "@/server/actions/appointment"
 import { searchPatients } from "@/server/actions/patient"
+import {
+  getBlockedSlots,
+  createBlockedSlot,
+  deleteBlockedSlot,
+  type BlockedSlotItem,
+} from "@/server/actions/blocked-slot"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -186,6 +196,8 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [blockedSlots, setBlockedSlots] = useState<BlockedSlotItem[]>([])
+  const [showBlockForm, setShowBlockForm] = useState(false)
   const router = useRouter()
 
   // Schedule form
@@ -196,6 +208,9 @@ export default function CalendarPage() {
   const [scheduleTime, setScheduleTime] = useState("")
   const [scheduleNotes, setScheduleNotes] = useState("")
   const [searchingPatients, setSearchingPatients] = useState(false)
+  const [recurringEnabled, setRecurringEnabled] = useState(false)
+  const [recurrence, setRecurrence] = useState<"weekly" | "biweekly">("weekly")
+  const [occurrences, setOccurrences] = useState(4)
 
   // Compute date range based on view
   const getDateRange = useCallback((): [Date, Date] => {
@@ -222,10 +237,15 @@ export default function CalendarPage() {
     const [start, end] = getDateRange()
     startTransition(async () => {
       try {
-        const data = await getAppointmentsByDateRange(start.toISOString(), end.toISOString())
-        setAppointments(data)
+        const [apptData, slotData] = await Promise.all([
+          getAppointmentsByDateRange(start.toISOString(), end.toISOString()),
+          getBlockedSlots(start.toISOString(), end.toISOString()),
+        ])
+        setAppointments(apptData)
+        setBlockedSlots(slotData)
       } catch {
         setAppointments([])
+        setBlockedSlots([])
       } finally {
         setLoading(false)
       }
@@ -303,16 +323,67 @@ export default function CalendarPage() {
     return appointments.filter((a) => isSameDay(new Date(a.date), date))
   }
 
+  function getBlockedSlotsForDate(date: Date) {
+    return blockedSlots.filter((s) => {
+      const start = new Date(s.startDate)
+      const end = new Date(s.endDate)
+      if (s.allDay) {
+        const dateStart = new Date(date); dateStart.setHours(0, 0, 0, 0)
+        const dateEnd = new Date(date); dateEnd.setHours(23, 59, 59, 999)
+        return start <= dateEnd && end >= dateStart
+      }
+      return isSameDay(start, date) || isSameDay(end, date) || (start < date && end > date)
+    })
+  }
+
+  function getBlockedSlotsForHour(date: Date, hour: number) {
+    return blockedSlots.filter((s) => {
+      if (s.allDay) {
+        const dateStart = new Date(date); dateStart.setHours(0, 0, 0, 0)
+        const dateEnd = new Date(date); dateEnd.setHours(23, 59, 59, 999)
+        const start = new Date(s.startDate)
+        const end = new Date(s.endDate)
+        return start <= dateEnd && end >= dateStart
+      }
+      const start = new Date(s.startDate)
+      const end = new Date(s.endDate)
+      const hourStart = new Date(date); hourStart.setHours(hour, 0, 0, 0)
+      const hourEnd = new Date(date); hourEnd.setHours(hour, 59, 59, 999)
+      return start <= hourEnd && end >= hourStart
+    })
+  }
+
+  async function handleDeleteBlockedSlot(id: string) {
+    try {
+      await deleteBlockedSlot(id)
+      loadAppointments()
+      toast.success("Bloqueio removido")
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao remover bloqueio")
+    }
+  }
+
   async function handleSchedule(forceSchedule = false) {
     if (!selectedPatient || !scheduleDate || !scheduleTime) return
     const dateTime = new Date(`${scheduleDate}T${scheduleTime}:00`)
     try {
-      await scheduleAppointment({
-        patientId: selectedPatient.id,
-        date: dateTime.toISOString(),
-        notes: scheduleNotes || undefined,
-        forceSchedule,
-      })
+      if (recurringEnabled) {
+        await scheduleRecurringAppointments({
+          patientId: selectedPatient.id,
+          startDate: dateTime.toISOString(),
+          notes: scheduleNotes || undefined,
+          recurrence,
+          occurrences,
+        })
+        toast.success(`${occurrences} consultas agendadas`)
+      } else {
+        await scheduleAppointment({
+          patientId: selectedPatient.id,
+          date: dateTime.toISOString(),
+          notes: scheduleNotes || undefined,
+          forceSchedule,
+        })
+      }
       setShowScheduleForm(false)
       resetScheduleForm()
       loadAppointments()
@@ -327,6 +398,7 @@ export default function CalendarPage() {
   function resetScheduleForm() {
     setPatientQuery(""); setPatientResults([]); setSelectedPatient(null)
     setScheduleDate(""); setScheduleTime(""); setScheduleNotes("")
+    setRecurringEnabled(false); setRecurrence("weekly"); setOccurrences(4)
   }
 
   async function handleStatusChange(appointmentId: string, status: string) {
@@ -442,6 +514,15 @@ export default function CalendarPage() {
           </div>
 
           <Button
+            variant="outline"
+            onClick={() => setShowBlockForm(true)}
+            className="rounded-xl text-xs gap-1.5 active:scale-[0.98]"
+          >
+            <Ban className="size-3.5" />
+            <span className="hidden sm:inline">Bloquear</span>
+          </Button>
+
+          <Button
             onClick={() => setShowScheduleForm(true)}
             className="bg-vox-primary hover:bg-vox-primary/90 text-white rounded-xl text-xs gap-1.5 shadow-sm shadow-vox-primary/15 active:scale-[0.98]"
           >
@@ -461,7 +542,27 @@ export default function CalendarPage() {
           scheduleDate={scheduleDate} setScheduleDate={setScheduleDate}
           scheduleTime={scheduleTime} setScheduleTime={setScheduleTime}
           scheduleNotes={scheduleNotes} setScheduleNotes={setScheduleNotes}
+          recurringEnabled={recurringEnabled} setRecurringEnabled={setRecurringEnabled}
+          recurrence={recurrence} setRecurrence={setRecurrence}
+          occurrences={occurrences} setOccurrences={setOccurrences}
           onSchedule={() => handleSchedule()} onCancel={() => { setShowScheduleForm(false); resetScheduleForm() }}
+        />
+      )}
+
+      {/* ─── Block Time Form ─── */}
+      {showBlockForm && (
+        <BlockTimeForm
+          onSave={async (data) => {
+            try {
+              await createBlockedSlot(data)
+              setShowBlockForm(false)
+              loadAppointments()
+              toast.success("Horario bloqueado")
+            } catch (err: any) {
+              toast.error(err.message || "Erro ao bloquear horario")
+            }
+          }}
+          onCancel={() => setShowBlockForm(false)}
         />
       )}
 
@@ -514,13 +615,19 @@ export default function CalendarPage() {
                       const h = new Date(a.date).getHours()
                       return h === hour
                     })
+                    const hourBlocked = getBlockedSlotsForHour(d, hour)
                     const cellId = `${d.toISOString()}-${hour}`
                     return (
                       <DroppableCell
                         key={cellId}
                         id={cellId}
-                        className={`h-16 border-b border-l border-border/10 px-0.5 py-0.5 transition-colors ${isToday(d) ? "bg-vox-primary/[0.02]" : ""}`}
+                        className={`h-16 border-b border-l border-border/10 px-0.5 py-0.5 transition-colors ${isToday(d) ? "bg-vox-primary/[0.02]" : ""} ${hourBlocked.length > 0 ? "bg-muted/60" : ""}`}
                       >
+                        {hourBlocked.length > 0 && dayAppts.length === 0 && (
+                          <div className="block truncate rounded-md px-1.5 py-1 text-[10px] font-medium leading-tight mb-0.5 bg-muted/60 border-l-4 border-muted-foreground/30 text-muted-foreground">
+                            {hourBlocked[0].title}
+                          </div>
+                        )}
                         {dayAppts.map((a) => (
                           <DraggableAppointment key={a.id} appointment={a}>
                             <div
@@ -567,14 +674,25 @@ export default function CalendarPage() {
           <div className="max-h-[calc(100vh-240px)] overflow-y-auto">
             {HOURS.map((hour) => {
               const hourAppts = getAppointmentsForDate(currentDate).filter((a) => new Date(a.date).getHours() === hour)
+              const hourBlocked = getBlockedSlotsForHour(currentDate, hour)
               return (
-                <div key={hour} className="flex border-b border-border/10">
+                <div key={hour} className={`flex border-b border-border/10 ${hourBlocked.length > 0 ? "bg-muted/40" : ""}`}>
                   {/* Hour label */}
                   <div className="flex w-16 shrink-0 items-start justify-end pr-3 pt-2 text-[11px] text-muted-foreground font-medium">
                     {String(hour).padStart(2, "0")}:00
                   </div>
-                  {/* Appointments */}
+                  {/* Appointments + Blocked Slots */}
                   <div className="flex-1 min-h-[64px] border-l border-border/10 px-2 py-1 space-y-1">
+                    {hourBlocked.map((s, i) => (
+                      <div key={`block-${s.id}-${i}`} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] bg-muted/60 border-l-4 border-muted-foreground/30 text-muted-foreground">
+                        <Ban className="size-3 shrink-0" />
+                        <span className="truncate font-medium">{s.title}</span>
+                        {s.recurring && <Repeat className="size-3 shrink-0 opacity-60" />}
+                        <button onClick={() => handleDeleteBlockedSlot(s.id)} className="ml-auto p-0.5 rounded hover:bg-muted text-muted-foreground/60 hover:text-vox-error">
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
+                    ))}
                     {hourAppts.map((a) => (
                       <AppointmentCard
                         key={a.id}
@@ -606,6 +724,7 @@ export default function CalendarPage() {
                 if (day === null) return <div key={`empty-${i}`} className="min-h-[80px] sm:min-h-[100px] border-b border-r border-border/20 bg-muted/20" />
                 const dayDate = new Date(year, month, day)
                 const dayAppts = getAppointmentsForDay(day)
+                const dayBlocked = getBlockedSlotsForDate(dayDate)
                 const today = isToday(dayDate)
                 const isSelected = selectedDay === day
                 return (
@@ -618,20 +737,27 @@ export default function CalendarPage() {
                       {day}
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      {dayAppts.slice(0, 2).map((a) => (
+                      {dayBlocked.slice(0, 1).map((s, i) => (
+                        <div key={`block-${s.id}-${i}`} className="hidden sm:flex items-center gap-1 truncate text-[10px] px-1.5 py-0.5 rounded-md bg-muted/60 text-muted-foreground">
+                          <Ban className="size-2.5 shrink-0" />
+                          {s.title}
+                        </div>
+                      ))}
+                      {dayAppts.slice(0, dayBlocked.length > 0 ? 1 : 2).map((a) => (
                         <div key={a.id} className={`hidden sm:block truncate text-[10px] px-1.5 py-0.5 rounded-md ${STATUS_CONFIG[a.status]?.className ?? "bg-muted"}`}>
                           {formatTime(a.date)} {a.patient.name.split(" ")[0]}
                         </div>
                       ))}
-                      {dayAppts.length > 0 && (
+                      {(dayAppts.length > 0 || dayBlocked.length > 0) && (
                         <div className="flex gap-0.5 sm:hidden mt-0.5">
+                          {dayBlocked.length > 0 && <div className="size-1.5 rounded-full bg-muted-foreground/40" />}
                           {dayAppts.slice(0, 3).map((a) => (
                             <div key={a.id} className={`size-1.5 rounded-full ${STATUS_DOT[a.status] ?? "bg-muted-foreground"}`} />
                           ))}
                           {dayAppts.length > 3 && <span className="text-[9px] text-muted-foreground">+{dayAppts.length - 3}</span>}
                         </div>
                       )}
-                      {dayAppts.length > 2 && <span className="hidden sm:block text-[10px] text-muted-foreground px-1.5">+{dayAppts.length - 2} mais</span>}
+                      {(dayAppts.length + dayBlocked.length) > 2 && <span className="hidden sm:block text-[10px] text-muted-foreground px-1.5">+{dayAppts.length + dayBlocked.length - 2} mais</span>}
                     </div>
                   </button>
                 )
@@ -724,6 +850,9 @@ function ScheduleForm(props: {
   scheduleDate: string; setScheduleDate: (v: string) => void
   scheduleTime: string; setScheduleTime: (v: string) => void
   scheduleNotes: string; setScheduleNotes: (v: string) => void
+  recurringEnabled: boolean; setRecurringEnabled: (v: boolean) => void
+  recurrence: "weekly" | "biweekly"; setRecurrence: (v: "weekly" | "biweekly") => void
+  occurrences: number; setOccurrences: (v: number) => void
   onSchedule: () => void; onCancel: () => void
 }) {
   return (
@@ -778,11 +907,55 @@ function ScheduleForm(props: {
           <Label className="text-xs">Observacoes (opcional)</Label>
           <Textarea value={props.scheduleNotes} onChange={(e) => props.setScheduleNotes(e.target.value)} placeholder="Notas sobre a consulta..." className="rounded-xl text-sm min-h-[80px]" />
         </div>
+
+        {/* Recurring section */}
+        <div className="space-y-3 sm:col-span-2 pt-2 border-t border-border/30">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={props.recurringEnabled}
+              onChange={(e) => props.setRecurringEnabled(e.target.checked)}
+              className="rounded border-border accent-vox-primary size-4"
+            />
+            <span className="text-xs font-medium flex items-center gap-1.5">
+              <Repeat className="size-3.5 text-muted-foreground" />
+              Agendar recorrente
+            </span>
+          </label>
+          {props.recurringEnabled && (
+            <div className="grid gap-3 sm:grid-cols-2 pl-6">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Repetir</Label>
+                <select
+                  value={props.recurrence}
+                  onChange={(e) => props.setRecurrence(e.target.value as "weekly" | "biweekly")}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-vox-primary/30"
+                >
+                  <option value="weekly">Semanal</option>
+                  <option value="biweekly">Quinzenal</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Quantidade (2-52)</Label>
+                <Input
+                  type="number"
+                  min={2}
+                  max={52}
+                  value={props.occurrences}
+                  onChange={(e) => props.setOccurrences(Math.min(52, Math.max(2, parseInt(e.target.value) || 2)))}
+                  className="rounded-xl text-sm"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={props.onCancel} className="rounded-xl text-xs">Cancelar</Button>
         <Button onClick={props.onSchedule} disabled={!props.selectedPatient || !props.scheduleDate || !props.scheduleTime}
-          className="bg-vox-primary hover:bg-vox-primary/90 text-white rounded-xl text-xs">Agendar</Button>
+          className="bg-vox-primary hover:bg-vox-primary/90 text-white rounded-xl text-xs">
+          {props.recurringEnabled ? `Agendar ${props.occurrences}x` : "Agendar"}
+        </Button>
       </div>
     </Card>
   )
@@ -868,6 +1041,118 @@ function AppointmentCard({
             </div>
           </div>
         )}
+      </div>
+    </Card>
+  )
+}
+
+// ────────────────────── Block Time Form ──────────────────────
+
+function BlockTimeForm({ onSave, onCancel }: {
+  onSave: (data: { title: string; startDate: string; endDate: string; allDay?: boolean; recurring?: string | null }) => Promise<void>
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [startTime, setStartTime] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [endTime, setEndTime] = useState("")
+  const [allDay, setAllDay] = useState(false)
+  const [recurring, setRecurring] = useState<string>("")
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    if (!title.trim() || !startDate) return
+    setSaving(true)
+    try {
+      const start = allDay ? `${startDate}T00:00:00` : `${startDate}T${startTime || "00:00"}:00`
+      const end = allDay ? `${endDate || startDate}T23:59:59` : `${endDate || startDate}T${endTime || startTime || "01:00"}:00`
+      await onSave({
+        title: title.trim(),
+        startDate: new Date(start).toISOString(),
+        endDate: new Date(end).toISOString(),
+        allDay,
+        recurring: recurring || null,
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card className="rounded-2xl border border-border/40 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <Ban className="size-4 text-muted-foreground" />
+          Bloquear Horario
+        </h2>
+        <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted/60 text-muted-foreground">
+          <X className="size-4" />
+        </button>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2 sm:col-span-2">
+          <Label className="text-xs">Titulo</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex: Almoco, Ferias, Reuniao..."
+            className="rounded-xl text-sm"
+          />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allDay}
+              onChange={(e) => setAllDay(e.target.checked)}
+              className="rounded border-border accent-vox-primary size-4"
+            />
+            <span className="text-xs font-medium">Dia inteiro</span>
+          </label>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Data inicio</Label>
+          <Input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); if (!endDate) setEndDate(e.target.value) }} className="rounded-xl text-sm" />
+        </div>
+        {!allDay && (
+          <div className="space-y-2">
+            <Label className="text-xs">Horario inicio</Label>
+            <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="rounded-xl text-sm" />
+          </div>
+        )}
+        <div className="space-y-2">
+          <Label className="text-xs">Data fim</Label>
+          <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="rounded-xl text-sm" />
+        </div>
+        {!allDay && (
+          <div className="space-y-2">
+            <Label className="text-xs">Horario fim</Label>
+            <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="rounded-xl text-sm" />
+          </div>
+        )}
+        <div className="space-y-2 sm:col-span-2">
+          <Label className="text-xs">Repetir</Label>
+          <select
+            value={recurring}
+            onChange={(e) => setRecurring(e.target.value)}
+            className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-vox-primary/30"
+          >
+            <option value="">Nenhum</option>
+            <option value="weekly">Semanal</option>
+          </select>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" onClick={onCancel} className="rounded-xl text-xs">Cancelar</Button>
+        <Button
+          onClick={handleSave}
+          disabled={!title.trim() || !startDate || saving}
+          className="bg-muted-foreground hover:bg-muted-foreground/90 text-white rounded-xl text-xs gap-1.5"
+        >
+          {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Ban className="size-3.5" />}
+          Bloquear
+        </Button>
       </div>
     </Card>
   )

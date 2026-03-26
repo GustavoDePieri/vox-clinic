@@ -1,0 +1,145 @@
+"use server"
+
+import { auth } from "@clerk/nextjs/server"
+import { db } from "@/lib/db"
+
+async function getWorkspaceId() {
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+
+  const user = await db.user.findUnique({
+    where: { clerkId: userId },
+    include: { workspace: true },
+  })
+  if (!user?.workspace) throw new Error("Workspace not configured")
+
+  return user.workspace.id
+}
+
+export interface BlockedSlotItem {
+  id: string
+  title: string
+  startDate: string
+  endDate: string
+  allDay: boolean
+  recurring: string | null
+  isExpanded?: boolean // true if this is an expanded occurrence of a recurring slot
+}
+
+export async function getBlockedSlots(startDate: string, endDate: string): Promise<BlockedSlotItem[]> {
+  const workspaceId = await getWorkspaceId()
+  const rangeStart = new Date(startDate)
+  const rangeEnd = new Date(endDate)
+
+  // Fetch one-time slots that overlap with the range
+  const oneTimeSlots = await db.blockedSlot.findMany({
+    where: {
+      workspaceId,
+      recurring: null,
+      startDate: { lte: rangeEnd },
+      endDate: { gte: rangeStart },
+    },
+    orderBy: { startDate: "asc" },
+  })
+
+  // Fetch recurring weekly slots that started before the range end
+  const recurringSlots = await db.blockedSlot.findMany({
+    where: {
+      workspaceId,
+      recurring: "weekly",
+      startDate: { lte: rangeEnd },
+    },
+    orderBy: { startDate: "asc" },
+  })
+
+  const results: BlockedSlotItem[] = oneTimeSlots.map((s) => ({
+    id: s.id,
+    title: s.title,
+    startDate: s.startDate.toISOString(),
+    endDate: s.endDate.toISOString(),
+    allDay: s.allDay,
+    recurring: s.recurring,
+  }))
+
+  // Expand recurring weekly slots into all occurrences within the range
+  for (const slot of recurringSlots) {
+    const slotStart = new Date(slot.startDate)
+    const slotEnd = new Date(slot.endDate)
+    const durationMs = slotEnd.getTime() - slotStart.getTime()
+
+    // Find the first occurrence on or after rangeStart
+    const diffMs = rangeStart.getTime() - slotStart.getTime()
+    let weeksOffset = Math.max(0, Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)))
+
+    for (let i = 0; i < 200; i++) { // safety limit
+      const occurrenceStart = new Date(slotStart.getTime() + (weeksOffset + i) * 7 * 24 * 60 * 60 * 1000)
+      const occurrenceEnd = new Date(occurrenceStart.getTime() + durationMs)
+
+      if (occurrenceStart.getTime() > rangeEnd.getTime()) break
+
+      if (occurrenceEnd.getTime() >= rangeStart.getTime()) {
+        results.push({
+          id: slot.id,
+          title: slot.title,
+          startDate: occurrenceStart.toISOString(),
+          endDate: occurrenceEnd.toISOString(),
+          allDay: slot.allDay,
+          recurring: slot.recurring,
+          isExpanded: true,
+        })
+      }
+    }
+  }
+
+  return results.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+}
+
+export async function createBlockedSlot(data: {
+  title: string
+  startDate: string
+  endDate: string
+  allDay?: boolean
+  recurring?: string | null
+}) {
+  const workspaceId = await getWorkspaceId()
+
+  if (!data.title.trim()) throw new Error("Titulo e obrigatorio")
+
+  const startDate = new Date(data.startDate)
+  const endDate = new Date(data.endDate)
+
+  if (endDate <= startDate) throw new Error("Data final deve ser posterior a data inicial")
+
+  const slot = await db.blockedSlot.create({
+    data: {
+      workspaceId,
+      title: data.title.trim(),
+      startDate,
+      endDate,
+      allDay: data.allDay ?? false,
+      recurring: data.recurring || null,
+    },
+  })
+
+  return {
+    id: slot.id,
+    title: slot.title,
+    startDate: slot.startDate.toISOString(),
+    endDate: slot.endDate.toISOString(),
+    allDay: slot.allDay,
+    recurring: slot.recurring,
+  }
+}
+
+export async function deleteBlockedSlot(id: string) {
+  const workspaceId = await getWorkspaceId()
+
+  const existing = await db.blockedSlot.findFirst({
+    where: { id, workspaceId },
+  })
+  if (!existing) throw new Error("Bloqueio nao encontrado")
+
+  await db.blockedSlot.delete({ where: { id } })
+
+  return { success: true }
+}

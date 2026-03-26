@@ -61,10 +61,11 @@ describe("appointment actions", () => {
   describe("checkAppointmentConflicts", () => {
     it("checks +-30min window for conflicts", async () => {
       mockDb.appointment.findMany.mockResolvedValue([])
+      mockDb.blockedSlot.findMany.mockResolvedValue([])
 
       const result = await checkAppointmentConflicts("2024-06-15T10:00:00Z")
 
-      expect(result).toEqual([])
+      expect(result).toEqual({ appointments: [], blockedSlots: [] })
       const call = mockDb.appointment.findMany.mock.calls[0][0]
       expect(call.where.workspaceId).toBe(WORKSPACE_ID)
       expect(call.where.status).toEqual({ in: ["scheduled", "completed"] })

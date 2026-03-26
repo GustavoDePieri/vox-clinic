@@ -37,6 +37,7 @@ model Workspace {
   appointments      Appointment[]
   recordings        Recording[]
   members           WorkspaceMember[]
+  blockedSlots      BlockedSlot[]
 }
 
 model Patient {
@@ -65,6 +66,8 @@ model Patient {
   recordings      Recording[]
   treatmentPlans  TreatmentPlan[]
   documents       PatientDocument[]
+  prescriptions    Prescription[]
+  certificates     MedicalCertificate[]
 
   @@unique([workspaceId, document])
   @@index([workspaceId])
@@ -290,5 +293,49 @@ model WhatsAppMessage {
 
   @@index([conversationId, createdAt])
   @@index([waMessageId])
+  @@index([workspaceId])
+}
+
+model BlockedSlot {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title       String    // "Almoco", "Ferias", "Feriado", "Reuniao", etc.
+  startDate   DateTime
+  endDate     DateTime
+  allDay      Boolean   @default(false)
+  recurring   String?   // null = one-time, "weekly" = repeats weekly
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([workspaceId, startDate, endDate])
+}
+
+model Prescription {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  workspaceId   String
+  appointmentId String?
+  medications   Json     // [{ name, dosage, frequency, duration, notes }]
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([patientId])
+  @@index([workspaceId])
+}
+
+model MedicalCertificate {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  workspaceId String
+  type        String   // "atestado", "declaracao_comparecimento", "encaminhamento", "laudo"
+  content     String   // the certificate text
+  days        Int?     // days off (for atestado)
+  cid         String?  // CID code if applicable
+  createdAt   DateTime @default(now())
+
+  @@index([patientId])
   @@index([workspaceId])
 }

@@ -9,6 +9,8 @@ import { PatientTabs } from "./patient-tabs"
 import { ExportButton } from "./export-button"
 import { DeactivateButton } from "./deactivate-button"
 import { MergeDialog } from "./merge-dialog"
+import { CreatePrescriptionButton } from "@/components/create-prescription-dialog"
+import { CreateCertificateButton } from "@/components/create-certificate-dialog"
 
 export default async function PatientPage({
   params,
@@ -123,6 +125,8 @@ export default async function PatientPage({
 
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <CreatePrescriptionButton patientId={patient.id} patientName={patient.name} />
+            <CreateCertificateButton patientId={patient.id} patientName={patient.name} />
             <ExportButton patientId={patient.id} patientName={patient.name} />
             <Link href={`/patients/${patient.id}/report`} target="_blank">
               <Button variant="outline" size="sm" className="gap-1.5">

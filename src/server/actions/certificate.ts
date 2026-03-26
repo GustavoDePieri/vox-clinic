@@ -1,0 +1,167 @@
+"use server"
+
+import { auth } from "@clerk/nextjs/server"
+import { db } from "@/lib/db"
+import { logAudit } from "@/lib/audit"
+
+async function getAuthContext() {
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+
+  const user = await db.user.findUnique({
+    where: { clerkId: userId },
+    include: { workspace: true },
+  })
+  if (!user?.workspace) throw new Error("Workspace not configured")
+
+  return { userId, user, workspaceId: user.workspace.id }
+}
+
+function generateCertificateContent(
+  type: string,
+  patientName: string,
+  patientDocument: string | null,
+  options: { days?: number; startTime?: string; endTime?: string; content?: string }
+): string {
+  const today = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+  const cpfText = patientDocument ? `, portador(a) do CPF ${patientDocument},` : ""
+
+  switch (type) {
+    case "atestado":
+      return `Atesto para os devidos fins que o(a) paciente ${patientName}${cpfText} esteve sob meus cuidados profissionais no dia ${today}, necessitando de afastamento de suas atividades por ${options.days ?? 1} dia(s).`
+    case "declaracao_comparecimento":
+      return `Declaro para os devidos fins que o(a) paciente ${patientName}${cpfText} compareceu a esta clinica no dia ${today} para atendimento, no periodo das ${options.startTime ?? "___"} as ${options.endTime ?? "___"}.`
+    case "encaminhamento":
+      return options.content ?? ""
+    case "laudo":
+      return options.content ?? ""
+    default:
+      return options.content ?? ""
+  }
+}
+
+export async function createCertificate(data: {
+  patientId: string
+  type: string
+  days?: number
+  cid?: string
+  startTime?: string
+  endTime?: string
+  content?: string
+}) {
+  const { userId, workspaceId } = await getAuthContext()
+
+  const validTypes = ["atestado", "declaracao_comparecimento", "encaminhamento", "laudo"]
+  if (!validTypes.includes(data.type)) throw new Error("Tipo de documento invalido")
+
+  const patient = await db.patient.findFirst({
+    where: { id: data.patientId, workspaceId },
+  })
+  if (!patient) throw new Error("Paciente nao encontrado")
+
+  const content = generateCertificateContent(data.type, patient.name, patient.document, {
+    days: data.days,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    content: data.content,
+  })
+
+  if (!content.trim()) throw new Error("O conteudo do documento nao pode ser vazio")
+
+  const certificate = await db.medicalCertificate.create({
+    data: {
+      patientId: data.patientId,
+      workspaceId,
+      type: data.type,
+      content,
+      days: data.days ?? null,
+      cid: data.cid || null,
+    },
+  })
+
+  await logAudit({
+    workspaceId,
+    userId,
+    action: "certificate.created",
+    entityType: "MedicalCertificate",
+    entityId: certificate.id,
+  })
+
+  return { id: certificate.id }
+}
+
+export async function getCertificate(id: string) {
+  const { userId, user, workspaceId } = await getAuthContext()
+
+  const certificate = await db.medicalCertificate.findFirst({
+    where: { id, workspaceId },
+    include: {
+      patient: {
+        select: { name: true, document: true },
+      },
+    },
+  })
+  if (!certificate) throw new Error("Documento nao encontrado")
+
+  return {
+    id: certificate.id,
+    type: certificate.type,
+    content: certificate.content,
+    days: certificate.days,
+    cid: certificate.cid,
+    patientName: certificate.patient.name,
+    patientDocument: certificate.patient.document,
+    createdAt: certificate.createdAt.toISOString(),
+    clinicName: user.clinicName ?? "Clinica",
+    profession: user.profession ?? "Profissional de Saude",
+    doctorName: user.name,
+  }
+}
+
+export async function getPatientCertificates(patientId: string) {
+  const { workspaceId } = await getAuthContext()
+
+  const patient = await db.patient.findFirst({
+    where: { id: patientId, workspaceId },
+  })
+  if (!patient) throw new Error("Paciente nao encontrado")
+
+  const certificates = await db.medicalCertificate.findMany({
+    where: { patientId, workspaceId },
+    orderBy: { createdAt: "desc" },
+  })
+
+  return certificates.map((c) => ({
+    id: c.id,
+    type: c.type,
+    content: c.content,
+    days: c.days,
+    cid: c.cid,
+    createdAt: c.createdAt.toISOString(),
+  }))
+}
+
+export async function deleteCertificate(id: string) {
+  const { userId, workspaceId } = await getAuthContext()
+
+  const certificate = await db.medicalCertificate.findFirst({
+    where: { id, workspaceId },
+  })
+  if (!certificate) throw new Error("Documento nao encontrado")
+
+  await db.medicalCertificate.delete({ where: { id } })
+
+  await logAudit({
+    workspaceId,
+    userId,
+    action: "certificate.deleted",
+    entityType: "MedicalCertificate",
+    entityId: id,
+  })
+
+  return { success: true }
+}
