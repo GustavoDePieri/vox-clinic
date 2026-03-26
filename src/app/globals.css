@@ -207,7 +207,7 @@
   /* Hide navigation and non-content elements */
   nav,
   header,
-  .print\\:hidden,
+  .no-print,
   [data-sidebar],
   [data-nav-bottom] {
     display: none !important;

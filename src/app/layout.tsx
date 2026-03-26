@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: "VoxClinic",
   description: "CRM inteligente com voz para profissionais de saude",
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
   themeColor: "#14B8A6",
 };
 
