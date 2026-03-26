@@ -9,6 +9,7 @@ import { PatientTabs } from "./patient-tabs"
 import { ExportButton } from "./export-button"
 import { DeactivateButton } from "./deactivate-button"
 import { MergeDialog } from "./merge-dialog"
+import { MoreActionsDropdown } from "./more-actions-dropdown"
 import { CreatePrescriptionButton } from "@/components/create-prescription-dialog"
 import { CreateCertificateButton } from "@/components/create-certificate-dialog"
 
@@ -131,21 +132,23 @@ export default async function PatientPage({
             <div title="Gerar atestado, declaracao de comparecimento, encaminhamento ou laudo">
               <CreateCertificateButton patientId={patient.id} patientName={patient.name} />
             </div>
-            <div title="Exportar todos os dados deste paciente em CSV (LGPD)">
-              <ExportButton patientId={patient.id} patientName={patient.name} />
-            </div>
             <Link href={`/patients/${patient.id}/report`} target="_blank" title="Abrir relatorio completo para impressao (Ctrl+P)">
               <Button variant="outline" size="sm" className="gap-1.5">
                 <FileText className="size-3.5" />
                 Relatorio
               </Button>
             </Link>
-            <div title="Mesclar outro paciente duplicado neste registro. Transfere consultas, gravacoes e documentos.">
-              <MergeDialog patientId={patient.id} patientName={patient.name} />
-            </div>
-            <div title="Desativar paciente (soft delete — historico preservado por 20 anos conforme CFM)">
-              <DeactivateButton patientId={patient.id} />
-            </div>
+            <MoreActionsDropdown>
+              <div title="Exportar todos os dados deste paciente em CSV (LGPD)" className="w-full">
+                <ExportButton patientId={patient.id} patientName={patient.name} />
+              </div>
+              <div title="Mesclar outro paciente duplicado neste registro. Transfere consultas, gravacoes e documentos." className="w-full">
+                <MergeDialog patientId={patient.id} patientName={patient.name} />
+              </div>
+              <div title="Desativar paciente (soft delete — historico preservado por 20 anos conforme CFM)" className="w-full">
+                <DeactivateButton patientId={patient.id} />
+              </div>
+            </MoreActionsDropdown>
           </div>
         </div>
       </div>

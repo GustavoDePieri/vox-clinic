@@ -14,6 +14,7 @@ import {
   CalendarCheck,
   AudioLines,
   Sparkles,
+  UserPlus,
 } from "lucide-react"
 import Link from "next/link"
 import { QuickSearch } from "./quick-search"
@@ -158,272 +159,239 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* ─── Main Content Grid ─── */}
-      <div className="grid gap-5 lg:grid-cols-3 xl:grid-cols-4">
-        {/* Left Column — 2/3 */}
-        <div className="lg:col-span-2 xl:col-span-3 space-y-5">
+      {/* ─── Quick Actions Row ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          { href: "/appointments/new", label: "Nova Consulta", icon: Stethoscope, accent: true },
+          { href: "/patients/new/voice", label: "Cadastro por Voz", icon: Mic },
+          { href: "/patients/new", label: "Novo Paciente", icon: UserPlus },
+          { href: "/calendar", label: "Agendar Consulta", icon: CalendarDays },
+        ].map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            aria-label={action.label}
+            className={`group flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-[12px] font-medium transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none ${
+              action.accent
+                ? "border-vox-primary/20 bg-vox-primary/[0.05] text-vox-primary hover:bg-vox-primary/[0.10]"
+                : "border-border/50 bg-card hover:bg-accent hover:border-border/70"
+            }`}
+          >
+            <div className={`flex size-7 items-center justify-center rounded-lg shrink-0 ${
+              action.accent ? "bg-vox-primary/[0.12]" : "bg-muted"
+            }`}>
+              <action.icon className={`size-3.5 ${action.accent ? "text-vox-primary" : "text-muted-foreground"}`} />
+            </div>
+            <span className="truncate">{action.label}</span>
+          </Link>
+        ))}
+      </div>
 
-          {/* Today's Agenda */}
-          <Card>
-            <CardHeader className="flex-row items-center justify-between pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <div className="flex size-6 items-center justify-center rounded-lg bg-vox-primary/10">
-                  <Clock className="size-3.5 text-vox-primary" />
+      {/* ─── Main Content Grid ─── */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Today's Agenda */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <div className="flex size-6 items-center justify-center rounded-lg bg-vox-primary/10">
+                <Clock className="size-3.5 text-vox-primary" />
+              </div>
+              Agenda de Hoje
+            </CardTitle>
+            <Link
+              href="/calendar"
+              aria-label="Ver agenda completa"
+              className="text-xs font-medium text-vox-primary hover:text-vox-primary/80 flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+            >
+              Ver agenda <ArrowRight className="size-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {data.todayAppointments.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-2xl bg-muted/50">
+                  <CalendarDays className="size-6 text-muted-foreground/40" />
                 </div>
-                Agenda de Hoje
-              </CardTitle>
-              <Link
-                href="/calendar"
-                aria-label="Ver agenda completa"
-                className="text-xs font-medium text-vox-primary hover:text-vox-primary/80 flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-              >
-                Ver agenda <ArrowRight className="size-3" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {data.todayAppointments.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-2xl bg-muted/50">
-                    <CalendarDays className="size-6 text-muted-foreground/40" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Nenhuma consulta para hoje
-                  </p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Nenhuma consulta para hoje
+                </p>
+                <Link
+                  href="/appointments/new"
+                  aria-label="Registrar consulta"
+                  className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-vox-primary hover:text-vox-primary/80 rounded-lg px-3 py-1.5 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+                >
+                  <Stethoscope className="size-3" />
+                  Registrar consulta
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {data.todayAppointments.map((apt) => (
                   <Link
-                    href="/appointments/new"
-                    aria-label="Registrar consulta"
-                    className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-vox-primary hover:text-vox-primary/80 rounded-lg px-3 py-1.5 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+                    key={apt.id}
+                    href={`/patients/${apt.patient.id}`}
+                    aria-label={`Consulta de ${apt.patient.name} as ${formatTime(apt.date)}`}
+                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
                   >
-                    <Stethoscope className="size-3" />
-                    Registrar consulta
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {data.todayAppointments.map((apt) => (
-                    <Link
-                      key={apt.id}
-                      href={`/patients/${apt.patient.id}`}
-                      aria-label={`Consulta de ${apt.patient.name} as ${formatTime(apt.date)}`}
-                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-                    >
-                      <div className="flex size-10 items-center justify-center rounded-xl bg-vox-primary/[0.08] text-[11px] font-bold text-vox-primary tabular-nums shrink-0">
-                        {formatTime(apt.date)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold truncate group-hover:text-vox-primary transition-colors">
-                          {apt.patient.name}
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-vox-primary/[0.08] text-[11px] font-bold text-vox-primary tabular-nums shrink-0">
+                      {formatTime(apt.date)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold truncate group-hover:text-vox-primary transition-colors">
+                        {apt.patient.name}
+                      </p>
+                      {apt.procedures.length > 0 && (
+                        <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">
+                          {apt.procedures.join(", ")}
                         </p>
-                        {apt.procedures.length > 0 && (
-                          <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">
-                            {apt.procedures.join(", ")}
-                          </p>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusColor[apt.status] ?? "bg-muted text-muted-foreground"}`}>
+                      {statusLabel[apt.status] ?? apt.status}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <div className="flex size-6 items-center justify-center rounded-lg bg-vox-primary/10">
+                <CalendarDays className="size-3.5 text-vox-primary" />
+              </div>
+              Atividade Recente
+            </CardTitle>
+            <Link
+              href="/calendar"
+              aria-label="Ver toda atividade recente"
+              className="text-xs font-medium text-vox-primary hover:text-vox-primary/80 flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+            >
+              Ver tudo <ArrowRight className="size-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {data.recentAppointments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhum atendimento registrado.
+              </p>
+            ) : (
+              <div className="space-y-0.5">
+                {data.recentAppointments.map((apt) => (
+                  <Link
+                    key={apt.id}
+                    href={`/patients/${apt.patient.id}`}
+                    aria-label={`Atendimento de ${apt.patient.name} em ${formatDateShort(apt.date)}`}
+                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+                  >
+                    <span className="text-[11px] text-muted-foreground/70 w-12 shrink-0 tabular-nums font-medium">
+                      {formatDateShort(apt.date)}
+                    </span>
+                    <div className="flex size-8 items-center justify-center rounded-full bg-vox-primary/[0.08] text-[11px] font-bold text-vox-primary shrink-0">
+                      {apt.patient.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[13px] font-medium truncate block group-hover:text-vox-primary transition-colors">
+                        {apt.patient.name}
+                      </span>
+                    </div>
+                    {apt.procedures.length > 0 && (
+                      <div className="hidden sm:flex gap-1 shrink-0">
+                        {apt.procedures.slice(0, 2).map((proc, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px]">
+                            {proc}
+                          </Badge>
+                        ))}
+                        {apt.procedures.length > 2 && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            +{apt.procedures.length - 2}
+                          </Badge>
                         )}
                       </div>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusColor[apt.status] ?? "bg-muted text-muted-foreground"}`}>
-                        {statusLabel[apt.status] ?? apt.status}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    )}
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusColor[apt.status] ?? "bg-muted text-muted-foreground"}`}>
+                      {statusLabel[apt.status] ?? apt.status}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader className="flex-row items-center justify-between pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <div className="flex size-6 items-center justify-center rounded-lg bg-vox-primary/10">
-                  <CalendarDays className="size-3.5 text-vox-primary" />
+      {/* ─── Bottom Row: Search + Recent Patients ─── */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* Quick Search */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Search className="size-4 text-vox-primary" />
+              Busca Rapida
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuickSearch />
+          </CardContent>
+        </Card>
+
+        {/* Recent Patients */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <div className="flex size-6 items-center justify-center rounded-lg bg-vox-primary/10">
+                <Users className="size-3.5 text-vox-primary" />
+              </div>
+              Pacientes Recentes
+            </CardTitle>
+            <Link
+              href="/patients"
+              aria-label="Ver todos os pacientes"
+              className="text-xs font-medium text-vox-primary hover:text-vox-primary/80 rounded-lg px-2 py-1 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+            >
+              Ver todos
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {data.recentPatients.length === 0 ? (
+              <div className="text-center py-6">
+                <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-muted/50">
+                  <Users className="size-5 text-muted-foreground/40" />
                 </div>
-                Atividade Recente
-              </CardTitle>
-              <Link
-                href="/calendar"
-                aria-label="Ver toda atividade recente"
-                className="text-xs font-medium text-vox-primary hover:text-vox-primary/80 flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-              >
-                Ver tudo <ArrowRight className="size-3" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {data.recentAppointments.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Nenhum atendimento registrado.
+                <p className="text-sm text-muted-foreground">
+                  Nenhum paciente cadastrado.
                 </p>
-              ) : (
-                <div className="space-y-0.5">
-                  {data.recentAppointments.map((apt) => (
+              </div>
+            ) : (
+              <ul className="space-y-0.5">
+                {data.recentPatients.map((patient) => (
+                  <li key={patient.id}>
                     <Link
-                      key={apt.id}
-                      href={`/patients/${apt.patient.id}`}
-                      aria-label={`Atendimento de ${apt.patient.name} em ${formatDateShort(apt.date)}`}
-                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
+                      href={`/patients/${patient.id}`}
+                      aria-label={`Ver paciente ${patient.name}`}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
                     >
-                      <span className="text-[11px] text-muted-foreground/70 w-12 shrink-0 tabular-nums font-medium">
-                        {formatDateShort(apt.date)}
-                      </span>
                       <div className="flex size-8 items-center justify-center rounded-full bg-vox-primary/[0.08] text-[11px] font-bold text-vox-primary shrink-0">
-                        {apt.patient.name.charAt(0)}
+                        {patient.name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-[13px] font-medium truncate block group-hover:text-vox-primary transition-colors">
-                          {apt.patient.name}
+                        <span className="font-medium truncate block group-hover:text-vox-primary transition-colors text-[13px]">
+                          {patient.name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/60">
+                          {formatDate(patient.lastAppointment)}
                         </span>
                       </div>
-                      {apt.procedures.length > 0 && (
-                        <div className="hidden sm:flex gap-1 shrink-0">
-                          {apt.procedures.slice(0, 2).map((proc, i) => (
-                            <Badge key={i} variant="secondary" className="text-[10px]">
-                              {proc}
-                            </Badge>
-                          ))}
-                          {apt.procedures.length > 2 && (
-                            <Badge variant="secondary" className="text-[10px]">
-                              +{apt.procedures.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusColor[apt.status] ?? "bg-muted text-muted-foreground"}`}>
-                        {statusLabel[apt.status] ?? apt.status}
-                      </span>
                     </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column — 1/3 */}
-        <div className="space-y-5">
-
-          {/* Quick Actions */}
-          <Card className="border-vox-primary/15 bg-gradient-to-br from-vox-primary/[0.04] to-transparent">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <div className="flex size-6 items-center justify-center rounded-lg bg-vox-primary/10">
-                  <Sparkles className="size-3.5 text-vox-primary" />
-                </div>
-                Acoes Rapidas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link
-                href="/appointments/new"
-                aria-label="Nova Consulta"
-                className="group flex items-center gap-3 rounded-xl bg-vox-primary px-4 py-3 text-sm font-semibold text-white shadow-md shadow-vox-primary/20 transition-all hover:bg-vox-primary/90 hover:shadow-lg hover:shadow-vox-primary/25 hover:-translate-y-px active:translate-y-0 active:shadow-sm focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-              >
-                <Stethoscope className="size-4" />
-                Nova Consulta
-                <ArrowRight className="size-3.5 ml-auto opacity-60 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/patients/new/voice"
-                aria-label="Cadastro por Voz"
-                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3 text-sm font-medium transition-all hover:bg-accent hover:border-border/70 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-              >
-                <div className="flex size-7 items-center justify-center rounded-lg bg-vox-primary/[0.08]">
-                  <Mic className="size-3.5 text-vox-primary" />
-                </div>
-                Cadastro por Voz
-                <ArrowRight className="size-3.5 ml-auto opacity-0 transition-all group-hover:opacity-40 group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/patients/new"
-                aria-label="Novo Paciente"
-                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3 text-sm font-medium transition-all hover:bg-accent hover:border-border/70 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-              >
-                <div className="flex size-7 items-center justify-center rounded-lg bg-muted">
-                  <Users className="size-3.5 text-muted-foreground" />
-                </div>
-                Novo Paciente
-                <ArrowRight className="size-3.5 ml-auto opacity-0 transition-all group-hover:opacity-40 group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/calendar"
-                aria-label="Agendar Consulta"
-                className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3 text-sm font-medium transition-all hover:bg-accent hover:border-border/70 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-              >
-                <div className="flex size-7 items-center justify-center rounded-lg bg-muted">
-                  <CalendarDays className="size-3.5 text-muted-foreground" />
-                </div>
-                Agendar Consulta
-                <ArrowRight className="size-3.5 ml-auto opacity-0 transition-all group-hover:opacity-40 group-hover:translate-x-0.5" />
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Quick Search */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Search className="size-4 text-vox-primary" />
-                Busca Rapida
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuickSearch />
-            </CardContent>
-          </Card>
-
-          {/* Recent Patients */}
-          <Card>
-            <CardHeader className="flex-row items-center justify-between pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <div className="flex size-6 items-center justify-center rounded-lg bg-vox-primary/10">
-                  <Users className="size-3.5 text-vox-primary" />
-                </div>
-                Pacientes Recentes
-              </CardTitle>
-              <Link
-                href="/patients"
-                aria-label="Ver todos os pacientes"
-                className="text-xs font-medium text-vox-primary hover:text-vox-primary/80 rounded-lg px-2 py-1 hover:bg-vox-primary/5 transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-              >
-                Ver todos
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {data.recentPatients.length === 0 ? (
-                <div className="text-center py-6">
-                  <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-muted/50">
-                    <Users className="size-5 text-muted-foreground/40" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum paciente cadastrado.
-                  </p>
-                </div>
-              ) : (
-                <ul className="space-y-0.5">
-                  {data.recentPatients.map((patient) => (
-                    <li key={patient.id}>
-                      <Link
-                        href={`/patients/${patient.id}`}
-                        aria-label={`Ver paciente ${patient.name}`}
-                        className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
-                      >
-                        <div className="flex size-8 items-center justify-center rounded-full bg-vox-primary/[0.08] text-[11px] font-bold text-vox-primary shrink-0">
-                          {patient.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium truncate block group-hover:text-vox-primary transition-colors text-[13px]">
-                            {patient.name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground/60">
-                            {formatDate(patient.lastAppointment)}
-                          </span>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

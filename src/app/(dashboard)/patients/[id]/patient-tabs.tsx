@@ -186,6 +186,7 @@ const sourceLabels: Record<string, string> = {
 
 function ResumoTab({ patient, customFields }: { patient: PatientData; customFields?: CustomFieldDef[] }) {
   const [isEditing, setIsEditing] = useState(false)
+  const [showAllFields, setShowAllFields] = useState(false)
   const [name, setName] = useState(patient.name)
   const [phone, setPhone] = useState(patient.phone ?? "")
   const [email, setEmail] = useState(patient.email ?? "")
@@ -301,96 +302,26 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5">
-              <User className="size-3.5" /> Nome
-            </Label>
-            {isEditing ? (
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
-            ) : (
-              <p className="text-sm">{patient.name}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label>CPF</Label>
-            {isEditing ? (
-              <Input value={document} onChange={(e) => setDocument(e.target.value)} placeholder="000.000.000-00" />
-            ) : (
-              <p className="text-sm">{patient.document || "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label>RG</Label>
-            {isEditing ? (
-              <Input value={rg} onChange={(e) => setRg(e.target.value)} placeholder="00.000.000-0" />
-            ) : (
-              <p className="text-sm">{patient.rg || "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Sexo</Label>
-            {isEditing ? (
-              <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
+        {(() => {
+          const allFields = [
+            { id: "name", label: "Nome", icon: User, value: patient.name, editEl: <Input value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} /> },
+            { id: "document", label: "CPF", value: patient.document, editEl: <Input value={document} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDocument(e.target.value)} placeholder="000.000.000-00" /> },
+            { id: "rg", label: "RG", value: patient.rg, editEl: <Input value={rg} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRg(e.target.value)} placeholder="00.000.000-0" /> },
+            { id: "gender", label: "Sexo", value: patient.gender ? genderLabels[patient.gender] || patient.gender : null, editEl: (
+              <select value={gender} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGender(e.target.value)} className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
                 <option value="">Nao informado</option>
                 <option value="masculino">Masculino</option>
                 <option value="feminino">Feminino</option>
                 <option value="outro">Outro</option>
               </select>
-            ) : (
-              <p className="text-sm">{gender ? genderLabels[gender] || gender : "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5">
-              <Phone className="size-3.5" /> Telefone
-            </Label>
-            {isEditing ? (
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
-            ) : (
-              <p className="text-sm">{patient.phone || "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5">
-              <Mail className="size-3.5" /> Email
-            </Label>
-            {isEditing ? (
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            ) : (
-              <p className="text-sm">{patient.email || "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Data de Nascimento</Label>
-            {isEditing ? (
-              <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-            ) : (
-              <p className="text-sm">{formatDate(patient.birthDate)}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5">
-              <Shield className="size-3.5" /> Convenio
-            </Label>
-            {isEditing ? (
-              <Input value={insurance} onChange={(e) => setInsurance(e.target.value)} placeholder="Ex: Unimed, Amil..." />
-            ) : (
-              <p className="text-sm">{patient.insurance || "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Responsavel</Label>
-            {isEditing ? (
-              <Input value={guardian} onChange={(e) => setGuardian(e.target.value)} placeholder="Nome do responsavel" />
-            ) : (
-              <p className="text-sm">{patient.guardian || "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Origem</Label>
-            {isEditing ? (
-              <select value={source} onChange={(e) => setSource(e.target.value)} className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
+            ) },
+            { id: "phone", label: "Telefone", icon: Phone, value: patient.phone, editEl: <Input value={phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)} /> },
+            { id: "email", label: "Email", icon: Mail, value: patient.email, editEl: <Input type="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} /> },
+            { id: "birthDate", label: "Data de Nascimento", value: patient.birthDate ? formatDate(patient.birthDate) : null, editEl: <Input type="date" value={birthDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBirthDate(e.target.value)} /> },
+            { id: "insurance", label: "Convenio", icon: Shield, value: patient.insurance, editEl: <Input value={insurance} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInsurance(e.target.value)} placeholder="Ex: Unimed, Amil..." /> },
+            { id: "guardian", label: "Responsavel", value: patient.guardian, editEl: <Input value={guardian} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGuardian(e.target.value)} placeholder="Nome do responsavel" /> },
+            { id: "source", label: "Origem", value: patient.source ? sourceLabels[patient.source] || patient.source : null, editEl: (
+              <select value={source} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSource(e.target.value)} className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
                 <option value="">Nao informado</option>
                 <option value="instagram">Instagram</option>
                 <option value="google">Google</option>
@@ -400,37 +331,76 @@ function ResumoTab({ patient, customFields }: { patient: PatientData; customFiel
                 <option value="site">Site</option>
                 <option value="outro">Outro</option>
               </select>
-            ) : (
-              <p className="text-sm">{patient.source ? sourceLabels[patient.source] || patient.source : "-"}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Cadastrado em</Label>
-            <p className="text-sm">{formatDate(patient.createdAt)}</p>
-          </div>
-        </div>
+            ) },
+            { id: "createdAt", label: "Cadastrado em", value: formatDate(patient.createdAt), readOnly: true },
+          ]
+
+          const filledFields = allFields.filter(f => f.value && f.value !== "-")
+          const hiddenCount = allFields.length - filledFields.length
+          const fieldsToShow = isEditing || showAllFields ? allFields : filledFields
+
+          return (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {fieldsToShow.map((field) => {
+                  const IconComp = (field as any).icon
+                  return (
+                    <div key={field.id} className="space-y-1.5">
+                      <Label className={IconComp ? "flex items-center gap-1.5" : undefined}>
+                        {IconComp && <IconComp className="size-3.5" />}
+                        {field.label}
+                      </Label>
+                      {isEditing && !field.readOnly ? (
+                        field.editEl
+                      ) : (
+                        <p className="text-sm">{field.value || "-"}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              {!isEditing && hiddenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllFields(!showAllFields)}
+                  className="text-xs text-vox-primary hover:text-vox-primary/80 transition-colors font-medium"
+                >
+                  {showAllFields
+                    ? "Ocultar campos vazios"
+                    : `Mostrar todos (${hiddenCount} campos ocultos)`}
+                </button>
+              )}
+            </>
+          )
+        })()}
 
         {/* Address */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium flex items-center gap-1.5"><MapPin className="size-3.5" /> Endereco</p>
-          {isEditing ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input value={address.street ?? ""} onChange={(e) => setAddress(a => ({ ...a, street: e.target.value }))} placeholder="Rua" className="sm:col-span-2" />
-              <Input value={address.number ?? ""} onChange={(e) => setAddress(a => ({ ...a, number: e.target.value }))} placeholder="Numero" />
-              <Input value={address.complement ?? ""} onChange={(e) => setAddress(a => ({ ...a, complement: e.target.value }))} placeholder="Complemento" />
-              <Input value={address.neighborhood ?? ""} onChange={(e) => setAddress(a => ({ ...a, neighborhood: e.target.value }))} placeholder="Bairro" />
-              <Input value={address.city ?? ""} onChange={(e) => setAddress(a => ({ ...a, city: e.target.value }))} placeholder="Cidade" />
-              <Input value={address.state ?? ""} onChange={(e) => setAddress(a => ({ ...a, state: e.target.value }))} placeholder="UF" />
-              <Input value={address.zipCode ?? ""} onChange={(e) => setAddress(a => ({ ...a, zipCode: e.target.value }))} placeholder="CEP" />
+        {(() => {
+          const hasAddress = patient.address && Object.values(patient.address).some(v => v)
+          if (!isEditing && !showAllFields && !hasAddress) return null
+          return (
+            <div className="space-y-2">
+              <p className="text-sm font-medium flex items-center gap-1.5"><MapPin className="size-3.5" /> Endereco</p>
+              {isEditing ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Input value={address.street ?? ""} onChange={(e) => setAddress(a => ({ ...a, street: e.target.value }))} placeholder="Rua" className="sm:col-span-2" />
+                  <Input value={address.number ?? ""} onChange={(e) => setAddress(a => ({ ...a, number: e.target.value }))} placeholder="Numero" />
+                  <Input value={address.complement ?? ""} onChange={(e) => setAddress(a => ({ ...a, complement: e.target.value }))} placeholder="Complemento" />
+                  <Input value={address.neighborhood ?? ""} onChange={(e) => setAddress(a => ({ ...a, neighborhood: e.target.value }))} placeholder="Bairro" />
+                  <Input value={address.city ?? ""} onChange={(e) => setAddress(a => ({ ...a, city: e.target.value }))} placeholder="Cidade" />
+                  <Input value={address.state ?? ""} onChange={(e) => setAddress(a => ({ ...a, state: e.target.value }))} placeholder="UF" />
+                  <Input value={address.zipCode ?? ""} onChange={(e) => setAddress(a => ({ ...a, zipCode: e.target.value }))} placeholder="CEP" />
+                </div>
+              ) : (
+                <p className="text-sm">
+                  {hasAddress
+                    ? [patient.address!.street, patient.address!.number, patient.address!.complement, patient.address!.neighborhood, patient.address!.city, patient.address!.state, patient.address!.zipCode].filter(Boolean).join(", ")
+                    : "-"}
+                </p>
+              )}
             </div>
-          ) : (
-            <p className="text-sm">
-              {patient.address && Object.values(patient.address).some(v => v)
-                ? [patient.address.street, patient.address.number, patient.address.complement, patient.address.neighborhood, patient.address.city, patient.address.state, patient.address.zipCode].filter(Boolean).join(", ")
-                : "-"}
-            </p>
-          )}
-        </div>
+          )
+        })()}
 
         {/* Tags */}
         <div className="space-y-2">
@@ -948,9 +918,23 @@ function GravacoesTab({
 
   if (recordings.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        Nenhuma gravacao registrada.
-      </p>
+      <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <div className="flex size-14 items-center justify-center rounded-full bg-muted/60">
+          <Mic className="size-6 text-muted-foreground/50" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">Nenhuma gravacao registrada</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Grave uma consulta para gerar transcricao e resumo automatico
+          </p>
+        </div>
+        <Link href="/appointments/new">
+          <Button size="sm" className="bg-vox-primary text-white hover:bg-vox-primary/90 gap-1.5 mt-1">
+            <Mic className="size-3.5" />
+            Gravar consulta
+          </Button>
+        </Link>
+      </div>
     )
   }
 
@@ -1075,9 +1059,22 @@ function AnamneseTab({
 
   if (anamnesisTemplate.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        Nenhum modelo de anamnese configurado no workspace.
-      </p>
+      <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <div className="flex size-14 items-center justify-center rounded-full bg-muted/60">
+          <FileText className="size-6 text-muted-foreground/50" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">Nenhum modelo de anamnese configurado</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Configure o modelo de anamnese nas configuracoes do workspace
+          </p>
+        </div>
+        <Link href="/settings">
+          <Button size="sm" variant="outline" className="gap-1.5 mt-1">
+            Ir para Configuracoes
+          </Button>
+        </Link>
+      </div>
     )
   }
 
@@ -1103,6 +1100,12 @@ function AnamneseTab({
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
+        {Object.keys(existingAnamnesis).length === 0 && (
+          <div className="rounded-xl border border-vox-primary/20 bg-vox-primary/5 p-3 text-center">
+            <p className="text-sm text-vox-primary font-medium">Preencha a anamnese para este paciente</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Responda as perguntas abaixo e clique em Salvar</p>
+          </div>
+        )}
         {anamnesisTemplate.map((q, i) => (
           <div key={q.id} className="space-y-2">
             <Label className="text-sm font-medium">
@@ -1372,6 +1375,14 @@ function TratamentosTab({ patientId }: { patientId: string }) {
               Crie um plano para acompanhar o progresso do paciente
             </p>
           </div>
+          <Button
+            size="sm"
+            onClick={() => setShowForm(true)}
+            className="bg-vox-primary text-white hover:bg-vox-primary/90 gap-1.5 mt-1"
+          >
+            <Plus className="size-3.5" />
+            Criar plano de tratamento
+          </Button>
         </div>
       )}
 
@@ -1637,7 +1648,20 @@ function DocumentosTab({ patientId }: { patientId: string }) {
           <div className="flex size-14 items-center justify-center rounded-full bg-muted/60">
             <FileImage className="size-6 text-muted-foreground/50" />
           </div>
-          <p className="text-sm text-muted-foreground">Nenhum documento anexado</p>
+          <div>
+            <p className="text-sm font-medium">Nenhum documento anexado</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Envie imagens, PDFs ou documentos do paciente
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-vox-primary text-white hover:bg-vox-primary/90 gap-1.5 mt-1"
+          >
+            <Upload className="size-3.5" />
+            Fazer upload
+          </Button>
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useTransition } from "react"
+import { useState, useEffect, useCallback, useTransition, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { DndContext, DragOverlay, useDraggable, useDroppable, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core"
@@ -198,6 +198,8 @@ export default function CalendarPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlotItem[]>([])
   const [showBlockForm, setShowBlockForm] = useState(false)
+  const weekGridRef = useRef<HTMLDivElement>(null)
+  const [nowLineTop, setNowLineTop] = useState<number | null>(null)
   const router = useRouter()
 
   // Schedule form
@@ -255,6 +257,38 @@ export default function CalendarPage() {
   useEffect(() => {
     loadAppointments()
   }, [loadAppointments])
+
+  // Auto-scroll week view to current hour & update "now" line
+  useEffect(() => {
+    if (view !== "week" || loading) return
+    const container = weekGridRef.current
+    if (!container) return
+
+    const ROW_HEIGHT = 64 // h-16 = 4rem = 64px
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinutes = now.getMinutes()
+
+    // Scroll to current hour (centered roughly)
+    const scrollTarget = (currentHour - 7) * ROW_HEIGHT
+    container.scrollTo({ top: Math.max(0, scrollTarget - 100), behavior: "smooth" })
+
+    // Calculate "now" line position
+    const minuteOffset = (currentMinutes / 60) * ROW_HEIGHT
+    const topPosition = (currentHour - 7) * ROW_HEIGHT + minuteOffset
+    setNowLineTop(currentHour >= 7 && currentHour <= 20 ? topPosition : null)
+
+    // Update every minute
+    const interval = setInterval(() => {
+      const n = new Date()
+      const h = n.getHours()
+      const m = n.getMinutes()
+      const top = (h - 7) * ROW_HEIGHT + (m / 60) * ROW_HEIGHT
+      setNowLineTop(h >= 7 && h <= 20 ? top : null)
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [view, loading])
 
   // Patient search with debounce
   useEffect(() => {
@@ -602,7 +636,30 @@ export default function CalendarPage() {
             </div>
 
             {/* Time grid */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[calc(100vh-280px)] overflow-y-auto min-w-[600px]">
+            <div ref={weekGridRef} className="relative grid grid-cols-[60px_repeat(7,1fr)] max-h-[calc(100vh-280px)] overflow-y-auto min-w-[600px]">
+              {/* "Now" indicator line */}
+              {nowLineTop !== null && (() => {
+                const todayIndex = weekDays.findIndex((d) => isToday(d))
+                if (todayIndex === -1) return null
+                return (
+                  <div
+                    className="absolute left-[60px] right-0 z-10 pointer-events-none"
+                    style={{ top: `${nowLineTop}px` }}
+                  >
+                    {/* Line across today's column only */}
+                    <div
+                      className="absolute h-[2px] bg-vox-error/80"
+                      style={{
+                        left: `calc(${(todayIndex / 7) * 100}%)`,
+                        width: `calc(${(1 / 7) * 100}%)`,
+                      }}
+                    >
+                      {/* Circle at left edge */}
+                      <div className="absolute -left-1.5 -top-[4px] size-[10px] rounded-full bg-vox-error/80" />
+                    </div>
+                  </div>
+                )
+              })()}
               {HOURS.map((hour) => (
                 <div key={hour} className="contents">
                   {/* Hour label */}
