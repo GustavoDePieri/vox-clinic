@@ -71,6 +71,12 @@ export default async function AdminLayout({
               >
                 Usuarios
               </Link>
+              <Link
+                href="/admin/roadmap"
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+              >
+                Roadmap
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">
