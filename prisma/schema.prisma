@@ -53,8 +53,9 @@ model Patient {
   isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  appointments Appointment[]
-  recordings   Recording[]
+  appointments    Appointment[]
+  recordings      Recording[]
+  treatmentPlans  TreatmentPlan[]
 
   @@unique([workspaceId, document])
   @@index([workspaceId])
@@ -135,6 +136,28 @@ model ConsentRecord {
 
   @@index([workspaceId])
   @@index([patientId])
+}
+
+model TreatmentPlan {
+  id                String   @id @default(cuid())
+  patientId         String
+  patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  workspaceId       String
+  name              String   // e.g. "Tratamento de canal", "Clareamento 6 sessoes"
+  procedures        Json     @default("[]") // list of procedure names involved
+  totalSessions     Int
+  completedSessions Int      @default(0)
+  status            String   @default("active") // active, completed, cancelled, paused
+  notes             String?
+  startDate         DateTime @default(now())
+  estimatedEndDate  DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([workspaceId])
+  @@index([workspaceId, status])
 }
 
 model WorkspaceMember {

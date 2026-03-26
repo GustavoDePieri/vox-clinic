@@ -49,7 +49,7 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
 - `src/app/(dashboard)/` — Authenticated pages (sidebar + bottom nav + auth guard)
   - `/dashboard` — Stat cards, today's agenda, recent activity, quick actions
   - `/patients` — Paginated list with search
-  - `/patients/[id]` — Detail with tabs (Resumo, Historico, Gravacoes) + audio playback
+  - `/patients/[id]` — Detail with tabs (Resumo, Historico, Tratamentos, Gravacoes, Anamnese) + audio playback
   - `/patients/[id]/report` — Print-friendly patient report (Ctrl+P → PDF)
   - `/patients/new/voice` — Voice registration flow
   - `/patients/new/manual` — Manual registration form
@@ -84,6 +84,7 @@ All data mutations use Server Actions with `"use server"` directive:
 - `appointment.ts` — getAppointmentsByDateRange, scheduleAppointment, updateAppointmentStatus, deleteAppointment
 - `dashboard.ts` — getDashboardData (stats, today's agenda, recent activity, trends)
 - `reminder.ts` — sendAppointmentReminder, sendBulkReminders
+- `treatment.ts` — getTreatmentPlans, createTreatmentPlan, addSessionToTreatment, updateTreatmentPlanStatus, deleteTreatmentPlan
 
 All actions authenticate via `auth()` from `@clerk/nextjs/server` and scope queries to the user's workspace.
 
@@ -144,8 +145,9 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 
 - **User**: clerkId, profession, clinicName, onboardingComplete → has one Workspace
 - **Workspace**: professionType, customFields, procedures, anamnesisTemplate, categories → has many Patients, Appointments, Recordings
-- **Patient**: belongs to Workspace. name, document (CPF, unique per workspace), customData, alerts, isActive (soft delete). Has many Appointments, Recordings
+- **Patient**: belongs to Workspace. name, document (CPF, unique per workspace), customData, alerts, isActive (soft delete). Has many Appointments, Recordings, TreatmentPlans
 - **Appointment**: links Patient + Workspace. date, procedures, notes, aiSummary, audioUrl, transcript, status (scheduled/completed/cancelled/no_show)
+- **TreatmentPlan**: links Patient + Workspace. name, procedures, totalSessions, completedSessions, status (active/completed/cancelled/paused), notes, startDate, estimatedEndDate, completedAt
 - **Recording**: audioUrl, transcript, aiExtractedData, status (pending/processed), workspaceId, errorMessage, fileSize, duration
 - **AuditLog**: workspaceId, userId, action, entityType, entityId, details (Json)
 - **ConsentRecord**: workspaceId, patientId?, recordingId?, consentType, givenBy, givenAt
