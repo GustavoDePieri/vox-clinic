@@ -26,34 +26,53 @@ export async function preprocessAudio(
     targetBitrate = '64k',
   } = options
 
+  const FFMPEG_TIMEOUT_MS = 30_000
+
   return new Promise((resolve, reject) => {
     const inputStream = Readable.from(inputBuffer)
     const chunks: Buffer[] = []
     const output = new PassThrough()
+    let settled = false
+
+    // Timeout: kill ffmpeg if it hangs
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        try { command.kill('SIGKILL') } catch {}
+        reject(new Error('FFmpeg timeout: processamento de audio excedeu 30s'))
+      }
+    }, FFMPEG_TIMEOUT_MS)
 
     output.on('data', (chunk: Buffer) => chunks.push(chunk))
     output.on('end', () => {
-      resolve({
-        buffer: Buffer.concat(chunks),
-        originalDuration: null, // will be filled from Whisper response
-        processedDuration: null,
-      })
+      if (!settled) {
+        settled = true
+        clearTimeout(timer)
+        resolve({
+          buffer: Buffer.concat(chunks),
+          originalDuration: null,
+          processedDuration: null,
+        })
+      }
     })
-    output.on('error', reject)
+    output.on('error', (err) => {
+      if (!settled) {
+        settled = true
+        clearTimeout(timer)
+        reject(err)
+      }
+    })
 
     // Build audio filter chain
     const filters: string[] = []
 
-    // 1. Silence removal (if enabled)
     if (removeSilence) {
       filters.push('silenceremove=stop_periods=-1:stop_duration=0.5:stop_threshold=-30dB:stop_silence=0.15')
     }
 
-    // 2. Speed up (using atempo, max 2.0 per filter)
     if (speed > 1.0 && speed <= 2.0) {
       filters.push(`atempo=${speed}`)
     } else if (speed > 2.0) {
-      // Chain atempo filters for speeds > 2.0
       filters.push(`atempo=2.0`)
       filters.push(`atempo=${speed / 2.0}`)
     }
@@ -70,7 +89,13 @@ export async function preprocessAudio(
     }
 
     command
-      .on('error', (err: Error) => reject(new Error(`FFmpeg error: ${err.message}`)))
+      .on('error', (err: Error) => {
+        if (!settled) {
+          settled = true
+          clearTimeout(timer)
+          reject(new Error(`FFmpeg error: ${err.message}`))
+        }
+      })
       .pipe(output, { end: true })
   })
 }

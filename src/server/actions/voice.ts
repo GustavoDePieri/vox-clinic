@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { uploadAudio } from "@/lib/storage"
+import { uploadAudio, deleteAudio } from "@/lib/storage"
 import { transcribeAudio } from "@/lib/openai"
 import { preprocessAudio } from "@/lib/audio-preprocessing"
 import { extractEntities } from "@/lib/claude"
@@ -34,56 +34,65 @@ export async function processVoiceRegistration(formData: FormData) {
   // 1. Upload to Supabase Storage (returns path, not public URL)
   const audioPath = await uploadAudio(buffer, audioFile.name || "recording.webm")
 
-  // 2. Preprocess audio for transcription (silence removal + speed up)
-  const { buffer: processedBuffer } = await preprocessAudio(buffer, audioFile.name || "recording.webm")
+  try {
+    // 2. Preprocess audio for transcription (silence removal + speed up)
+    const { buffer: processedBuffer } = await preprocessAudio(buffer, audioFile.name || "recording.webm")
 
-  // 3. Transcribe the processed (smaller) audio via Whisper
-  const workspaceProcedureNames = (user.workspace.procedures as any[]).map((p: any) => p.name)
-  const { text: transcript } = await transcribeAudio(
-    processedBuffer,
-    "processed.mp3",  // always MP3 after preprocessing
-    workspaceProcedureNames
-  )
+    // 3. Transcribe the processed (smaller) audio via Whisper
+    const workspaceProcedureNames = (user.workspace.procedures as any[]).map((p: any) => p.name)
+    const { text: transcript } = await transcribeAudio(
+      processedBuffer,
+      "processed.mp3",
+      workspaceProcedureNames
+    )
 
-  // 4. Extract entities via Claude
-  const workspaceConfig = {
-    customFields: user.workspace.customFields as any[],
-    procedures: user.workspace.procedures as any[],
-  }
-  const extractedData: ExtractedPatientData = await extractEntities(transcript, workspaceConfig)
+    // 4. Extract entities via Claude
+    const workspaceConfig = {
+      customFields: user.workspace.customFields as any[],
+      procedures: user.workspace.procedures as any[],
+    }
+    const extractedData: ExtractedPatientData = await extractEntities(transcript, workspaceConfig)
 
-  // 5. Create Recording in database
-  const recording = await db.recording.create({
-    data: {
-      workspaceId: user.workspace.id,
-      audioUrl: audioPath,
+    // 5. Create Recording + audit + consent in transaction
+    const recording = await db.$transaction(async (tx) => {
+      const rec = await tx.recording.create({
+        data: {
+          workspaceId: user.workspace!.id,
+          audioUrl: audioPath,
+          transcript,
+          aiExtractedData: extractedData as any,
+          status: "processed",
+          fileSize: audioFile.size,
+        },
+      })
+
+      await logAudit({
+        workspaceId: user.workspace!.id,
+        userId,
+        action: "recording.created",
+        entityType: "Recording",
+        entityId: rec.id,
+      })
+
+      await recordConsent({
+        workspaceId: user.workspace!.id,
+        recordingId: rec.id,
+        consentType: "audio_recording",
+        givenBy: userId,
+      })
+
+      return rec
+    })
+
+    return {
       transcript,
-      aiExtractedData: extractedData as any,
-      status: "processed",
-      fileSize: audioFile.size,
-    },
-  })
-
-  // 6. Log audit and record consent
-  await logAudit({
-    workspaceId: user.workspace.id,
-    userId,
-    action: "recording.created",
-    entityType: "Recording",
-    entityId: recording.id,
-  })
-
-  await recordConsent({
-    workspaceId: user.workspace.id,
-    recordingId: recording.id,
-    consentType: "audio_recording",
-    givenBy: userId,
-  })
-
-  return {
-    transcript,
-    extractedData,
-    recordingId: recording.id,
+      extractedData,
+      recordingId: recording.id,
+    }
+  } catch (err) {
+    // Cleanup: remove orphaned audio from storage on pipeline failure
+    try { await deleteAudio(audioPath) } catch {}
+    throw err
   }
 }
 

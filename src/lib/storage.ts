@@ -23,6 +23,10 @@ export async function getSignedAudioUrl(path: string): Promise<string> {
   return data.signedUrl
 }
 
+export async function deleteAudio(path: string): Promise<void> {
+  await supabase.storage.from('audio').remove([path])
+}
+
 export async function getAudioBuffer(path: string): Promise<Buffer> {
   const { data, error } = await supabase.storage
     .from('audio')
