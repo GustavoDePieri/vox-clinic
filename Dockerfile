@@ -18,16 +18,28 @@ RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" \
     DIRECT_URL="postgresql://build:build@localhost:5432/build" \
     npx prisma generate
 
-# Build Next.js (dummy env vars for build - real values injected at runtime via Fly secrets)
+# Build Next.js
+# NEXT_PUBLIC_* vars are inlined at build time — pass real values via --build-arg
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
+ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
+ARG NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
+ARG NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/onboarding"
+ARG NEXT_PUBLIC_SUPABASE_URL
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 ENV DIRECT_URL="postgresql://build:build@localhost:5432/build"
-ENV NEXT_PUBLIC_SUPABASE_URL="https://build.supabase.co"
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_build"
 ENV SUPABASE_SERVICE_ROLE_KEY="build-placeholder"
-ENV CLERK_SECRET_KEY="sk_test_build"
+ENV CLERK_SECRET_KEY="sk_test_build-placeholder"
 ENV OPENAI_API_KEY="sk-build-placeholder"
 ENV ANTHROPIC_API_KEY="sk-ant-build-placeholder"
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL}
+ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
+ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
 RUN npm run build
 
 # --- Stage 3: Production ---
