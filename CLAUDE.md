@@ -38,10 +38,11 @@ npx shadcn@latest add [component] -y  # Add shadcn/ui component
 This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.css`. There is NO `tailwind.config.ts`. Custom colors are CSS variables:
 - `--color-vox-primary: #14B8A6` (teal/verde-agua) → `bg-vox-primary`, `text-vox-primary`
 - `--color-vox-success: #10B981` (emerald), `--color-vox-warning: #F59E0B`, `--color-vox-error: #EF4444`
-- Background has subtle cool tint (`oklch(0.988 0.004 270)`)
+- Background has subtle teal tint (`oklch(0.988 0.004 175)`)
 - Cards: `rounded-2xl`, `border-border/40`, subtle shadow
-- Inputs: `h-10`, `rounded-xl`, indigo focus ring
+- Inputs: `h-10`, `rounded-xl`, teal focus ring
 - Buttons: `rounded-xl`, `h-9` default, `scale-[0.98]` active press
+- Full-width system layout (no max-width constraint), content uses `px-4 md:px-6 lg:px-8`
 
 ### Route Groups
 - `src/app/(auth)/` — Sign-in/sign-up (Clerk components)
@@ -60,8 +61,16 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
 - `src/app/api/webhooks/clerk/` — User sync webhook
 - `src/app/api/reminders/` — Cron-triggered appointment reminders
 
+### Command Palette (Cmd+K)
+- `src/components/command-palette.tsx` — Global search accessible from any page
+- Triggered via `Cmd+K` / `Ctrl+K` keyboard shortcut, or search button in header
+- Three result groups: **Pacientes** (live search via `searchPatients()`), **Paginas**, **Acoes**
+- Full keyboard navigation: Arrow keys, Enter to navigate, Escape to close
+- 200ms debounce on patient search, max 5 results
+- Uses shadcn Dialog component
+
 ### Navigation
-- `src/components/nav-sidebar.tsx` — Desktop sidebar (hidden on mobile, md+)
+- `src/components/nav-sidebar.tsx` — Desktop sidebar (hidden on mobile, md+), grouped sections (Menu/Acoes)
 - `src/components/nav-bottom.tsx` — Mobile bottom nav (fixed, md:hidden, grid-cols-5)
 - Links: Dashboard, Pacientes, Agenda, Nova Consulta, Config
 - Active state via `usePathname()` with `bg-vox-primary/10 text-vox-primary shadow-sm`
@@ -155,6 +164,7 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 3. **Double-confirm guard**: `confirmConsultation` checks `recording.appointmentId == null` inside transaction to prevent duplicate appointments from double-clicks.
 4. **Duplicate patient detection**: By CPF (normalized, both formatted/unformatted) and by name (case-insensitive contains). `@@unique([workspaceId, document])` enforces at DB level.
 5. **Soft delete for patients**: `isActive` flag. `getPatients` filters `isActive: true`. Records retained for CFM 20-year requirement.
+6. **Appointment conflict detection**: `checkAppointmentConflicts()` checks ±30min window. `scheduleAppointment()` rejects with `CONFLICT:` prefix error. UI shows confirm dialog, `forceSchedule: true` bypasses.
 
 ### Security & Privacy (LGPD)
 6. **LGPD consent**: Required before audio recording (enforced in RecordButton). ConsentRecord stored in database.
