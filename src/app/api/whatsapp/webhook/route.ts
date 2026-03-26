@@ -1,10 +1,32 @@
 import { NextRequest, NextResponse } from "next/server"
+import { createHmac, timingSafeEqual } from "crypto"
 import { db } from "@/lib/db"
 import type {
   WebhookPayload,
   IncomingMessage,
   MessageStatus,
 } from "@/lib/whatsapp/types"
+
+// ============================================
+// Validacao de assinatura HMAC-SHA256 (Meta)
+// ============================================
+
+export function validateWebhookSignature(
+  rawBody: string,
+  signature: string,
+  secret: string
+): boolean {
+  const expectedSignature =
+    "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex")
+  try {
+    return timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    )
+  } catch {
+    return false
+  }
+}
 
 // ============================================
 // GET /api/whatsapp/webhook
@@ -33,7 +55,49 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload: WebhookPayload = await request.json()
+    const rawBody = await request.text()
+    const signature = request.headers.get("x-hub-signature-256")
+
+    let payload: WebhookPayload
+    try {
+      payload = JSON.parse(rawBody)
+    } catch {
+      console.error("[WhatsApp Webhook] Erro ao parsear payload")
+      return NextResponse.json({ status: "ok" }, { status: 200 })
+    }
+
+    // Valida assinatura HMAC-SHA256 da Meta
+    const phoneNumberIds = extractPhoneNumberIds(payload)
+    if (phoneNumberIds.length > 0) {
+      const configs = await db.whatsAppConfig.findMany({
+        where: { phoneNumberId: { in: phoneNumberIds }, isActive: true },
+        select: { webhookSecret: true },
+      })
+
+      // Se alguma config tem webhookSecret, exigir assinatura valida
+      const configsWithSecret = configs.filter((c) => c.webhookSecret)
+      if (configsWithSecret.length > 0) {
+        if (!signature) {
+          console.warn("[WhatsApp Webhook] Assinatura ausente — rejeitando")
+          return NextResponse.json(
+            { error: "Assinatura ausente" },
+            { status: 401 }
+          )
+        }
+
+        const isValid = configsWithSecret.some((c) =>
+          validateWebhookSignature(rawBody, signature, c.webhookSecret!)
+        )
+        if (!isValid) {
+          console.warn("[WhatsApp Webhook] Assinatura invalida — rejeitando")
+          return NextResponse.json(
+            { error: "Assinatura invalida" },
+            { status: 401 }
+          )
+        }
+      }
+      // Se nenhuma config tem webhookSecret, processar normalmente (backwards compat)
+    }
 
     // Meta espera 200 rapido — processe async
     processWebhookAsync(payload).catch((err) =>
@@ -45,6 +109,23 @@ export async function POST(request: NextRequest) {
     console.error("[WhatsApp Webhook] Erro ao parsear payload:", error)
     return NextResponse.json({ status: "ok" }, { status: 200 }) // sempre 200 pra Meta
   }
+}
+
+// ============================================
+// Helpers — Extracao de phoneNumberId
+// ============================================
+
+function extractPhoneNumberIds(payload: WebhookPayload): string[] {
+  const ids: string[] = []
+  if (payload.object !== "whatsapp_business_account") return ids
+  for (const entry of payload.entry ?? []) {
+    for (const change of entry.changes ?? []) {
+      if (change.field === "messages" && change.value?.metadata?.phone_number_id) {
+        ids.push(change.value.metadata.phone_number_id)
+      }
+    }
+  }
+  return [...new Set(ids)]
 }
 
 // ============================================

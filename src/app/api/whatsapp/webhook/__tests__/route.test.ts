@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { NextRequest } from "next/server"
+import { createHmac } from "crypto"
 
 const { mockDb } = vi.hoisted(() => {
   const mockDb = {
-    whatsAppConfig: { findFirst: vi.fn() },
+    whatsAppConfig: { findFirst: vi.fn(), findMany: vi.fn() },
     whatsAppConversation: { upsert: vi.fn() },
     whatsAppMessage: { upsert: vi.fn(), updateMany: vi.fn() },
   }
@@ -13,7 +14,11 @@ const { mockDb } = vi.hoisted(() => {
 
 vi.mock("@/lib/db", () => ({ db: mockDb }))
 
-import { GET, POST } from "@/app/api/whatsapp/webhook/route"
+import { GET, POST, validateWebhookSignature } from "@/app/api/whatsapp/webhook/route"
+
+function signPayload(body: string, secret: string): string {
+  return "sha256=" + createHmac("sha256", secret).update(body).digest("hex")
+}
 
 const VERIFY_TOKEN = "my-verify-token"
 
@@ -90,6 +95,8 @@ describe("POST /api/whatsapp/webhook", () => {
       ],
     }
 
+    // No webhookSecret configured — backwards compat
+    mockDb.whatsAppConfig.findMany.mockResolvedValueOnce([])
     mockDb.whatsAppConfig.findFirst.mockResolvedValueOnce({
       id: "config_1",
       workspaceId: "ws_1",
@@ -174,6 +181,7 @@ describe("POST /api/whatsapp/webhook", () => {
       ],
     }
 
+    mockDb.whatsAppConfig.findMany.mockResolvedValueOnce([])
     mockDb.whatsAppConfig.findFirst.mockResolvedValueOnce({
       id: "config_1",
       workspaceId: "ws_1",
@@ -261,6 +269,7 @@ describe("POST /api/whatsapp/webhook", () => {
       ],
     }
 
+    mockDb.whatsAppConfig.findMany.mockResolvedValueOnce([])
     mockDb.whatsAppConfig.findFirst.mockResolvedValueOnce(null)
 
     const request = new NextRequest("https://example.com/api/whatsapp/webhook", {
@@ -281,5 +290,139 @@ describe("POST /api/whatsapp/webhook", () => {
     // Should not attempt to create conversation or message
     expect(mockDb.whatsAppConversation.upsert).not.toHaveBeenCalled()
     expect(mockDb.whatsAppMessage.upsert).not.toHaveBeenCalled()
+  })
+
+  describe("signature validation", () => {
+    const secret = "test_webhook_secret_123"
+    const payload = {
+      object: "whatsapp_business_account",
+      entry: [
+        {
+          changes: [
+            {
+              field: "messages",
+              value: {
+                metadata: { phone_number_id: "phone_123" },
+                contacts: [{ wa_id: "5511999998888", profile: { name: "Maria" } }],
+                messages: [
+                  {
+                    id: "wamid_sig",
+                    from: "5511999998888",
+                    timestamp: "1700000000",
+                    type: "text",
+                    text: { body: "Oi" },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    }
+
+    it("should accept POST with valid signature when webhookSecret is configured", async () => {
+      const body = JSON.stringify(payload)
+      const sig = signPayload(body, secret)
+
+      mockDb.whatsAppConfig.findMany.mockResolvedValueOnce([{ webhookSecret: secret }])
+      mockDb.whatsAppConfig.findFirst.mockResolvedValueOnce({
+        id: "config_1",
+        workspaceId: "ws_1",
+        phoneNumberId: "phone_123",
+        isActive: true,
+      })
+      mockDb.whatsAppConversation.upsert.mockResolvedValueOnce({ id: "conv_1" })
+      mockDb.whatsAppMessage.upsert.mockResolvedValueOnce({})
+
+      const request = new NextRequest("https://example.com/api/whatsapp/webhook", {
+        method: "POST",
+        body,
+        headers: { "x-hub-signature-256": sig },
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(200)
+
+      await vi.waitFor(() => {
+        expect(mockDb.whatsAppConversation.upsert).toHaveBeenCalled()
+      })
+    })
+
+    it("should return 401 with invalid signature when webhookSecret is configured", async () => {
+      const body = JSON.stringify(payload)
+
+      mockDb.whatsAppConfig.findMany.mockResolvedValueOnce([{ webhookSecret: secret }])
+
+      const request = new NextRequest("https://example.com/api/whatsapp/webhook", {
+        method: "POST",
+        body,
+        headers: { "x-hub-signature-256": "sha256=invalidsignature" },
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(401)
+    })
+
+    it("should return 401 without signature header when webhookSecret is configured", async () => {
+      const body = JSON.stringify(payload)
+
+      mockDb.whatsAppConfig.findMany.mockResolvedValueOnce([{ webhookSecret: secret }])
+
+      const request = new NextRequest("https://example.com/api/whatsapp/webhook", {
+        method: "POST",
+        body,
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(401)
+    })
+
+    it("should process without signature when no webhookSecret is configured (backwards compat)", async () => {
+      const body = JSON.stringify(payload)
+
+      // No webhookSecret on any config
+      mockDb.whatsAppConfig.findMany.mockResolvedValueOnce([{ webhookSecret: null }])
+      mockDb.whatsAppConfig.findFirst.mockResolvedValueOnce({
+        id: "config_1",
+        workspaceId: "ws_1",
+        phoneNumberId: "phone_123",
+        isActive: true,
+      })
+      mockDb.whatsAppConversation.upsert.mockResolvedValueOnce({ id: "conv_1" })
+      mockDb.whatsAppMessage.upsert.mockResolvedValueOnce({})
+
+      const request = new NextRequest("https://example.com/api/whatsapp/webhook", {
+        method: "POST",
+        body,
+        // No signature header
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(200)
+
+      await vi.waitFor(() => {
+        expect(mockDb.whatsAppConversation.upsert).toHaveBeenCalled()
+      })
+    })
+  })
+
+  describe("validateWebhookSignature", () => {
+    it("should return true for matching signature", () => {
+      const body = '{"test":"data"}'
+      const secret = "mysecret"
+      const sig = signPayload(body, secret)
+      expect(validateWebhookSignature(body, sig, secret)).toBe(true)
+    })
+
+    it("should return false for non-matching signature", () => {
+      const body = '{"test":"data"}'
+      const secret = "mysecret"
+      expect(validateWebhookSignature(body, "sha256=wrong", secret)).toBe(false)
+    })
+
+    it("should return false for malformed signature", () => {
+      const body = '{"test":"data"}'
+      expect(validateWebhookSignature(body, "", "secret")).toBe(false)
+    })
   })
 })

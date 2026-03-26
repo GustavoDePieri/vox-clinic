@@ -10,7 +10,12 @@ import { BorderBeam } from "@/components/ui/border-beam"
 import { DotPattern } from "@/components/ui/dot-pattern"
 import { ChevronRight } from "lucide-react"
 
-export function HeroSection() {
+interface HeroSectionProps {
+  isAuthenticated?: boolean
+  dashboardUrl?: string
+}
+
+export function HeroSection({ isAuthenticated = false, dashboardUrl = "/dashboard" }: HeroSectionProps) {
   return (
     <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-20 md:py-28">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -60,10 +65,10 @@ export function HeroSection() {
           <BlurFade delay={0.4} inView>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/sign-up"
+                href={isAuthenticated ? dashboardUrl : "/sign-up"}
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-vox-primary px-8 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
               >
-                Comecar Gratis
+                {isAuthenticated ? "Ir para o Dashboard" : "Comecar Gratis"}
               </Link>
               <a
                 href="#how-it-works"

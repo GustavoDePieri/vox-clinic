@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { uploadAudio, deleteAudio } from "@/lib/storage"
+import { uploadAudio } from "@/lib/storage"
 import { transcribeAudio } from "@/lib/openai"
 import { preprocessAudio } from "@/lib/audio-preprocessing"
 import { generateConsultationSummary } from "@/lib/claude"
@@ -93,8 +93,23 @@ export async function processConsultation(formData: FormData, patientId: string)
       audioPath,
     }
   } catch (err) {
-    // Cleanup: remove orphaned audio from storage on pipeline failure
-    try { await deleteAudio(audioPath) } catch {}
+    // Save recording with error status so audio is preserved for retry
+    try {
+      await db.recording.create({
+        data: {
+          audioUrl: audioPath,
+          transcript: undefined,
+          aiExtractedData: undefined,
+          status: "error",
+          errorMessage: err instanceof Error ? err.message : "Erro desconhecido no processamento",
+          workspaceId: user.workspace!.id,
+          patientId,
+          fileSize: audioFile.size,
+        },
+      })
+    } catch {
+      // If even saving the error recording fails, don't lose the original error
+    }
     throw err
   }
 }
@@ -149,8 +164,9 @@ export async function confirmConsultation(data: {
       id: string
       appointmentId: string | null
     }>>(
-      `SELECT id, "appointmentId" FROM "Recording" WHERE id = $1 FOR UPDATE`,
-      data.recordingId
+      `SELECT id, "appointmentId" FROM "Recording" WHERE id = $1 AND "workspaceId" = $2 FOR UPDATE`,
+      data.recordingId,
+      workspaceId
     )
 
     const recording = rows[0]

@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { uploadAudio, deleteAudio } from "@/lib/storage"
+import { uploadAudio } from "@/lib/storage"
 import { transcribeAudio } from "@/lib/openai"
 import { preprocessAudio } from "@/lib/audio-preprocessing"
 import { extractEntities } from "@/lib/claude"
@@ -90,8 +90,22 @@ export async function processVoiceRegistration(formData: FormData) {
       recordingId: recording.id,
     }
   } catch (err) {
-    // Cleanup: remove orphaned audio from storage on pipeline failure
-    try { await deleteAudio(audioPath) } catch {}
+    // Save recording with error status so audio is preserved for retry
+    try {
+      await db.recording.create({
+        data: {
+          audioUrl: audioPath,
+          transcript: undefined,
+          aiExtractedData: undefined,
+          status: "error",
+          errorMessage: err instanceof Error ? err.message : "Erro desconhecido no processamento",
+          workspaceId: user.workspace!.id,
+          fileSize: audioFile.size,
+        },
+      })
+    } catch {
+      // If even saving the error recording fails, don't lose the original error
+    }
     throw err
   }
 }
@@ -140,6 +154,13 @@ export async function confirmPatientRegistration(data: ConfirmPatientData) {
 
   // Atomic: Create Patient + Appointment + link Recording
   const result = await db.$transaction(async (tx) => {
+    // Validate recording belongs to this workspace (multi-tenant isolation)
+    const recording = await tx.recording.findFirst({
+      where: { id: data.recordingId, workspaceId },
+      select: { id: true },
+    })
+    if (!recording) throw new Error("Recording not found")
+
     const patient = await tx.patient.create({
       data: {
         workspaceId,

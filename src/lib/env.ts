@@ -31,6 +31,11 @@ const envSchema = z.object({
     .string()
     .optional()
     .default(''),
+  ENCRYPTION_KEY: z
+    .string()
+    .regex(/^([0-9a-f]{64})?$/, 'ENCRYPTION_KEY must be 64 hex chars (32 bytes) or empty')
+    .optional()
+    .default(''),
 })
 
 function validateEnv() {

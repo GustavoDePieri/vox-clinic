@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import { decrypt } from "@/lib/crypto"
 import type {
   OutgoingMessage,
   MetaApiResponse,
@@ -240,5 +241,5 @@ export async function createWhatsAppClient(
     throw new Error("WhatsApp nao configurado para este workspace")
   }
 
-  return new WhatsAppClient(config.accessToken, config.phoneNumberId)
+  return new WhatsAppClient(decrypt(config.accessToken), config.phoneNumberId)
 }

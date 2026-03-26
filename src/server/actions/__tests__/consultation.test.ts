@@ -96,24 +96,54 @@ describe("consultation actions", () => {
       await expect(processConsultation(formData, "p1")).rejects.toThrow("No audio file provided")
     })
 
-    it("cleans up audio on transcription failure", async () => {
+    it("saves error recording on transcription failure (preserves audio)", async () => {
       mockTranscribeAudio.mockRejectedValueOnce(new Error("Whisper timeout"))
+      mockDb.recording.create.mockResolvedValue({ id: "rec_err" })
 
       const formData = new FormData()
       formData.set("audio", createAudioFile(5000))
 
       await expect(processConsultation(formData, "p1")).rejects.toThrow("Whisper timeout")
-      expect(mockDeleteAudio).toHaveBeenCalledWith("audio/test-file.webm")
+
+      // Audio should NOT be deleted
+      expect(mockDeleteAudio).not.toHaveBeenCalled()
+
+      // Error recording should be saved with correct status and message
+      expect(mockDb.recording.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          audioUrl: "audio/test-file.webm",
+          status: "error",
+          errorMessage: "Whisper timeout",
+          workspaceId: WORKSPACE_ID,
+          patientId: "p1",
+          transcript: undefined,
+          aiExtractedData: undefined,
+        }),
+      })
     })
 
-    it("cleans up audio on summary generation failure", async () => {
+    it("saves error recording on summary generation failure (preserves audio)", async () => {
       mockGenerateConsultationSummary.mockRejectedValueOnce(new Error("Claude error"))
+      mockDb.recording.create.mockResolvedValue({ id: "rec_err" })
 
       const formData = new FormData()
       formData.set("audio", createAudioFile(5000))
 
       await expect(processConsultation(formData, "p1")).rejects.toThrow("Claude error")
-      expect(mockDeleteAudio).toHaveBeenCalledWith("audio/test-file.webm")
+
+      // Audio should NOT be deleted
+      expect(mockDeleteAudio).not.toHaveBeenCalled()
+
+      // Error recording should be saved
+      expect(mockDb.recording.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          audioUrl: "audio/test-file.webm",
+          status: "error",
+          errorMessage: "Claude error",
+          workspaceId: WORKSPACE_ID,
+          patientId: "p1",
+        }),
+      })
     })
 
     it("throws Unauthorized when not authenticated", async () => {
@@ -271,6 +301,16 @@ describe("consultation actions", () => {
       expect(mockDb.appointment.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ price: 250 }),
       })
+    })
+
+    it("rejects recording from different workspace (multi-tenant isolation)", async () => {
+      // FOR UPDATE query returns empty (recording not in this workspace)
+      mockDb.$queryRawUnsafe.mockResolvedValue([])
+
+      await expect(confirmConsultation(confirmData)).rejects.toThrow("Recording not found")
+
+      // Should NOT create appointment
+      expect(mockDb.appointment.create).not.toHaveBeenCalled()
     })
 
     it("Unauthorized when not authenticated", async () => {

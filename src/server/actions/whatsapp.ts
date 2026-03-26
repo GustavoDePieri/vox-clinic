@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { encrypt, decrypt } from "@/lib/crypto"
 import { createWhatsAppClient } from "@/lib/whatsapp/client"
 
 // ============================================
@@ -25,9 +26,15 @@ async function getWorkspaceId(): Promise<string> {
 
 export async function getWhatsAppConfig() {
   const workspaceId = await getWorkspaceId()
-  return db.whatsAppConfig.findFirst({
+  const config = await db.whatsAppConfig.findFirst({
     where: { workspaceId, isActive: true },
   })
+  if (!config) return null
+
+  return {
+    ...config,
+    accessToken: decrypt(config.accessToken),
+  }
 }
 
 export async function saveWhatsAppConfig(data: {
@@ -40,6 +47,11 @@ export async function saveWhatsAppConfig(data: {
   try {
     const workspaceId = await getWorkspaceId()
 
+    const encryptedData = {
+      ...data,
+      accessToken: encrypt(data.accessToken),
+    }
+
     await db.whatsAppConfig.upsert({
       where: {
         workspaceId_phoneNumberId: {
@@ -49,12 +61,12 @@ export async function saveWhatsAppConfig(data: {
       },
       create: {
         workspaceId,
-        ...data,
+        ...encryptedData,
         webhookSecret: crypto.randomUUID(),
         isActive: true,
       },
       update: {
-        ...data,
+        ...encryptedData,
         isActive: true,
       },
     })

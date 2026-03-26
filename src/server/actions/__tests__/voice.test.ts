@@ -101,27 +101,53 @@ describe("voice actions", () => {
       await expect(processVoiceRegistration(formData)).rejects.toThrow("No audio file provided")
     })
 
-    it("handles transcription failure and cleans up audio", async () => {
+    it("saves error recording on transcription failure (preserves audio)", async () => {
       mockTranscribeAudio.mockRejectedValueOnce(new Error("Whisper API timeout"))
+      mockDb.recording.create.mockResolvedValue({ id: "rec_err" })
 
       const formData = new FormData()
       formData.set("audio", createAudioFile(5000))
 
       await expect(processVoiceRegistration(formData)).rejects.toThrow("Whisper API timeout")
 
-      // Audio should have been uploaded then cleaned up
+      // Audio should have been uploaded but NOT deleted
       expect(mockUploadAudio).toHaveBeenCalledTimes(1)
-      expect(mockDeleteAudio).toHaveBeenCalledWith("audio/test-file.webm")
+      expect(mockDeleteAudio).not.toHaveBeenCalled()
+
+      // Error recording should be saved with correct status and message
+      expect(mockDb.recording.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          audioUrl: "audio/test-file.webm",
+          status: "error",
+          errorMessage: "Whisper API timeout",
+          workspaceId: WORKSPACE_ID,
+          transcript: undefined,
+          aiExtractedData: undefined,
+        }),
+      })
     })
 
-    it("handles extraction failure and cleans up audio", async () => {
+    it("saves error recording on extraction failure (preserves audio)", async () => {
       mockExtractEntities.mockRejectedValueOnce(new Error("Claude API error"))
+      mockDb.recording.create.mockResolvedValue({ id: "rec_err" })
 
       const formData = new FormData()
       formData.set("audio", createAudioFile(5000))
 
       await expect(processVoiceRegistration(formData)).rejects.toThrow("Claude API error")
-      expect(mockDeleteAudio).toHaveBeenCalledWith("audio/test-file.webm")
+
+      // Audio should NOT be deleted
+      expect(mockDeleteAudio).not.toHaveBeenCalled()
+
+      // Error recording should be saved
+      expect(mockDb.recording.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          audioUrl: "audio/test-file.webm",
+          status: "error",
+          errorMessage: "Claude API error",
+          workspaceId: WORKSPACE_ID,
+        }),
+      })
     })
 
     it("throws Unauthorized when not authenticated", async () => {
@@ -153,6 +179,7 @@ describe("voice actions", () => {
     it("creates patient + appointment + updates recording in transaction", async () => {
       // No duplicate found
       mockDb.patient.findFirst.mockResolvedValue(null)
+      mockDb.recording.findFirst.mockResolvedValue({ id: "rec_1" })
       const createdPatient = { id: "p_new", name: "Maria Silva" }
       const createdAppointment = { id: "a_new" }
       mockDb.patient.create.mockResolvedValue(createdPatient)
@@ -195,6 +222,7 @@ describe("voice actions", () => {
       mockDb.patient.findFirst
         .mockResolvedValueOnce({ id: "p_existing", name: "Maria S." }) // by document
       // Second findFirst (by name) should not be called since document matched
+      mockDb.recording.findFirst.mockResolvedValue({ id: "rec_1" })
 
       const createdPatient = { id: "p_new", name: "Maria Silva" }
       const createdAppointment = { id: "a_new" }
@@ -216,6 +244,7 @@ describe("voice actions", () => {
       // When no document is provided, only the name-based findFirst is called
       mockDb.patient.findFirst
         .mockResolvedValueOnce({ id: "p_existing", name: "Maria Silva" }) // name match (only call)
+      mockDb.recording.findFirst.mockResolvedValue({ id: "rec_1" })
 
       const createdPatient = { id: "p_new", name: "Maria Silva" }
       const createdAppointment = { id: "a_new" }
@@ -231,8 +260,23 @@ describe("voice actions", () => {
       expect(result.duplicatePatient).toEqual({ id: "p_existing", name: "Maria Silva" })
     })
 
+    it("rejects recording from different workspace (multi-tenant isolation)", async () => {
+      mockDb.patient.findFirst.mockResolvedValue(null)
+      // Recording not found in this workspace
+      mockDb.recording.findFirst.mockResolvedValue(null)
+
+      await expect(
+        confirmPatientRegistration({ recordingId: "rec_other_ws", name: "Test" })
+      ).rejects.toThrow("Recording not found")
+
+      // Should NOT create patient or appointment
+      expect(mockDb.patient.create).not.toHaveBeenCalled()
+      expect(mockDb.appointment.create).not.toHaveBeenCalled()
+    })
+
     it("logs audit for both patient and appointment creation", async () => {
       mockDb.patient.findFirst.mockResolvedValue(null)
+      mockDb.recording.findFirst.mockResolvedValue({ id: "rec_1" })
       mockDb.patient.create.mockResolvedValue({ id: "p_new", name: "Test" })
       mockDb.appointment.create.mockResolvedValue({ id: "a_new" })
       mockDb.recording.update.mockResolvedValue({ id: "rec_1" })

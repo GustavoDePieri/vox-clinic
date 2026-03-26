@@ -13,12 +13,17 @@ import { PricingSection } from "./pricing-section"
 import { FAQSection } from "./faq-section"
 import { FinalCTASection } from "./final-cta-section"
 
-export function LandingPage() {
+interface LandingPageProps {
+  isAuthenticated?: boolean
+  dashboardUrl?: string
+}
+
+export function LandingPage({ isAuthenticated = false, dashboardUrl = "/dashboard" }: LandingPageProps) {
   return (
     <div className="min-h-screen scroll-smooth">
-      <NavBar />
+      <NavBar isAuthenticated={isAuthenticated} dashboardUrl={dashboardUrl} />
       <main>
-        <HeroSection />
+        <HeroSection isAuthenticated={isAuthenticated} dashboardUrl={dashboardUrl} />
         <SocialProofBar />
         <HowItWorksSection />
         <FeaturesBentoSection />

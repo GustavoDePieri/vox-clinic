@@ -11,7 +11,12 @@ const navLinks = [
   { href: "#faq", label: "FAQ" },
 ]
 
-export function NavBar() {
+interface NavBarProps {
+  isAuthenticated?: boolean
+  dashboardUrl?: string
+}
+
+export function NavBar({ isAuthenticated = false, dashboardUrl = "/dashboard" }: NavBarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
@@ -46,18 +51,29 @@ export function NavBar() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/sign-in"
-            className="inline-flex h-9 items-center justify-center rounded-xl border border-border px-5 text-sm font-medium hover:bg-muted transition-colors active:scale-[0.98]"
-          >
-            Entrar
-          </Link>
-          <Link
-            href="/sign-up"
-            className="inline-flex h-9 items-center justify-center rounded-xl bg-vox-primary px-5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
-          >
-            Comecar Gratis
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              href={dashboardUrl}
+              className="inline-flex h-9 items-center justify-center rounded-xl bg-vox-primary px-5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
+            >
+              Ir para o Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="inline-flex h-9 items-center justify-center rounded-xl border border-border px-5 text-sm font-medium hover:bg-muted transition-colors active:scale-[0.98]"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/sign-up"
+                className="inline-flex h-9 items-center justify-center rounded-xl bg-vox-primary px-5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
+              >
+                Comecar Gratis
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -85,18 +101,29 @@ export function NavBar() {
               </a>
             ))}
             <div className="pt-3 border-t border-border/40 flex flex-col gap-2">
-              <Link
-                href="/sign-in"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-5 text-sm font-medium hover:bg-muted transition-colors"
-              >
-                Entrar
-              </Link>
-              <Link
-                href="/sign-up"
-                className="inline-flex h-10 items-center justify-center rounded-xl bg-vox-primary px-5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors"
-              >
-                Comecar Gratis
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  href={dashboardUrl}
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-vox-primary px-5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors"
+                >
+                  Ir para o Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/sign-in"
+                    className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-5 text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    Entrar
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    className="inline-flex h-10 items-center justify-center rounded-xl bg-vox-primary px-5 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors"
+                  >
+                    Comecar Gratis
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
