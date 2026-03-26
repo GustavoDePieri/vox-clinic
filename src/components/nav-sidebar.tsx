@@ -8,6 +8,7 @@ import {
   Mic,
   CalendarDays,
   DollarSign,
+  BarChart3,
   Settings,
   Sparkles,
 } from "lucide-react"
@@ -17,6 +18,7 @@ const mainNav = [
   { href: "/patients", label: "Pacientes", icon: Users },
   { href: "/calendar", label: "Agenda", icon: CalendarDays },
   { href: "/financial", label: "Financeiro", icon: DollarSign },
+  { href: "/reports", label: "Relatorios", icon: BarChart3 },
 ]
 
 const actionNav = [

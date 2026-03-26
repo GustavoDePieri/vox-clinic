@@ -17,6 +17,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "VoxClinic",
   description: "CRM inteligente com voz para profissionais de saude",
+  manifest: "/manifest.json",
+  themeColor: "#14B8A6",
 };
 
 export default function RootLayout({
@@ -30,7 +32,14 @@ export default function RootLayout({
         lang="pt-BR"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col">{children}</body>
+        <body className="min-h-full flex flex-col">
+          {children}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js")}`,
+            }}
+          />
+        </body>
       </html>
     </ClerkProvider>
   );

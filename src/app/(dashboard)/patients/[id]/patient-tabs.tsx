@@ -534,6 +534,23 @@ function HistoricoTab({
                           </div>
                         </div>
                       )}
+                      {currentStatus === "completed" && (
+                        <div className="flex gap-2 pt-2 border-t">
+                          <Link
+                            href={`/appointments/${apt.id}/receipt`}
+                            target="_blank"
+                          >
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-vox-primary border-vox-primary/30 hover:bg-vox-primary/5"
+                            >
+                              <FileText className="size-3.5" />
+                              Recibo
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
                       {isScheduled && (
                         <div className="flex gap-2 pt-2 border-t">
                           <Button

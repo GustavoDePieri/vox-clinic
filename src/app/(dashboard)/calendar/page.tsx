@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useTransition } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { DndContext, DragOverlay, useDraggable, useDroppable, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core"
 import {
   ChevronLeft,
   ChevronRight,
@@ -29,6 +31,7 @@ import {
   scheduleAppointment,
   updateAppointmentStatus,
   deleteAppointment,
+  rescheduleAppointment,
 } from "@/server/actions/appointment"
 import { searchPatients } from "@/server/actions/patient"
 
@@ -132,6 +135,31 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
+// ────────────────────── Drag & Drop Components ──────────────────────
+
+function DraggableAppointment({ appointment, children }: { appointment: AppointmentItem; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: appointment.id,
+    data: appointment,
+  })
+
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes} className={isDragging ? "opacity-50" : ""}>
+      {children}
+    </div>
+  )
+}
+
+function DroppableCell({ id, children, className }: { id: string; children: React.ReactNode; className?: string }) {
+  const { isOver, setNodeRef } = useDroppable({ id })
+
+  return (
+    <div ref={setNodeRef} className={`${className ?? ""} ${isOver ? "bg-vox-primary/10 ring-1 ring-vox-primary/30" : ""}`}>
+      {children}
+    </div>
+  )
+}
+
 // ────────────────────── Main Component ──────────────────────
 
 export default function CalendarPage() {
@@ -145,6 +173,8 @@ export default function CalendarPage() {
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [loading, setLoading] = useState(true)
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const router = useRouter()
 
   // Schedule form
   const [patientQuery, setPatientQuery] = useState("")
@@ -298,6 +328,37 @@ export default function CalendarPage() {
     catch (err: any) { alert(err.message || "Erro ao excluir consulta") }
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragId(event.active.id as string)
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null)
+    const { active, over } = event
+    if (!over) return
+    const droppableId = over.id as string
+    // droppableId format: "ISO_DATE-HOUR"
+    const lastDash = droppableId.lastIndexOf("-")
+    const dateIso = droppableId.substring(0, lastDash)
+    const hour = parseInt(droppableId.substring(lastDash + 1), 10)
+
+    const appointment = appointments.find((a) => a.id === active.id)
+    if (!appointment) return
+
+    // Check if it's the same slot
+    const oldDate = new Date(appointment.date)
+    const newDate = new Date(dateIso)
+    newDate.setHours(hour, oldDate.getMinutes(), 0, 0)
+    if (oldDate.getTime() === newDate.getTime()) return
+
+    try {
+      await rescheduleAppointment(appointment.id, newDate.toISOString())
+      loadAppointments()
+    } catch (err: any) {
+      alert(err.message || "Erro ao reagendar consulta")
+    }
+  }
+
   const cells = getMonthGrid(year, month)
   const selectedDayAppointments = selectedDay ? getAppointmentsForDay(selectedDay) : []
 
@@ -397,67 +458,88 @@ export default function CalendarPage() {
 
       {/* ─── Week View ─── */}
       {!loading && view === "week" && (
-        <Card className="rounded-2xl border border-border/40 overflow-hidden">
-          {/* Day headers */}
-          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/40">
-            <div className="py-2" />
-            {weekDays.map((d) => {
-              const today = isToday(d)
-              return (
-                <button
-                  key={d.toISOString()}
-                  onClick={() => { setCurrentDate(d); setView("day") }}
-                  className={`flex flex-col items-center gap-0.5 py-2 transition-colors hover:bg-muted/40 ${today ? "bg-vox-primary/5" : ""}`}
-                >
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase">{DAY_NAMES[d.getDay()]}</span>
-                  <span className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold ${
-                    today ? "bg-vox-primary text-white" : "text-foreground"
-                  }`}>
-                    {d.getDate()}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <Card className="rounded-2xl border border-border/40 overflow-hidden">
+            {/* Day headers */}
+            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/40">
+              <div className="py-2" />
+              {weekDays.map((d) => {
+                const today = isToday(d)
+                return (
+                  <button
+                    key={d.toISOString()}
+                    onClick={() => { setCurrentDate(d); setView("day") }}
+                    className={`flex flex-col items-center gap-0.5 py-2 transition-colors hover:bg-muted/40 ${today ? "bg-vox-primary/5" : ""}`}
+                  >
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase">{DAY_NAMES[d.getDay()]}</span>
+                    <span className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold ${
+                      today ? "bg-vox-primary text-white" : "text-foreground"
+                    }`}>
+                      {d.getDate()}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
 
-          {/* Time grid */}
-          <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[calc(100vh-280px)] overflow-y-auto">
-            {HOURS.map((hour) => (
-              <div key={hour} className="contents">
-                {/* Hour label */}
-                <div className="flex items-start justify-end pr-2 pt-1 text-[10px] text-muted-foreground h-16 border-b border-border/10">
-                  {String(hour).padStart(2, "0")}:00
+            {/* Time grid */}
+            <div className="grid grid-cols-[60px_repeat(7,1fr)] max-h-[calc(100vh-280px)] overflow-y-auto">
+              {HOURS.map((hour) => (
+                <div key={hour} className="contents">
+                  {/* Hour label */}
+                  <div className="flex items-start justify-end pr-2 pt-1 text-[10px] text-muted-foreground h-16 border-b border-border/10">
+                    {String(hour).padStart(2, "0")}:00
+                  </div>
+                  {/* Day columns */}
+                  {weekDays.map((d) => {
+                    const dayAppts = getAppointmentsForDate(d).filter((a) => {
+                      const h = new Date(a.date).getHours()
+                      return h === hour
+                    })
+                    const cellId = `${d.toISOString()}-${hour}`
+                    return (
+                      <DroppableCell
+                        key={cellId}
+                        id={cellId}
+                        className={`h-16 border-b border-l border-border/10 px-0.5 py-0.5 transition-colors ${isToday(d) ? "bg-vox-primary/[0.02]" : ""}`}
+                      >
+                        {dayAppts.map((a) => (
+                          <DraggableAppointment key={a.id} appointment={a}>
+                            <div
+                              onClick={() => router.push(`/patients/${a.patient.id}`)}
+                              className={`block truncate rounded-md px-1.5 py-1 text-[10px] font-medium leading-tight mb-0.5 cursor-grab active:cursor-grabbing transition-opacity hover:opacity-80 ${
+                                STATUS_CONFIG[a.status]?.className ?? "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              <span className="font-semibold">{formatTime(a.date)}</span>{" "}
+                              {a.patient.name.split(" ")[0]}
+                            </div>
+                          </DraggableAppointment>
+                        ))}
+                      </DroppableCell>
+                    )
+                  })}
                 </div>
-                {/* Day columns */}
-                {weekDays.map((d) => {
-                  const dayAppts = getAppointmentsForDate(d).filter((a) => {
-                    const h = new Date(a.date).getHours()
-                    return h === hour
-                  })
-                  return (
-                    <div
-                      key={`${d.toISOString()}-${hour}`}
-                      className={`h-16 border-b border-l border-border/10 px-0.5 py-0.5 ${isToday(d) ? "bg-vox-primary/[0.02]" : ""}`}
-                    >
-                      {dayAppts.map((a) => (
-                        <Link
-                          key={a.id}
-                          href={`/patients/${a.patient.id}`}
-                          className={`block truncate rounded-md px-1.5 py-1 text-[10px] font-medium leading-tight mb-0.5 transition-opacity hover:opacity-80 ${
-                            STATUS_CONFIG[a.status]?.className ?? "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          <span className="font-semibold">{formatTime(a.date)}</span>{" "}
-                          {a.patient.name.split(" ")[0]}
-                        </Link>
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+
+          {/* Drag overlay */}
+          <DragOverlay>
+            {activeDragId ? (() => {
+              const a = appointments.find((ap) => ap.id === activeDragId)
+              if (!a) return null
+              return (
+                <div className={`truncate rounded-md px-1.5 py-1 text-[10px] font-medium leading-tight shadow-lg ${
+                  STATUS_CONFIG[a.status]?.className ?? "bg-muted text-muted-foreground"
+                }`}>
+                  <span className="font-semibold">{formatTime(a.date)}</span>{" "}
+                  {a.patient.name.split(" ")[0]}
+                </div>
+              )
+            })() : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       {/* ─── Day View ─── */}

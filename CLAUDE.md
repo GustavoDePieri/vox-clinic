@@ -51,9 +51,10 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
   - `/patients` — Paginated list with search
   - `/patients/[id]` — Detail with tabs (Resumo, Historico, Tratamentos, Documentos, Gravacoes, Anamnese) + audio playback
   - `/patients/[id]/report` — Print-friendly patient report (Ctrl+P → PDF)
+  - `/appointments/[id]/receipt` — Print-friendly receipt (Ctrl+P → PDF)
   - `/patients/new/voice` — Voice registration flow
   - `/patients/new/manual` — Manual registration form
-  - `/calendar` — Week/day/month/list views with scheduling and conflict detection
+  - `/calendar` — Week/day/month/list views with scheduling, conflict detection, and drag & drop rescheduling (week view, via @dnd-kit/core)
   - `/appointments/new` — Record consultation for existing patient
   - `/appointments/review` — Review AI summary before confirming
   - `/settings` — Workspace config (procedures, custom fields, clinic name)
@@ -83,6 +84,8 @@ All data mutations use Server Actions with `"use server"` directive:
 - `consultation.ts` — processConsultation, getRecordingForReview (server-side data fetch), confirmConsultation (in $transaction with double-confirm guard)
 - `patient.ts` — getPatients (paginated, filters isActive), getPatient, updatePatient, createPatient, searchPatients, getRecentPatients, getAudioPlaybackUrl, deactivatePatient (soft delete)
 - `appointment.ts` — getAppointmentsByDateRange, scheduleAppointment, updateAppointmentStatus, deleteAppointment
+- `receipt.ts` — generateReceiptData
+- `reports.ts` — getReportsData (analytics: monthly revenue, patient trends, procedure ranking, hour heatmap, return rate, no-show rate)
 - `dashboard.ts` — getDashboardData (stats, today's agenda, recent activity, trends)
 - `reminder.ts` — sendAppointmentReminder, sendBulkReminders
 - `treatment.ts` — getTreatmentPlans, createTreatmentPlan, addSessionToTreatment, updateTreatmentPlanStatus, deleteTreatmentPlan
@@ -207,7 +210,7 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 - All UI in Brazilian Portuguese (pt-BR). Dates DD/MM/AAAA, phone +55 DDD, CPF validation.
 - Navigation: sidebar on desktop (w-56, 5 items), bottom nav on mobile (grid-cols-5).
 - Dashboard: stat cards (4), today's agenda, recent activity, quick actions sidebar.
-- Calendar: month grid + list view, scheduling, quick status actions.
+- Calendar: month grid + list view, scheduling, quick status actions. Week view supports drag & drop rescheduling (@dnd-kit/core) — drag appointment pills to a different time slot to reschedule.
 - Patient reports: print-friendly page with @media print styles (Ctrl+P → PDF).
 - Audio playback: signed URL player in patient recordings tab.
 - Error states shown to users (no silent catches). Toast/banner pattern.

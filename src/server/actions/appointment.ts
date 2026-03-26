@@ -191,6 +191,22 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
   return { id: updated.id, status: updated.status }
 }
 
+export async function rescheduleAppointment(appointmentId: string, newDate: string) {
+  const workspaceId = await getWorkspaceId()
+
+  const existing = await db.appointment.findFirst({
+    where: { id: appointmentId, workspaceId },
+  })
+  if (!existing) throw new Error("Consulta nao encontrada")
+
+  const updated = await db.appointment.update({
+    where: { id: appointmentId },
+    data: { date: new Date(newDate) },
+  })
+
+  return { id: updated.id, date: updated.date.toISOString() }
+}
+
 export async function deleteAppointment(appointmentId: string) {
   const workspaceId = await getWorkspaceId()
 
