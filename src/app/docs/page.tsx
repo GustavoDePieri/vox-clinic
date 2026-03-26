@@ -73,7 +73,7 @@ function CategorySection({ icon, title, description, count, children }: { icon: 
 }
 
 const FEATURES_SUMMARY = {
-  total: 54,
+  total: 68,
   categories: 10,
 }
 
@@ -144,7 +144,7 @@ export default function DocsPage() {
         </nav>
 
         {/* ── 1. GESTAO DE PACIENTES ── */}
-        <CategorySection icon="👤" title="Gestao de Pacientes" description="Cadastro completo, busca avancada, tags e organizacao de pacientes." count={9}>
+        <CategorySection icon="👤" title="Gestao de Pacientes" description="Cadastro completo, busca avancada, tags e organizacao de pacientes." count={11}>
           <FeatureCard title="Cadastro Completo" description="Nome, CPF, RG, telefone, email, data de nascimento, sexo, endereco completo, convenio, responsavel (menores), origem/fonte do paciente." />
           <FeatureCard title="Campos Personalizaveis" description="Campos extras configuraveis por especialidade: texto, numero, booleano, data, selecao. Gerados automaticamente pela IA no onboarding." />
           <FeatureCard title="Historico Medico" description="Secao dedicada com alergias, doencas cronicas, medicacoes em uso, tipo sanguineo e observacoes medicas. Tudo editavel inline." />
@@ -154,26 +154,33 @@ export default function DocsPage() {
           <FeatureCard title="Importacao/Exportacao" description="Importacao CSV com mapeamento de colunas (PapaParse). Exportacao individual em JSON. Exportacao em massa para Excel (.xlsx)." />
           <FeatureCard title="Deteccao e Merge de Duplicatas" description="Deteccao por CPF e nome. Merge atomico: transfere consultas, gravacoes, documentos e planos. Unifica tags, alertas e historico medico." />
           <FeatureCard title="Origem do Paciente" description="Campo de rastreamento de fonte: Instagram, Google, Facebook, Indicacao, Convenio, Site, Outro. Para medir ROI de marketing." />
+          <FeatureCard title="Desativacao Segura" description="Soft delete de pacientes (nunca perde historico). Atende exigencia CFM de 20 anos de guarda de prontuario." />
+          <FeatureCard title="Relatorio Imprimivel" description="Pagina de relatorio completo do paciente com todos os dados, historico e tratamentos. Ctrl+P gera PDF." />
         </CategorySection>
 
         {/* ── 2. AGENDAMENTO ── */}
-        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendario completo com multiplas visoes, bloqueio de horarios e agendamentos recorrentes." count={6}>
+        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendario completo com multiplas visoes, bloqueio de horarios e agendamentos recorrentes." count={8}>
           <FeatureCard title="Calendario Multi-visao" description="Visualizacao diaria, semanal, mensal e em lista. Navegacao por data, responsivo. Acoes rapidas de status por consulta." />
           <FeatureCard title="Drag and Drop" description="Arraste consultas na visao semanal para reagendar. Integrado com @dnd-kit/core. Atualiza data automaticamente." />
           <FeatureCard title="Deteccao de Conflitos" description="Verifica janela de +/-30 minutos. Alerta visual com opcao de forcar agendamento. Tambem verifica bloqueios de horario." />
           <FeatureCard title="Bloqueio de Horarios" description="Bloqueie almoco, ferias, feriados ou reunioes. Suporte a bloqueios unicos e recorrentes semanais. Barras cinza no calendario." />
           <FeatureCard title="Agenda Recorrente" description="Agende series de consultas: semanal ou quinzenal, de 2 a 52 ocorrencias. Criacao atomica em transacao. Ideal para fisioterapia e estetica." />
           <FeatureCard title="Duracao por Procedimento" description="Cada procedimento pode ter duracao em minutos configuravel em Configuracoes. Padrao: 30 minutos." />
+          <FeatureCard title="Reagendamento" description="Mova consultas para outra data/hora via drag-and-drop ou formulario. Atualiza automaticamente." />
+          <FeatureCard title="Cancelamento com Confirmacao" description="Cancele agendamentos com confirmacao. Status atualiza para 'cancelado' com registro no historico." />
         </CategorySection>
 
         {/* ── 3. PRONTUARIO E IA ── */}
-        <CategorySection icon="🎙️" title="Prontuario e IA" description="Gravacao de voz, transcricao automatica e extracao de dados por inteligencia artificial." count={6}>
+        <CategorySection icon="🎙️" title="Prontuario e IA" description="Gravacao de voz, transcricao automatica e extracao de dados por inteligencia artificial." count={9}>
           <FeatureCard title="Gravacao de Audio" description="Gravacao via MediaRecorder (webm/opus). Consentimento LGPD obrigatorio. Audio nunca salvo localmente. Limite de 25MB." />
           <FeatureCard title="Transcricao por IA (Whisper)" description="Transcricao automatica em portugues via OpenAI Whisper. Vocabulario medico como hints. Timeout de 60 segundos." />
           <FeatureCard title="Extracao de Dados (Claude)" description="Claude Sonnet extrai nome, CPF, telefone, procedimentos, observacoes via tool_use. Validacao Zod. Temperatura 0 para precisao." />
           <FeatureCard title="Revisao antes de Salvar" description="Dados extraidos pela IA nunca sao salvos automaticamente. Profissional revisa, edita e confirma. Campos com confianca < 80% destacados em amarelo." />
           <FeatureCard title="Cadastro por Voz" description="Fale os dados do paciente e a IA preenche o cadastro. Deteccao de duplicatas por CPF/nome antes de salvar." />
           <FeatureCard title="Templates por Especialidade" description="IA gera templates customizados no onboarding: procedimentos, campos extras e perguntas de anamnese por profissao." />
+          <FeatureCard title="Reproducao de Audio" description="Player de audio com controles play/pause na aba de gravacoes do paciente. URLs assinadas de 5 minutos." />
+          <FeatureCard title="Planos de Tratamento" description="Crie planos com multiplas sessoes (ex: clareamento 6 sessoes). Rastreie progresso, marque sessoes concluidas, pause ou cancele." />
+          <FeatureCard title="Anamnese Customizada" description="Template de perguntas por profissao (texto, booleano, selecao). Preenchido na aba Anamnese do paciente. Gerado pela IA no onboarding." />
         </CategorySection>
 
         {/* ── 4. PRESCRICOES E DOCUMENTOS ── */}
@@ -215,12 +222,13 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 8. CONFIGURACOES ── */}
-        <CategorySection icon="⚙️" title="Configuracoes" description="Personalize o workspace, equipe e integracoes." count={5}>
+        <CategorySection icon="⚙️" title="Configuracoes" description="Personalize o workspace, equipe e integracoes." count={6}>
           <FeatureCard title="Procedimentos com Duracao" description="Cadastre procedimentos com nome, categoria, preco e duracao em minutos. Gerados por IA no onboarding." />
           <FeatureCard title="Campos Personalizados" description="Crie campos extras por especialidade: texto, numero, booleano, data, selecao com opcoes. Aparecem no cadastro e perfil do paciente." />
           <FeatureCard title="Anamnese Configuravel" description="Template de perguntas de anamnese por profissao. Texto, booleano ou selecao. Gerado pela IA." />
           <FeatureCard title="Gestao de Equipe" description="Convite por email com roles: proprietario, admin, membro. Controle de acesso basico. Convites com expiracao de 7 dias." />
           <FeatureCard title="Configuracao WhatsApp" description="Wizard de 5 etapas para conectar WhatsApp Business via Facebook Embedded Signup. Tokens criptografados." />
+          <FeatureCard title="Tema Claro/Escuro" description="Alterne entre modo claro, escuro ou preferencia do sistema. Salvo localmente." />
         </CategorySection>
 
         {/* ── 9. SEGURANCA ── */}
@@ -234,13 +242,15 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 10. INFRAESTRUTURA ── */}
-        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiencia do usuario." count={6}>
+        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiencia do usuario." count={8}>
           <FeatureCard title="Design Responsivo" description="Mobile-first com sidebar no desktop e bottom nav no mobile. Funciona em celular, tablet e desktop." />
           <FeatureCard title="PWA Ready" description="Manifest.json e service worker para instalacao como app. Icones configurados para iOS e Android." />
           <FeatureCard title="Performance" description="Next.js 16 com Turbopack. Server components, cache com unstable_cache. Carregamento rapido com skeletons." />
           <FeatureCard title="Busca Global (Cmd+K)" description="Command palette acessivel de qualquer pagina. Busca pacientes, paginas e acoes rapidas. Navegacao por teclado." />
-          <FeatureCard title="Onboarding com IA" description="Wizard de 4 etapas: escolha da profissao, perguntas, dados da clinica, preview gerado por IA. Workspace pronto em segundos." />
+          <FeatureCard title="Onboarding com IA" description="Wizard de 4 etapas: escolha da profissao (8 opcoes), perguntas contextuais, dados da clinica, preview editavel gerado por Claude. Workspace pronto em segundos." />
           <FeatureCard title="Impressao em PDF" description="Paginas de recibo, prescricao e atestado otimizadas para impressao (Ctrl+P). Estilos @media print dedicados." />
+          <FeatureCard title="Health Check" description="Endpoint /api/health para monitoramento de disponibilidade e integracao com ferramentas de uptime." />
+          <FeatureCard title="Validacao de Ambiente" description="Todas as variaveis de ambiente validadas via Zod no startup. App falha rapido se configuracao incorreta." />
         </CategorySection>
 
         {/* Footer */}
