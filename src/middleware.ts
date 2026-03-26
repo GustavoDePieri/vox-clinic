@@ -18,11 +18,9 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
   if (isAdminRoute(request)) {
-    const session = await auth.protect()
-    const metadata = session.sessionClaims?.metadata as Record<string, string> | undefined
-    if (metadata?.role !== 'superadmin') {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+    // Admin routes require auth — the actual superadmin check happens
+    // in (admin)/layout.tsx via DB query (defense-in-depth)
+    await auth.protect()
     return
   }
   if (!isPublicRoute(request)) {
