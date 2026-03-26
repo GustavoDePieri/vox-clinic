@@ -163,7 +163,7 @@ export function HeroSection({ isAuthenticated = false, dashboardUrl = "/dashboar
 
           <BlurFade delay={0.5} inView>
             <p className="text-xs text-muted-foreground">
-              Gratis para sempre. Sem cartao de credito.
+              Comece gratis. Sem cartao de credito.
             </p>
           </BlurFade>
         </div>
