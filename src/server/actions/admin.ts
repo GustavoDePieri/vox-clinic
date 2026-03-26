@@ -126,3 +126,24 @@ export async function toggleWorkspaceStatus(workspaceId: string) {
 
   return { success: true, newStatus }
 }
+
+export async function getAdminUsers() {
+  await requireSuperAdmin()
+
+  const users = await db.user.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      workspace: {
+        select: {
+          id: true,
+          professionType: true,
+          plan: true,
+          planStatus: true,
+          _count: { select: { patients: true, appointments: true } },
+        },
+      },
+    },
+  })
+
+  return users
+}
