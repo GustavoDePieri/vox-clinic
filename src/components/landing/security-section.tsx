@@ -1,18 +1,7 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { Shield, Lock, FileSearch, Timer } from "lucide-react"
+import { Shield, Lock, FileSearch, Timer, Database, Eye, KeyRound } from "lucide-react"
 import { BlurFade } from "@/components/ui/blur-fade"
-
-const Globe = dynamic(
-  () => import("@/components/ui/globe").then((m) => ({ default: m.Globe })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="aspect-square w-full rounded-full bg-vox-primary/10 animate-pulse" />
-    ),
-  }
-)
 
 const trustPoints = [
   {
@@ -33,27 +22,48 @@ const trustPoints = [
   },
 ]
 
-const BRAZIL_GLOBE_CONFIG = {
-  width: 800,
-  height: 800,
-  onRender: () => {},
-  devicePixelRatio: 2,
-  phi: 2.2,
-  theta: -0.4,
-  dark: 0,
-  diffuse: 0.4,
-  mapSamples: 16000,
-  mapBrightness: 1.2,
-  baseColor: [1, 1, 1] as [number, number, number],
-  markerColor: [20 / 255, 184 / 255, 166 / 255] as [number, number, number],
-  glowColor: [1, 1, 1] as [number, number, number],
-  markers: [
-    { location: [-23.5505, -46.6333] as [number, number], size: 0.12 },
-    { location: [-22.9068, -43.1729] as [number, number], size: 0.1 },
-    { location: [-15.7975, -47.8919] as [number, number], size: 0.08 },
-    { location: [-3.119, -60.0217] as [number, number], size: 0.06 },
-    { location: [-30.0346, -51.2177] as [number, number], size: 0.07 },
-  ],
+function SecurityVisual() {
+  const orbitItems = [
+    { icon: Lock, label: "LGPD", angle: 0 },
+    { icon: Database, label: "sa-east-1", angle: 72 },
+    { icon: Eye, label: "Auditoria", angle: 144 },
+    { icon: KeyRound, label: "Criptografia", angle: 216 },
+    { icon: Timer, label: "URLs 5min", angle: 288 },
+  ]
+
+  return (
+    <div className="relative aspect-square max-w-[360px] mx-auto">
+      {/* Outer ring */}
+      <div className="absolute inset-0 rounded-full border-2 border-dashed border-vox-primary/20 animate-[spin_30s_linear_infinite]" />
+      {/* Inner ring */}
+      <div className="absolute inset-8 rounded-full border border-vox-primary/10" />
+      {/* Center shield */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-vox-primary/20 to-vox-primary/5 shadow-lg shadow-vox-primary/10">
+          <Shield className="size-10 text-vox-primary" />
+        </div>
+      </div>
+      {/* Orbiting items */}
+      {orbitItems.map((item) => {
+        const rad = (item.angle * Math.PI) / 180
+        const radius = 44 // percentage from center
+        const x = 50 + radius * Math.cos(rad)
+        const y = 50 + radius * Math.sin(rad)
+        return (
+          <div
+            key={item.label}
+            className="absolute flex flex-col items-center gap-1"
+            style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)" }}
+          >
+            <div className="flex size-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-border/60 shadow-sm">
+              <item.icon className="size-4 text-vox-primary" />
+            </div>
+            <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">{item.label}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 export function SecuritySection() {
@@ -85,9 +95,7 @@ export function SecuritySection() {
           </BlurFade>
 
           <BlurFade inView delay={0.2}>
-            <div className="relative aspect-square max-w-[400px] mx-auto">
-              <Globe config={BRAZIL_GLOBE_CONFIG} />
-            </div>
+            <SecurityVisual />
           </BlurFade>
         </div>
       </div>
