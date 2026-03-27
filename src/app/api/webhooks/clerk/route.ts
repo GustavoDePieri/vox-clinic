@@ -73,7 +73,25 @@ export async function POST(req: Request) {
   if (evt.type === 'user.deleted') {
     const { id } = evt.data
     if (id) {
-      await db.user.deleteMany({ where: { clerkId: id } })
+      // Soft-delete: deactivate workspace instead of cascade-deleting all data.
+      // Medical records must be retained for 20 years per CFM regulations.
+      const user = await db.user.findUnique({
+        where: { clerkId: id },
+        include: { workspace: true },
+      })
+      if (user?.workspace) {
+        await db.workspace.update({
+          where: { id: user.workspace.id },
+          data: { planStatus: 'canceled' },
+        })
+      }
+      // Deactivate all patients in the workspace to prevent data access
+      if (user?.workspace) {
+        await db.patient.updateMany({
+          where: { workspaceId: user.workspace.id },
+          data: { isActive: false },
+        })
+      }
     }
   }
 

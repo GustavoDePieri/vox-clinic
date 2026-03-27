@@ -10,11 +10,11 @@ export async function getFinancialData(period: "month" | "year", date: string) {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
-  const workspaceId = user.workspace.id
   const baseDate = new Date(date)
 
   let startDate: Date
@@ -110,19 +110,22 @@ export async function getFinancialData(period: "month" | "year", date: string) {
 }
 
 export async function updateAppointmentPrice(appointmentId: string, price: number) {
+  if (!Number.isFinite(price) || price < 0) throw new Error("Preco invalido")
+
   const { userId } = await auth()
   if (!userId) throw new Error("Unauthorized")
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const appointment = await db.appointment.findUnique({
     where: { id: appointmentId },
   })
-  if (!appointment || appointment.workspaceId !== user.workspace.id) {
+  if (!appointment || appointment.workspaceId !== workspaceId) {
     throw new Error("Appointment not found")
   }
 
@@ -135,16 +138,18 @@ export async function updateAppointmentPrice(appointmentId: string, price: numbe
 }
 
 export async function updateProcedurePrice(procedureId: string, price: number) {
+  if (!Number.isFinite(price) || price < 0) throw new Error("Preco invalido")
+
   const { userId } = await auth()
   if (!userId) throw new Error("Unauthorized")
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
-  const workspaceId = user.workspace.id
   const MAX_RETRIES = 3
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -175,9 +180,15 @@ export async function getWorkspaceProcedures() {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
-  return (user.workspace.procedures as unknown as Procedure[]) ?? []
+  if (user?.workspace) {
+    return (user.workspace.procedures as unknown as Procedure[]) ?? []
+  }
+
+  const workspace = await db.workspace.findUnique({ where: { id: workspaceId } })
+  return (workspace?.procedures as unknown as Procedure[]) ?? []
 }

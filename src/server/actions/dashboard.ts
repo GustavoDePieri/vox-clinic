@@ -122,13 +122,19 @@ export async function getDashboardData() {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user || !user.workspace) throw new Error("Workspace not found")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!user || !workspaceId) throw new Error("Workspace not found")
+
+  // Load workspace professionType if not available via ownership (member fallback)
+  const professionType = user.workspace?.professionType
+    ?? (await db.workspace.findUnique({ where: { id: workspaceId }, select: { professionType: true } }))?.professionType
+    ?? "Profissional"
 
   return getCachedDashboardData(
-    user.workspace.id,
+    workspaceId,
     user.clinicName ?? "Minha Clinica",
-    user.profession ?? user.workspace.professionType
+    user.profession ?? professionType
   )
 }

@@ -4,6 +4,7 @@ import { env } from '@/lib/env'
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY,
   timeout: 60_000,
+  maxRetries: 2,
 })
 
 const DEFAULT_MEDICAL_PROMPT =

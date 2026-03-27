@@ -10,10 +10,12 @@ async function getAuthContext() {
   if (!userId) throw new Error("Unauthorized")
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
-  return { userId, user, workspaceId: user.workspace.id }
+  if (!user) throw new Error("User not found")
+  const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
+  return { userId, user, workspaceId }
 }
 
 async function requireOwnerOrAdmin(workspaceId: string, userId: string) {

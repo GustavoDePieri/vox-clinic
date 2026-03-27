@@ -11,15 +11,15 @@ export async function sendAppointmentReminder(appointmentId: string) {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
-  if (!user.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const appointment = await db.appointment.findFirst({
     where: {
       id: appointmentId,
-      workspaceId: user.workspace.id,
+      workspaceId,
     },
     include: { patient: true },
   })
@@ -33,12 +33,12 @@ export async function sendAppointmentReminder(appointmentId: string) {
   const html = appointmentReminder({
     patientName: appointment.patient.name,
     appointmentDate: appointment.date,
-    clinicName: user.clinicName || "Clínica",
+    clinicName: user!.clinicName || "Clínica",
   })
 
   await sendEmail({
     to: appointment.patient.email,
-    subject: `Lembrete: Consulta agendada - ${user.clinicName || "VoxClinic"}`,
+    subject: `Lembrete: Consulta agendada - ${user!.clinicName || "VoxClinic"}`,
     html,
   })
 
@@ -51,10 +51,10 @@ export async function sendBulkReminders(date: string) {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
-  if (!user.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const targetDate = new Date(date)
   const startOfDay = new Date(targetDate)
@@ -64,7 +64,7 @@ export async function sendBulkReminders(date: string) {
 
   const appointments = await db.appointment.findMany({
     where: {
-      workspaceId: user.workspace.id,
+      workspaceId,
       date: {
         gte: startOfDay,
         lte: endOfDay,
@@ -87,12 +87,12 @@ export async function sendBulkReminders(date: string) {
       const html = appointmentReminder({
         patientName: appointment.patient.name,
         appointmentDate: appointment.date,
-        clinicName: user.clinicName || "Clínica",
+        clinicName: user!.clinicName || "Clínica",
       })
 
       await sendEmail({
         to: appointment.patient.email,
-        subject: `Lembrete: Consulta agendada - ${user.clinicName || "VoxClinic"}`,
+        subject: `Lembrete: Consulta agendada - ${user!.clinicName || "VoxClinic"}`,
         html,
       })
 

@@ -99,10 +99,12 @@ export async function POST(request: NextRequest) {
       // Se nenhuma config tem webhookSecret, processar normalmente (backwards compat)
     }
 
-    // Meta espera 200 rapido — processe async
-    processWebhookAsync(payload).catch((err) =>
+    // Processa sincronamente antes de retornar 200 (Meta permite 20s timeout)
+    try {
+      await processWebhookAsync(payload)
+    } catch (err) {
       console.error("[WhatsApp Webhook] Erro no processamento:", err)
-    )
+    }
 
     return NextResponse.json({ status: "ok" }, { status: 200 })
   } catch (error) {

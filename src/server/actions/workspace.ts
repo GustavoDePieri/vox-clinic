@@ -11,7 +11,7 @@ async function getAuthenticatedUser() {
   if (!userId) throw new Error("Unauthorized")
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   if (!user) throw new Error("User not found")
   return user
@@ -19,14 +19,20 @@ async function getAuthenticatedUser() {
 
 export async function getWorkspace() {
   const user = await getAuthenticatedUser()
-  if (!user.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
+
+  // Load workspace if not available via ownership (member fallback)
+  const workspace = user.workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
+  if (!workspace) throw new Error("Workspace not configured")
+
   return {
-    id: user.workspace.id,
-    professionType: user.workspace.professionType,
-    procedures: user.workspace.procedures as any[],
-    customFields: user.workspace.customFields as any[],
-    anamnesisTemplate: user.workspace.anamnesisTemplate as any[],
-    categories: user.workspace.categories as any[],
+    id: workspace.id,
+    professionType: workspace.professionType,
+    procedures: workspace.procedures as any[],
+    customFields: workspace.customFields as any[],
+    anamnesisTemplate: workspace.anamnesisTemplate as any[],
+    categories: workspace.categories as any[],
     clinicName: user.clinicName,
     profession: user.profession,
   }
@@ -40,14 +46,15 @@ export async function updateWorkspace(data: {
   clinicName?: string
 }) {
   const user = await getAuthenticatedUser()
-  if (!user.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const { clinicName, ...workspaceData } = data
 
   await db.$transaction(async (tx) => {
     if (Object.keys(workspaceData).length > 0) {
       await tx.workspace.update({
-        where: { id: user.workspace!.id },
+        where: { id: workspaceId },
         data: workspaceData,
       })
     }

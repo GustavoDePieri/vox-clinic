@@ -10,11 +10,13 @@ async function getWorkspaceContext() {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
 
-  return { workspaceId: user.workspace.id, clerkId: userId }
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
+
+  return { workspaceId, clerkId: userId }
 }
 
 function normalizeCPF(doc: string): string | null {

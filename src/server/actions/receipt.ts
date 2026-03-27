@@ -9,14 +9,15 @@ export async function generateReceiptData(appointmentId: string) {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const appointment = await db.appointment.findFirst({
     where: {
       id: appointmentId,
-      workspaceId: user.workspace.id,
+      workspaceId,
     },
     include: {
       patient: {
@@ -27,9 +28,14 @@ export async function generateReceiptData(appointmentId: string) {
 
   if (!appointment) throw new Error("Consulta nao encontrada")
 
+  // Load workspace professionType if not available via ownership (member fallback)
+  const professionType = user?.workspace?.professionType
+    ?? (await db.workspace.findUnique({ where: { id: workspaceId }, select: { professionType: true } }))?.professionType
+    ?? "Profissional"
+
   return {
-    clinicName: user.clinicName ?? "Clinica",
-    profession: user.profession ?? user.workspace.professionType,
+    clinicName: user?.clinicName ?? "Clinica",
+    profession: user?.profession ?? professionType,
     patientName: appointment.patient.name,
     patientDocument: appointment.patient.document,
     date: appointment.date.toISOString(),

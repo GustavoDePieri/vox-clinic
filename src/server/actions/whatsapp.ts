@@ -15,11 +15,13 @@ async function getWorkspaceId(): Promise<string> {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace nao encontrado")
 
-  return user.workspace.id
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace nao encontrado")
+
+  return workspaceId
 }
 
 // ---- Configuracao ----
@@ -205,8 +207,8 @@ export async function markConversationAsRead(
 
     await client.markAsRead(lastMessageWaId)
 
-    await db.whatsAppConversation.update({
-      where: { id: conversationId },
+    await db.whatsAppConversation.updateMany({
+      where: { id: conversationId, workspaceId },
       data: { unreadCount: 0 },
     })
   } catch (error) {

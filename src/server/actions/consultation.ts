@@ -17,10 +17,14 @@ export async function processConsultation(formData: FormData, patientId: string)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
-  if (!user.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
+
+  // Load workspace if not available via ownership (member fallback)
+  const workspace = user?.workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
+  if (!workspace) throw new Error("Workspace not configured")
 
   const audioFile = formData.get("audio") as File | null
   if (!audioFile) throw new Error("No audio file provided")
@@ -43,7 +47,7 @@ export async function processConsultation(formData: FormData, patientId: string)
     const { buffer: processedBuffer } = await preprocessAudio(buffer, audioFile.name || "consultation.webm")
 
     // 3. Transcribe via Whisper
-    const workspaceProcedureNames = (user.workspace.procedures as any[]).map((p: any) => p.name)
+    const workspaceProcedureNames = (workspace.procedures as any[]).map((p: any) => p.name)
     const result = await transcribeAudio(
       processedBuffer,
       "processed.mp3",
@@ -52,7 +56,7 @@ export async function processConsultation(formData: FormData, patientId: string)
     transcript = result.text
 
     // 4. Generate summary with Claude
-    const workspaceProcedures = user.workspace.procedures as any[]
+    const workspaceProcedures = workspace.procedures as any[]
     const summary: AppointmentSummary = await generateConsultationSummary(
       transcript,
       workspaceProcedures
@@ -62,7 +66,7 @@ export async function processConsultation(formData: FormData, patientId: string)
     const recording = await db.$transaction(async (tx) => {
       const rec = await tx.recording.create({
         data: {
-          workspaceId: user.workspace!.id,
+          workspaceId,
           audioUrl: audioPath!,
           transcript,
           aiExtractedData: summary as any,
@@ -73,7 +77,7 @@ export async function processConsultation(formData: FormData, patientId: string)
       })
 
       await logAudit({
-        workspaceId: user.workspace!.id,
+        workspaceId,
         userId,
         action: "recording.created",
         entityType: "Recording",
@@ -81,7 +85,7 @@ export async function processConsultation(formData: FormData, patientId: string)
       })
 
       await recordConsent({
-        workspaceId: user.workspace!.id,
+        workspaceId,
         patientId,
         recordingId: rec.id,
         consentType: "audio_recording",
@@ -108,7 +112,7 @@ export async function processConsultation(formData: FormData, patientId: string)
             aiExtractedData: undefined,
             status: "error",
             errorMessage: err instanceof Error ? err.message : "Erro desconhecido no processamento",
-            workspaceId: user.workspace!.id,
+            workspaceId,
             patientId,
             fileSize: audioFile.size,
           },
@@ -127,12 +131,13 @@ export async function getRecordingForReview(recordingId: string) {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const recording = await db.recording.findFirst({
-    where: { id: recordingId, workspaceId: user.workspace.id },
+    where: { id: recordingId, workspaceId },
   })
   if (!recording) throw new Error("Recording not found")
 
@@ -158,11 +163,11 @@ export async function confirmConsultation(data: {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
-  const workspaceId = user.workspace.id
   const agendaId = await getDefaultAgendaIdForWorkspace(workspaceId)
 
   // Atomic: Create Appointment + link Recording (with double-confirm guard via FOR UPDATE)

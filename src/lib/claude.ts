@@ -11,6 +11,7 @@ import { env } from '@/lib/env'
 const anthropic = new Anthropic({
   apiKey: env.ANTHROPIC_API_KEY,
   timeout: 30_000,
+  maxRetries: 2,
 })
 
 // ---------------------------------------------------------------------------

@@ -17,10 +17,14 @@ export async function processVoiceRegistration(formData: FormData) {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
-  if (!user.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
+
+  // Load workspace if not available via ownership (member fallback)
+  const workspace = user?.workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
+  if (!workspace) throw new Error("Workspace not configured")
 
   const audioFile = formData.get("audio") as File | null
   if (!audioFile) throw new Error("No audio file provided")
@@ -43,7 +47,7 @@ export async function processVoiceRegistration(formData: FormData) {
     const { buffer: processedBuffer } = await preprocessAudio(buffer, audioFile.name || "recording.webm")
 
     // 3. Transcribe the processed (smaller) audio via Whisper
-    const workspaceProcedureNames = (user.workspace.procedures as any[]).map((p: any) => p.name)
+    const workspaceProcedureNames = (workspace.procedures as any[]).map((p: any) => p.name)
     const result = await transcribeAudio(
       processedBuffer,
       "processed.mp3",
@@ -53,8 +57,8 @@ export async function processVoiceRegistration(formData: FormData) {
 
     // 4. Extract entities via Claude
     const workspaceConfig = {
-      customFields: user.workspace.customFields as any[],
-      procedures: user.workspace.procedures as any[],
+      customFields: workspace.customFields as any[],
+      procedures: workspace.procedures as any[],
     }
     const extractedData: ExtractedPatientData = await extractEntities(transcript, workspaceConfig)
 
@@ -62,7 +66,7 @@ export async function processVoiceRegistration(formData: FormData) {
     const recording = await db.$transaction(async (tx) => {
       const rec = await tx.recording.create({
         data: {
-          workspaceId: user.workspace!.id,
+          workspaceId,
           audioUrl: audioPath!,
           transcript,
           aiExtractedData: extractedData as any,
@@ -72,7 +76,7 @@ export async function processVoiceRegistration(formData: FormData) {
       })
 
       await logAudit({
-        workspaceId: user.workspace!.id,
+        workspaceId,
         userId,
         action: "recording.created",
         entityType: "Recording",
@@ -80,7 +84,7 @@ export async function processVoiceRegistration(formData: FormData) {
       })
 
       await recordConsent({
-        workspaceId: user.workspace!.id,
+        workspaceId,
         recordingId: rec.id,
         consentType: "audio_recording",
         givenBy: userId,
@@ -105,7 +109,7 @@ export async function processVoiceRegistration(formData: FormData) {
             aiExtractedData: undefined,
             status: "error",
             errorMessage: err instanceof Error ? err.message : "Erro desconhecido no processamento",
-            workspaceId: user.workspace!.id,
+            workspaceId,
             fileSize: audioFile.size,
           },
         })
@@ -136,12 +140,11 @@ export async function confirmPatientRegistration(data: ConfirmPatientData) {
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
-  if (!user.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
-  const workspaceId = user.workspace.id
   const agendaId = await getDefaultAgendaIdForWorkspace(workspaceId)
 
   // Check for duplicate patient by document or similar name
@@ -245,11 +248,10 @@ export async function checkDuplicatePatient(name: string, document?: string | nu
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user?.workspace) return null
-
-  const workspaceId = user.workspace.id
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) return null
 
   if (document) {
     const normalized = normalizeCpf(document)

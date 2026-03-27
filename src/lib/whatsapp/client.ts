@@ -38,6 +38,7 @@ export class WhatsAppClient {
 
     const res = await fetch(url, {
       ...fetchOptions,
+      signal: fetchOptions?.signal ?? AbortSignal.timeout(15_000),
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
