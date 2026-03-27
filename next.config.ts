@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["ffmpeg-static", "fluent-ffmpeg"],
   experimental: {
     serverActions: {
       bodySizeLimit: "25mb",
