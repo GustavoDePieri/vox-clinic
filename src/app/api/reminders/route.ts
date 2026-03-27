@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       where: {
         date: { gte: startOfDay, lte: endOfDay },
         status: "scheduled",
+        reminderSentAt: null, // only appointments that haven't been reminded
       },
       include: {
         patient: true,
@@ -80,6 +81,10 @@ export async function POST(req: Request) {
             clinicName,
             "Responda para confirmar ou cancelar"
           )
+          await db.appointment.update({
+            where: { id: appointment.id },
+            data: { reminderSentAt: new Date() },
+          })
           whatsappSent++
           continue // WhatsApp sent, skip email
         } catch (error) {
@@ -102,6 +107,10 @@ export async function POST(req: Request) {
             to: appointment.patient.email,
             subject: `Lembrete: Consulta agendada - ${clinicName}`,
             html,
+          })
+          await db.appointment.update({
+            where: { id: appointment.id },
+            data: { reminderSentAt: new Date() },
           })
           emailSent++
         } catch (error) {

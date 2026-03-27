@@ -28,6 +28,7 @@ model Workspace {
   userId            String   @unique
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   professionType    String
+  timezone          String   @default("America/Sao_Paulo") // IANA timezone identifier
   customFields      Json     @default("[]")
   procedures        Json     @default("[]")
   anamnesisTemplate Json     @default("[]")
@@ -68,6 +69,7 @@ model Patient {
   medicalHistory Json          @default("{}") // { allergies: [], chronicDiseases: [], medications: [], bloodType, notes }
   customData     Json          @default("{}")
   alerts         Json          @default("[]")
+  lastBirthdaySentYear Int?    // year when birthday message was last sent (prevents duplicate sends)
   isActive       Boolean       @default(true)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -102,6 +104,7 @@ model Appointment {
   price        Float?      // valor da consulta em BRL
   source       String?     // "online", "whatsapp", null (manual/legacy)
   status       String      @default("completed")
+  reminderSentAt DateTime? // when reminder was sent (prevents duplicate sends)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   recordings   Recording[]

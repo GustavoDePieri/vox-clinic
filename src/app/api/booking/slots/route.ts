@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       startHour: true,
       endHour: true,
       maxDaysAhead: true,
-      workspace: { select: { id: true } },
+      workspace: { select: { id: true, timezone: true } },
     },
   })
 
@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
     agendaId,
     config.workspace.id,
     config.startHour,
-    config.endHour
+    config.endHour,
+    config.workspace.timezone
   )
 
   return NextResponse.json({

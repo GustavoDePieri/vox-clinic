@@ -26,8 +26,11 @@ export async function POST(req: Request) {
     const todayMonth = now.getMonth() + 1 // 1-12
     const todayDay = now.getDate()
 
+    const currentYear = now.getFullYear()
+
     // Use raw SQL to filter by month/day at the database level
     // Avoids loading ALL patients into memory
+    // Also filters out patients who already received birthday message this year
     const birthdayPatients = await db.$queryRawUnsafe<Array<{
       id: string
       name: string
@@ -40,9 +43,11 @@ export async function POST(req: Request) {
        WHERE p."isActive" = true
          AND p."birthDate" IS NOT NULL
          AND EXTRACT(MONTH FROM p."birthDate") = $1
-         AND EXTRACT(DAY FROM p."birthDate") = $2`,
+         AND EXTRACT(DAY FROM p."birthDate") = $2
+         AND (p."lastBirthdaySentYear" IS NULL OR p."lastBirthdaySentYear" < $3)`,
       todayMonth,
-      todayDay
+      todayDay,
+      currentYear
     )
 
     // Load workspace info for birthday patients
@@ -77,6 +82,7 @@ export async function POST(req: Request) {
         try {
           const client = new WhatsAppClient(decrypt(waConfig.accessToken), waConfig.phoneNumberId)
           await client.sendText(phone, message)
+          await db.patient.update({ where: { id: patient.id }, data: { lastBirthdaySentYear: currentYear } })
           whatsappSent++
           continue
         } catch (error) {
@@ -103,6 +109,7 @@ export async function POST(req: Request) {
               </div>
             `,
           })
+          await db.patient.update({ where: { id: patient.id }, data: { lastBirthdaySentYear: currentYear } })
           emailSent++
         } catch (error) {
           errors.push(`Email ${patient.id}: ${error instanceof Error ? error.message : "Erro"}`)

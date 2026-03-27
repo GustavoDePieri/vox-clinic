@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             procedures: true,
+            timezone: true,
           },
         },
       },

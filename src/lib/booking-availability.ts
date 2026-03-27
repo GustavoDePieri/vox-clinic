@@ -15,22 +15,29 @@ export async function getAvailableSlots(
   agendaId: string,
   workspaceId: string,
   startHour: number,
-  endHour: number
+  endHour: number,
+  timezone: string = "America/Sao_Paulo"
 ): Promise<SlotResult[]> {
   const duration = Math.max(durationMinutes || 30, 15)
-  const targetDate = new Date(date)
-  const dayStart = new Date(targetDate)
-  dayStart.setHours(0, 0, 0, 0)
-  const dayEnd = new Date(targetDate)
-  dayEnd.setHours(23, 59, 59, 999)
+
+  // Parse the date string as a date in the workspace timezone.
+  // On Vercel (UTC), new Date("2026-04-01") = midnight UTC, not local.
+  // We use Intl.DateTimeFormat to compute the correct UTC offset for the workspace timezone.
+  const tzOffsetMs = getTimezoneOffsetMs(date, timezone)
+
+  // dayStart/dayEnd in UTC that correspond to midnight..23:59 in the workspace timezone
+  const dayStartUtc = new Date(new Date(date).getTime() - tzOffsetMs)
+  dayStartUtc.setUTCHours(0, 0, 0, 0)
+  const adjustedDayStart = new Date(dayStartUtc.getTime() - tzOffsetMs)
+
+  const dayStart = adjustedDayStart
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1)
   const now = new Date()
 
-  // 1. Generate candidate slots
+  // 1. Generate candidate slots in workspace-local time (stored as UTC)
   const slots: Date[] = []
-  const cursor = new Date(targetDate)
-  cursor.setHours(startHour, 0, 0, 0)
-  const endTime = new Date(targetDate)
-  endTime.setHours(endHour, 0, 0, 0)
+  const cursor = new Date(dayStart.getTime() + startHour * 60 * 60 * 1000)
+  const endTime = new Date(dayStart.getTime() + endHour * 60 * 60 * 1000)
 
   while (cursor.getTime() + duration * 60000 <= endTime.getTime()) {
     slots.push(new Date(cursor))
@@ -100,7 +107,7 @@ export async function getAvailableSlots(
 
     // Past slot check
     if (slotStart.getTime() <= now.getTime()) {
-      return { time: formatTime(slotStart), available: false }
+      return { time: formatTime(slotStart, timezone), available: false }
     }
 
     // Appointment overlap check
@@ -109,23 +116,31 @@ export async function getAvailableSlots(
       const apptDuration = getApptDuration(appt.procedures) || 30
       const apptEnd = new Date(apptStart.getTime() + apptDuration * 60000)
       if (slotStart < apptEnd && slotEnd > apptStart) {
-        return { time: formatTime(slotStart), available: false }
+        return { time: formatTime(slotStart, timezone), available: false }
       }
     }
 
     // Blocked slot overlap check
     for (const blocked of blockedRanges) {
       if (slotStart < blocked.end && slotEnd > blocked.start) {
-        return { time: formatTime(slotStart), available: false }
+        return { time: formatTime(slotStart, timezone), available: false }
       }
     }
 
-    return { time: formatTime(slotStart), available: true }
+    return { time: formatTime(slotStart, timezone), available: true }
   })
 }
 
-function formatTime(date: Date): string {
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
+function formatTime(date: Date, timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: timezone,
+  }).formatToParts(date)
+  const hour = parts.find(p => p.type === "hour")?.value ?? "00"
+  const minute = parts.find(p => p.type === "minute")?.value ?? "00"
+  return `${hour}:${minute}`
 }
 
 function getApptDuration(procedures: any): number {
@@ -134,4 +149,17 @@ function getApptDuration(procedures: any): number {
     if (typeof p === "object" && p?.duration) return p.duration
   }
   return 30
+}
+
+/**
+ * Get the UTC offset in milliseconds for a given date string in a timezone.
+ * E.g., "America/Sao_Paulo" is typically UTC-3, so returns -10800000.
+ */
+function getTimezoneOffsetMs(dateStr: string, timezone: string): number {
+  const date = new Date(dateStr + "T12:00:00Z") // noon UTC to avoid DST edge
+  const utcStr = date.toLocaleString("en-US", { timeZone: "UTC" })
+  const tzStr = date.toLocaleString("en-US", { timeZone: timezone })
+  const utcDate = new Date(utcStr)
+  const tzDate = new Date(tzStr)
+  return tzDate.getTime() - utcDate.getTime()
 }
