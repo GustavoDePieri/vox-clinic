@@ -48,13 +48,15 @@ export async function getFinancialData(period: "month" | "year", date: string) {
   // Group by procedure
   const procedureMap = new Map<string, { count: number; total: number }>()
   for (const apt of appointments) {
-    const procs = apt.procedures as string[]
-    const pricePerProc = apt.price != null && procs.length > 0 ? apt.price / procs.length : 0
-    for (const proc of procs) {
-      const existing = procedureMap.get(proc) ?? { count: 0, total: 0 }
+    const rawProcs = apt.procedures as unknown as (string | { name?: string })[]
+    if (!Array.isArray(rawProcs)) continue
+    const procNames = rawProcs.map((p) => (typeof p === "string" ? p : p?.name ?? String(p)))
+    const pricePerProc = apt.price != null && procNames.length > 0 ? apt.price / procNames.length : 0
+    for (const name of procNames) {
+      const existing = procedureMap.get(name) ?? { count: 0, total: 0 }
       existing.count += 1
       existing.total += pricePerProc
-      procedureMap.set(proc, existing)
+      procedureMap.set(name, existing)
     }
   }
 
@@ -82,14 +84,20 @@ export async function getFinancialData(period: "month" | "year", date: string) {
   }
 
   // Recent transactions (last 10)
-  const recentTransactions = appointments.slice(0, 10).map((a) => ({
-    id: a.id,
-    date: a.date,
-    patientId: a.patient.id,
-    patientName: a.patient.name,
-    procedures: a.procedures as string[],
-    price: a.price,
-  }))
+  const recentTransactions = appointments.slice(0, 10).map((a) => {
+    const rawProcs = a.procedures as unknown as (string | { name?: string })[]
+    const procNames = Array.isArray(rawProcs)
+      ? rawProcs.map((p) => (typeof p === "string" ? p : p?.name ?? String(p)))
+      : []
+    return {
+      id: a.id,
+      date: a.date,
+      patientId: a.patient.id,
+      patientName: a.patient.name,
+      procedures: procNames,
+      price: a.price,
+    }
+  })
 
   return {
     totalRevenue,
