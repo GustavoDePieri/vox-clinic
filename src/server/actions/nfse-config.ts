@@ -65,7 +65,7 @@ export async function getNfseConfig() {
     aliquotaISS: config.aliquotaISS,
     regimeTributario: config.regimeTributario,
     provider: config.provider,
-    apiKey: config.apiKey,
+    apiKey: config.apiKey ? `****${config.apiKey.slice(-4)}` : '',
     certificateId: config.certificateId,
     clinicCity: config.clinicCity,
     clinicState: config.clinicState,
@@ -100,10 +100,15 @@ export async function saveNfseConfig(data: {
   if (!data.codigoServico.trim()) throw new Error("Codigo de Servico e obrigatorio")
   if (!data.descricaoServico.trim()) throw new Error("Descricao do Servico e obrigatoria")
   if (data.aliquotaISS < 0 || data.aliquotaISS > 100) throw new Error("Aliquota ISS invalida")
-  if (!data.apiKey.trim()) throw new Error("API Key e obrigatoria")
+  // If apiKey starts with ****, it's the masked value — don't require a new one
+  const isMaskedApiKey = data.apiKey.startsWith('****')
+  if (!isMaskedApiKey && !data.apiKey.trim()) throw new Error("API Key e obrigatoria")
   if (!data.clinicCity.trim()) throw new Error("Cidade e obrigatoria")
   if (!data.clinicState.trim()) throw new Error("Estado e obrigatorio")
   if (!data.clinicCep.replace(/\D/g, "").trim()) throw new Error("CEP e obrigatorio")
+
+  // Only update apiKey if the user provided a new (non-masked) value
+  const apiKeyToSave = isMaskedApiKey ? undefined : data.apiKey.trim()
 
   const config = await db.nfseConfig.upsert({
     where: { workspaceId },
@@ -116,7 +121,7 @@ export async function saveNfseConfig(data: {
       aliquotaISS: data.aliquotaISS,
       regimeTributario: data.regimeTributario,
       provider: data.provider,
-      apiKey: data.apiKey.trim(),
+      apiKey: apiKeyToSave ?? '',
       clinicCity: data.clinicCity.trim(),
       clinicState: data.clinicState.trim(),
       clinicCep: data.clinicCep.replace(/\D/g, ""),
@@ -129,7 +134,7 @@ export async function saveNfseConfig(data: {
       aliquotaISS: data.aliquotaISS,
       regimeTributario: data.regimeTributario,
       provider: data.provider,
-      apiKey: data.apiKey.trim(),
+      ...(apiKeyToSave !== undefined ? { apiKey: apiKeyToSave } : {}),
       clinicCity: data.clinicCity.trim(),
       clinicState: data.clinicState.trim(),
       clinicCep: data.clinicCep.replace(/\D/g, ""),

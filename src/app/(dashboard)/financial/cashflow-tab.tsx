@@ -23,6 +23,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { getCashFlowData } from "@/server/actions/cashflow"
+import { toast } from "sonner"
 
 const formatBRL = (value: number) =>
   (value / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -54,7 +55,7 @@ export default function CashFlowTab() {
       const result = await getCashFlowData(period, currentDate.toISOString())
       setData(result)
     } catch {
-      // silently handle
+      toast.error("Erro ao carregar dados do fluxo de caixa")
     } finally {
       setLoading(false)
     }

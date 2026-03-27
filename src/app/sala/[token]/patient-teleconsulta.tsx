@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Video } from "lucide-react"
+import { recordTeleconsultaConsent } from "@/server/actions/teleconsulta"
 
 interface PatientTeleconsultaProps {
   info: {
@@ -11,11 +12,13 @@ interface PatientTeleconsultaProps {
     professionalName: string
     patientName: string
   }
+  videoToken: string
 }
 
-export function PatientTeleconsulta({ info }: PatientTeleconsultaProps) {
+export function PatientTeleconsulta({ info, videoToken }: PatientTeleconsultaProps) {
   const [joined, setJoined] = useState(false)
   const [consent, setConsent] = useState(false)
+  const [joining, setJoining] = useState(false)
 
   const dateStr = new Date(info.appointmentDate).toLocaleString("pt-BR", {
     weekday: "long",
@@ -83,8 +86,16 @@ export function PatientTeleconsulta({ info }: PatientTeleconsultaProps) {
 
         {/* Join button */}
         <button
-          onClick={() => setJoined(true)}
-          disabled={!consent}
+          onClick={async () => {
+            setJoining(true)
+            try {
+              await recordTeleconsultaConsent(videoToken)
+            } catch {
+              // Best-effort: don't block joining if consent persistence fails
+            }
+            setJoined(true)
+          }}
+          disabled={!consent || joining}
           className="w-full h-11 rounded-xl bg-[#14B8A6] text-white font-medium text-sm transition-all hover:bg-[#0D9488] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <Video className="size-4" />

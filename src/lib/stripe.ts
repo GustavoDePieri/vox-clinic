@@ -1,14 +1,15 @@
 import Stripe from 'stripe'
 
-function getStripeKey(): string {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) throw new Error('STRIPE_SECRET_KEY not configured')
-  return key
-}
+let _stripe: Stripe | null = null
 
-export const stripe = new Stripe(getStripeKey(), {
-  typescript: true,
-})
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY not configured')
+    _stripe = new Stripe(key, { typescript: true })
+  }
+  return _stripe
+}
 
 // Plan to Stripe Price ID mapping
 // These should be set up in Stripe Dashboard and mapped here

@@ -102,7 +102,7 @@ export function FiscalTab() {
           inscricaoMunicipal: config.inscricaoMunicipal,
           codigoServico: config.codigoServico,
           descricaoServico: config.descricaoServico,
-          aliquotaISS: String(config.aliquotaISS * 100), // Convert decimal to %
+          aliquotaISS: (config.aliquotaISS * 100).toFixed(2).replace(/\.?0+$/, ''), // Convert decimal to %
           regimeTributario: config.regimeTributario,
           provider: config.provider,
           apiKey: config.apiKey,

@@ -48,14 +48,9 @@ export async function createTeleconsultaRoom(appointmentId: string) {
 
   const room = await createVideoRoom(appointmentId, expiresAt)
 
-  const ownerToken = await createMeetingToken(room.name, {
-    isOwner: true,
-    userName: user.clinicName ?? user.name ?? "Profissional",
-    expiresAt,
-  })
-
-  await db.appointment.update({
-    where: { id: appointmentId },
+  // Atomic update: only set fields if no other call already created the room
+  const updated = await db.appointment.updateMany({
+    where: { id: appointmentId, workspaceId, videoRoomName: null },
     data: {
       videoRoomName: room.name,
       videoRoomUrl: room.url,
@@ -63,11 +58,55 @@ export async function createTeleconsultaRoom(appointmentId: string) {
     },
   })
 
+  if (updated.count === 0) {
+    // Another call already created the room, clean up the one we just made
+    await deleteVideoRoom(room.name).catch(() => {})
+    // Re-fetch the existing room info
+    const existing = await db.appointment.findUnique({ where: { id: appointmentId } })
+    if (!existing?.videoRoomName || !existing?.videoRoomUrl || !existing?.videoToken) {
+      throw new Error("Erro ao criar sala de teleconsulta")
+    }
+    const existingOwnerToken = await createMeetingToken(existing.videoRoomName, {
+      isOwner: true,
+      userName: user.clinicName ?? user.name ?? "Profissional",
+      expiresAt,
+    })
+    return {
+      roomUrl: existing.videoRoomUrl,
+      ownerToken: existingOwnerToken.token,
+      videoToken: existing.videoToken,
+    }
+  }
+
+  const ownerToken = await createMeetingToken(room.name, {
+    isOwner: true,
+    userName: user.clinicName ?? user.name ?? "Profissional",
+    expiresAt,
+  })
+
   return {
     roomUrl: room.url,
     ownerToken: ownerToken.token,
     videoToken,
   }
+}
+
+export async function recordTeleconsultaConsent(videoToken: string) {
+  const appointment = await db.appointment.findFirst({
+    where: { videoToken },
+    select: { id: true, workspaceId: true, patientId: true },
+  })
+  if (!appointment) throw new Error("Appointment not found")
+
+  await db.consentRecord.create({
+    data: {
+      workspaceId: appointment.workspaceId,
+      patientId: appointment.patientId,
+      consentType: "teleconsulta",
+      givenBy: "patient",
+      details: `Teleconsulta consent given via /sala/${videoToken}`,
+    },
+  })
 }
 
 export async function getPatientJoinInfo(videoToken: string) {
@@ -131,7 +170,7 @@ export async function endTeleconsulta(appointmentId: string) {
 
   await db.appointment.update({
     where: { id: appointmentId },
-    data: { status: "completed" },
+    data: { status: "completed", videoRoomName: null, videoRoomUrl: null, videoToken: null },
   })
 
   // Cleanup: delete Daily room

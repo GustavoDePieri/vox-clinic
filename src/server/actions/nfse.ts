@@ -47,112 +47,118 @@ export async function emitNfse(appointmentId: string) {
   if (!appointment) throw new Error("Consulta nao encontrada")
   if (!appointment.price) throw new Error("Consulta sem valor definido. Defina o preco antes de emitir NFS-e.")
 
-  // Check if NFS-e already exists for this appointment
-  const existing = await db.nfse.findFirst({
-    where: {
-      appointmentId,
-      workspaceId,
-      status: { notIn: ["cancelled", "error"] },
-    },
+  // Narrow price after the guard above
+  const appointmentPrice = appointment.price!
+
+  // Use transaction to prevent duplicate NFS-e race condition
+  return await db.$transaction(async (tx) => {
+    // Check if NFS-e already exists for this appointment
+    const existing = await tx.nfse.findFirst({
+      where: {
+        appointmentId,
+        workspaceId,
+        status: { notIn: ["cancelled", "error"] },
+      },
+    })
+    if (existing) throw new Error("Ja existe uma NFS-e para esta consulta.")
+
+    // Build the NFS-e payload
+    const valorBRL = appointmentPrice // already in BRL (Float)
+    const aliquotaDecimal = config.aliquotaISS // e.g. 0.05 for 5%
+    const issValorBRL = valorBRL * aliquotaDecimal
+
+    // Parse patient address if available
+    const address = appointment.patient.address as {
+      logradouro?: string
+      numero?: string
+      bairro?: string
+      codigoMunicipio?: string
+      uf?: string
+      cep?: string
+    } | null
+
+    const payload: EmitNfseInput = {
+      ambiente: process.env.NFSE_AMBIENTE === 'producao' ? 'producao' : 'homologacao',
+      prestador: {
+        cpfCnpj: config.cnpj,
+        inscricaoMunicipal: config.inscricaoMunicipal,
+      },
+      tomador: {
+        cpfCnpj: appointment.patient.document?.replace(/\D/g, "") || undefined,
+        razaoSocial: appointment.patient.name,
+        endereco: address
+          ? {
+              logradouro: address.logradouro,
+              numero: address.numero,
+              bairro: address.bairro,
+              codigoMunicipio: address.codigoMunicipio,
+              uf: address.uf,
+              cep: address.cep,
+            }
+          : undefined,
+      },
+      servico: {
+        descricao: config.descricaoServico,
+        codigoServico: config.codigoServico,
+        valorServicos: valorBRL,
+        aliquotaIss: aliquotaDecimal,
+      },
+    }
+
+    // Call NFS-e API
+    const client = new NfseClient(config.apiKey)
+
+    let externalId: string | null = null
+    let numero: string | null = null
+    let codigoVerificacao: string | null = null
+    let pdfUrl: string | null = null
+    let xmlUrl: string | null = null
+    let status = "pending"
+    let errorMessage: string | null = null
+
+    try {
+      const response = await client.emit(payload)
+      externalId = response.id
+      numero = response.numero ?? null
+      codigoVerificacao = response.codigoVerificacao ?? null
+      pdfUrl = response.linkPdf ?? null
+      xmlUrl = response.linkXml ?? null
+      status = response.status === "autorizada" || response.status === "authorized"
+        ? "authorized"
+        : "processing"
+    } catch (err) {
+      status = "error"
+      errorMessage = err instanceof Error ? err.message : "Erro desconhecido ao emitir NFS-e"
+    }
+
+    // Store in database (centavos for valor and issValor)
+    const valorCentavos = Math.round(valorBRL * 100)
+    const issValorCentavos = Math.round(issValorBRL * 100)
+
+    const nfse = await tx.nfse.create({
+      data: {
+        workspaceId,
+        appointmentId,
+        patientId: appointment.patient.id,
+        valor: valorCentavos,
+        issValor: issValorCentavos,
+        description: config.descricaoServico,
+        externalId,
+        numero,
+        codigoVerificacao,
+        pdfUrl,
+        xmlUrl,
+        status,
+        errorMessage,
+        emittedAt: status !== "error" ? new Date() : null,
+      },
+      include: {
+        patient: { select: { id: true, name: true } },
+      },
+    })
+
+    return nfse
   })
-  if (existing) throw new Error("Ja existe uma NFS-e para esta consulta.")
-
-  // Build the NFS-e payload
-  const valorBRL = appointment.price // already in BRL (Float)
-  const aliquotaDecimal = config.aliquotaISS // e.g. 0.05 for 5%
-  const issValorBRL = valorBRL * aliquotaDecimal
-
-  // Parse patient address if available
-  const address = appointment.patient.address as {
-    logradouro?: string
-    numero?: string
-    bairro?: string
-    codigoMunicipio?: string
-    uf?: string
-    cep?: string
-  } | null
-
-  const payload: EmitNfseInput = {
-    ambiente: "homologacao", // default to test environment
-    prestador: {
-      cpfCnpj: config.cnpj,
-      inscricaoMunicipal: config.inscricaoMunicipal,
-    },
-    tomador: {
-      cpfCnpj: appointment.patient.document?.replace(/\D/g, "") || undefined,
-      razaoSocial: appointment.patient.name,
-      endereco: address
-        ? {
-            logradouro: address.logradouro,
-            numero: address.numero,
-            bairro: address.bairro,
-            codigoMunicipio: address.codigoMunicipio,
-            uf: address.uf,
-            cep: address.cep,
-          }
-        : undefined,
-    },
-    servico: {
-      descricao: config.descricaoServico,
-      codigoServico: config.codigoServico,
-      valorServicos: valorBRL,
-      aliquotaIss: aliquotaDecimal,
-    },
-  }
-
-  // Call NFS-e API
-  const client = new NfseClient(config.apiKey)
-
-  let externalId: string | null = null
-  let numero: string | null = null
-  let codigoVerificacao: string | null = null
-  let pdfUrl: string | null = null
-  let xmlUrl: string | null = null
-  let status = "pending"
-  let errorMessage: string | null = null
-
-  try {
-    const response = await client.emit(payload)
-    externalId = response.id
-    numero = response.numero ?? null
-    codigoVerificacao = response.codigoVerificacao ?? null
-    pdfUrl = response.linkPdf ?? null
-    xmlUrl = response.linkXml ?? null
-    status = response.status === "autorizada" || response.status === "authorized"
-      ? "authorized"
-      : "processing"
-  } catch (err) {
-    status = "error"
-    errorMessage = err instanceof Error ? err.message : "Erro desconhecido ao emitir NFS-e"
-  }
-
-  // Store in database (centavos for valor and issValor)
-  const valorCentavos = Math.round(valorBRL * 100)
-  const issValorCentavos = Math.round(issValorBRL * 100)
-
-  const nfse = await db.nfse.create({
-    data: {
-      workspaceId,
-      appointmentId,
-      patientId: appointment.patient.id,
-      valor: valorCentavos,
-      issValor: issValorCentavos,
-      description: config.descricaoServico,
-      externalId,
-      numero,
-      codigoVerificacao,
-      pdfUrl,
-      xmlUrl,
-      status,
-      errorMessage,
-      emittedAt: status !== "error" ? new Date() : null,
-    },
-    include: {
-      patient: { select: { id: true, name: true } },
-    },
-  })
-
-  return nfse
 }
 
 export async function getNfseList(filters?: {

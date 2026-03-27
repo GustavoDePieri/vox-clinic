@@ -55,6 +55,16 @@ export async function createCharge(input: CreateChargeInput) {
 
   const netAmount = totalAmount - discount
 
+  // Validate patient belongs to this workspace
+  const patient = await db.patient.findUnique({ where: { id: patientId } })
+  if (!patient || patient.workspaceId !== workspaceId) throw new Error("Paciente nao encontrado")
+
+  // Validate appointment belongs to this workspace if provided
+  if (appointmentId) {
+    const appointment = await db.appointment.findUnique({ where: { id: appointmentId } })
+    if (!appointment || appointment.workspaceId !== workspaceId) throw new Error("Consulta nao encontrada")
+  }
+
   // Split into installments — first absorbs remainder
   const baseAmount = Math.floor(netAmount / installments)
   const remainder = netAmount - baseAmount * installments
@@ -84,7 +94,12 @@ export async function createCharge(input: CreateChargeInput) {
 
     for (let i = 0; i < installments; i++) {
       const dueDate = new Date(firstDate)
-      dueDate.setMonth(dueDate.getMonth() + i)
+      const targetMonth = dueDate.getMonth() + i
+      dueDate.setMonth(targetMonth)
+      // Clamp to last day of target month if overflow occurred
+      if (dueDate.getMonth() !== ((firstDate.getMonth() + i) % 12)) {
+        dueDate.setDate(0) // goes to last day of previous month
+      }
 
       await tx.payment.create({
         data: {
@@ -211,7 +226,7 @@ export async function getCharges(input: GetChargesInput = {}) {
     await db.charge.updateMany({
       where: {
         id: { in: chargesWithOverdue.map((p) => p.chargeId) },
-        status: { in: ["pending"] },
+        status: { in: ["pending", "partial"] },
       },
       data: { status: "overdue" },
     })
@@ -307,6 +322,26 @@ export async function getReceivablesSummary() {
     },
     data: { status: "overdue" },
   })
+
+  // Update charges that have overdue payments
+  const chargesWithOverdue = await db.payment.findMany({
+    where: {
+      workspaceId,
+      status: "overdue",
+    },
+    select: { chargeId: true },
+    distinct: ["chargeId"],
+  })
+
+  if (chargesWithOverdue.length > 0) {
+    await db.charge.updateMany({
+      where: {
+        id: { in: chargesWithOverdue.map((p) => p.chargeId) },
+        status: { in: ["pending", "partial"] },
+      },
+      data: { status: "overdue" },
+    })
+  }
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)

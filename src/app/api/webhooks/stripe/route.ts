@@ -1,5 +1,5 @@
 import Stripe from "stripe"
-import { stripe, getPlanFromPriceId } from "@/lib/stripe"
+import { getStripe, getPlanFromPriceId } from "@/lib/stripe"
 import { db } from "@/lib/db"
 
 export async function POST(request: Request) {
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+    event = getStripe().webhooks.constructEvent(body, sig, webhookSecret)
   } catch {
     return new Response("Invalid signature", { status: 400 })
   }
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
             planStatus = "past_due"
             break
           case "trialing":
-            planStatus = "active"
+            planStatus = "trialing"
             break
           case "canceled":
           case "unpaid":

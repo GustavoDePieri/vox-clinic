@@ -6,7 +6,7 @@ export default async function PatientJoinPage({ params }: { params: Promise<{ to
 
   try {
     const info = await getPatientJoinInfo(token)
-    return <PatientTeleconsulta info={info} />
+    return <PatientTeleconsulta info={info} videoToken={token} />
   } catch (error) {
     const message = error instanceof Error ? error.message : "Teleconsulta nao encontrada"
     return (

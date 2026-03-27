@@ -26,6 +26,12 @@ import { toast } from "sonner"
 const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
+function parseBRL(value: string): number {
+  // Handle Brazilian format: "1.234,56" or "1234,56" or "1234.56"
+  const cleaned = value.replace(/\./g, '').replace(',', '.')
+  return parseFloat(cleaned) || 0
+}
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -97,8 +103,8 @@ export function CreateChargeDialog({ open, onOpenChange, onSuccess, defaultPatie
   }, [open, defaultPatientId])
 
   // Calculations
-  const totalCentavos = Math.round(parseFloat(totalAmountStr || "0") * 100)
-  const discountCentavos = Math.round(parseFloat(discountStr || "0") * 100)
+  const totalCentavos = Math.round(parseBRL(totalAmountStr || "0") * 100)
+  const discountCentavos = Math.round(parseBRL(discountStr || "0") * 100)
   const netCentavos = Math.max(0, totalCentavos - discountCentavos)
   const installmentCount = parseInt(installments, 10) || 1
   const baseInstallment = Math.floor(netCentavos / installmentCount)

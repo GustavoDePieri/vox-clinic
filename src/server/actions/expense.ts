@@ -93,72 +93,74 @@ export async function createExpense(data: {
   const isPaidImmediately = !!data.paymentMethod
   const now = new Date()
 
-  // Create the parent expense
-  const parent = await db.expense.create({
-    data: {
-      workspaceId,
-      description: data.description,
-      amount: data.amount,
-      categoryId: data.categoryId || null,
-      dueDate: new Date(data.dueDate),
-      paymentMethod: isPaidImmediately ? data.paymentMethod : null,
-      paidAt: isPaidImmediately ? now : null,
-      paidAmount: isPaidImmediately ? data.amount : null,
-      status: isPaidImmediately ? "paid" : "pending",
-      recurrence: data.recurrence || null,
-      recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
-      notes: data.notes || null,
-      createdBy: userId,
-    },
-    include: { category: true },
-  })
-
-  // Generate recurring children if applicable
-  if (data.recurrence) {
-    const children: Array<{
-      workspaceId: string
-      description: string
-      amount: number
-      categoryId: string | null
-      dueDate: Date
-      status: string
-      recurrence: string
-      recurrenceEnd: Date | null
-      parentId: string
-      notes: string | null
-      createdBy: string
-    }> = []
-
-    const baseDate = new Date(data.dueDate)
-    const endDate = data.recurrenceEnd
-      ? new Date(data.recurrenceEnd)
-      : new Date(baseDate.getFullYear() + 1, baseDate.getMonth(), baseDate.getDate()) // 12 months max
-
-    let current = getNextRecurrenceDate(baseDate, data.recurrence)
-
-    while (current <= endDate && children.length < 52) {
-      children.push({
+  return db.$transaction(async (tx) => {
+    // Create the parent expense
+    const parent = await tx.expense.create({
+      data: {
         workspaceId,
         description: data.description,
         amount: data.amount,
         categoryId: data.categoryId || null,
-        dueDate: current,
-        status: "pending",
-        recurrence: data.recurrence,
+        dueDate: new Date(data.dueDate),
+        paymentMethod: isPaidImmediately ? data.paymentMethod : null,
+        paidAt: isPaidImmediately ? now : null,
+        paidAmount: isPaidImmediately ? data.amount : null,
+        status: isPaidImmediately ? "paid" : "pending",
+        recurrence: data.recurrence || null,
         recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
-        parentId: parent.id,
         notes: data.notes || null,
         createdBy: userId,
-      })
-      current = getNextRecurrenceDate(current, data.recurrence)
+      },
+      include: { category: true },
+    })
+
+    // Generate recurring children if applicable
+    if (data.recurrence) {
+      const children: Array<{
+        workspaceId: string
+        description: string
+        amount: number
+        categoryId: string | null
+        dueDate: Date
+        status: string
+        recurrence: string
+        recurrenceEnd: Date | null
+        parentId: string
+        notes: string | null
+        createdBy: string
+      }> = []
+
+      const baseDate = new Date(data.dueDate)
+      const endDate = data.recurrenceEnd
+        ? new Date(data.recurrenceEnd)
+        : new Date(baseDate.getFullYear() + 1, baseDate.getMonth(), baseDate.getDate()) // 12 months max
+
+      let current = getNextRecurrenceDate(baseDate, data.recurrence)
+
+      while (current <= endDate && children.length < 52) {
+        children.push({
+          workspaceId,
+          description: data.description,
+          amount: data.amount,
+          categoryId: data.categoryId || null,
+          dueDate: current,
+          status: "pending",
+          recurrence: data.recurrence,
+          recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
+          parentId: parent.id,
+          notes: data.notes || null,
+          createdBy: userId,
+        })
+        current = getNextRecurrenceDate(current, data.recurrence)
+      }
+
+      if (children.length > 0) {
+        await tx.expense.createMany({ data: children })
+      }
     }
 
-    if (children.length > 0) {
-      await db.expense.createMany({ data: children })
-    }
-  }
-
-  return parent
+    return parent
+  })
 }
 
 function getNextRecurrenceDate(
@@ -170,12 +172,24 @@ function getNextRecurrenceDate(
     case "weekly":
       next.setDate(next.getDate() + 7)
       break
-    case "monthly":
+    case "monthly": {
+      const expectedMonth = (next.getMonth() + 1) % 12
       next.setMonth(next.getMonth() + 1)
+      // Clamp to last day of target month if overflow occurred
+      if (next.getMonth() !== expectedMonth) {
+        next.setDate(0)
+      }
       break
-    case "yearly":
+    }
+    case "yearly": {
+      const expectedMonth = next.getMonth()
       next.setFullYear(next.getFullYear() + 1)
+      // Clamp to last day of target month if overflow occurred (e.g. Feb 29 → Mar 1)
+      if (next.getMonth() !== expectedMonth) {
+        next.setDate(0)
+      }
       break
+    }
   }
   return next
 }

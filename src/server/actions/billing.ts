@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { stripe, PLAN_PRICE_IDS } from "@/lib/stripe"
+import { getStripe, PLAN_PRICE_IDS } from "@/lib/stripe"
 
 async function getWorkspaceWithUser() {
   const { userId } = await auth()
@@ -36,7 +36,7 @@ export async function createCheckoutSession(planKey: "pro" | "enterprise") {
   let stripeCustomerId = workspace.stripeCustomerId
 
   if (!stripeCustomerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: user.email ?? undefined,
       name: user.name ?? undefined,
       metadata: {
@@ -54,7 +54,7 @@ export async function createCheckoutSession(planKey: "pro" | "enterprise") {
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.voxclinic.com"
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
     customer: stripeCustomerId,
     line_items: [{ price: priceId, quantity: 1 }],
@@ -78,7 +78,7 @@ export async function createPortalSession() {
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.voxclinic.com"
 
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: workspace.stripeCustomerId,
     return_url: `${baseUrl}/settings/billing`,
   })
@@ -105,7 +105,7 @@ export async function getBillingInfo() {
 
   if (workspace.stripeSubId) {
     try {
-      const subscription = await stripe.subscriptions.retrieve(workspace.stripeSubId)
+      const subscription = await getStripe().subscriptions.retrieve(workspace.stripeSubId)
       result.cancelAtPeriodEnd = subscription.cancel_at_period_end
       // In Stripe v21+, current_period_end moved to SubscriptionItem
       const firstItem = subscription.items?.data?.[0]

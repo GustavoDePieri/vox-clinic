@@ -25,6 +25,12 @@ import { toast } from "sonner"
 const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
+function parseBRL(value: string): number {
+  // Handle Brazilian format: "1.234,56" or "1234,56" or "1234.56"
+  const cleaned = value.replace(/\./g, '').replace(',', '.')
+  return parseFloat(cleaned) || 0
+}
+
 const formatDateBR = (date: Date | string) =>
   new Date(date).toLocaleDateString("pt-BR")
 
@@ -72,7 +78,7 @@ export function RegisterPaymentDialog({ payment, open, onOpenChange, onSuccess }
     }
   }, [payment])
 
-  const paidCentavos = Math.round(parseFloat(paidAmountStr || "0") * 100)
+  const paidCentavos = Math.round(parseBRL(paidAmountStr || "0") * 100)
   const canSubmit = paidCentavos > 0 && paymentMethod
 
   function handleSubmit() {

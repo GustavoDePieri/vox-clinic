@@ -9,19 +9,26 @@ export class NfseClient {
   }
 
   private async request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-        ...options.headers,
-      },
-    })
-    if (!res.ok) {
-      const error = await res.text().catch(() => "Unknown error")
-      throw new Error(`NFS-e API error (${res.status}): ${error}`)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    try {
+      const res = await fetch(`${this.baseUrl}${path}`, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+          ...options.headers,
+        },
+      })
+      if (!res.ok) {
+        const error = await res.text().catch(() => "Unknown error")
+        throw new Error(`NFS-e API error (${res.status}): ${error}`)
+      }
+      return res.json() as Promise<T>
+    } finally {
+      clearTimeout(timeout)
     }
-    return res.json() as Promise<T>
   }
 
   async emit(data: EmitNfseInput): Promise<EmitNfseResponse> {
@@ -42,20 +49,33 @@ export class NfseClient {
     })
   }
 
-  async getPdfUrl(id: string): Promise<string> {
-    const res = await fetch(`${this.baseUrl}/nfse/${id}/pdf`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    })
-    if (!res.ok) throw new Error("Failed to get PDF")
-    const blob = await res.blob()
-    return URL.createObjectURL(blob)
+  async getPdfBytes(id: string): Promise<ArrayBuffer> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    try {
+      const res = await fetch(`${this.baseUrl}/nfse/${id}/pdf`, {
+        signal: controller.signal,
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      })
+      if (!res.ok) throw new Error(`Failed to get PDF: ${res.status}`)
+      return res.arrayBuffer()
+    } finally {
+      clearTimeout(timeout)
+    }
   }
 
   /** Simple connectivity test — fetches the root or a lightweight endpoint */
   async testConnection(): Promise<boolean> {
-    const res = await fetch(`${this.baseUrl}/nfse?$top=1`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    })
-    return res.ok
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    try {
+      const res = await fetch(`${this.baseUrl}/nfse?$top=1`, {
+        signal: controller.signal,
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      })
+      return res.ok
+    } finally {
+      clearTimeout(timeout)
+    }
   }
 }
