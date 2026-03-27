@@ -384,21 +384,30 @@ export default function MigrationPage() {
           setIsParsing(false)
           return
         }
-        const data = XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[sheetName], {
+        const data = XLSX.utils.sheet_to_json<Record<string, any>>(wb.Sheets[sheetName], {
           defval: "",
           raw: false,
+          dateNF: "yyyy-mm-dd",
         })
-        const h = data.length > 0 ? Object.keys(data[0]) : []
+        // Ensure all values are strings (XLSX may return Date objects or numbers)
+        const stringData = data.map((row) => {
+          const clean: Record<string, string> = {}
+          for (const [k, v] of Object.entries(row)) {
+            clean[k] = v == null ? "" : typeof v === "object" ? (v instanceof Date ? v.toISOString() : JSON.stringify(v)) : String(v)
+          }
+          return clean
+        })
+        const h = stringData.length > 0 ? Object.keys(stringData[0]) : []
 
-        if (h.length === 0 || data.length === 0) {
+        if (h.length === 0 || stringData.length === 0) {
           setParseError("Planilha vazia ou sem dados validos.")
           setIsParsing(false)
           return
         }
 
         setHeaders(h)
-        setParsedData(data)
-        setPreviewRows(data.slice(0, 3))
+        setParsedData(stringData)
+        setPreviewRows(stringData.slice(0, 3))
         setIsParsing(false)
       } else {
         setParseError("Formato nao suportado. Use CSV, TXT ou Excel (.xlsx, .xls).")
@@ -868,7 +877,11 @@ export default function MigrationPage() {
                         <tr key={i} className="border-b last:border-0">
                           {headers.slice(0, 8).map((h) => (
                             <td key={h} className="whitespace-nowrap px-4 py-2 text-muted-foreground max-w-[200px] truncate">
-                              {row[h] || <span className="text-muted-foreground/40 italic">vazio</span>}
+                              {row[h] != null && row[h] !== "" ? (
+                                typeof row[h] === "object" ? JSON.stringify(row[h]) : String(row[h])
+                              ) : (
+                                <span className="text-muted-foreground/40 italic">vazio</span>
+                              )}
                             </td>
                           ))}
                           {headers.length > 8 && (
@@ -979,9 +992,9 @@ export default function MigrationPage() {
                       )}
                       <span className="font-medium text-sm truncate">{header}</span>
                       {/* Sample value */}
-                      {previewRows[0]?.[header] && (
+                      {previewRows[0]?.[header] != null && previewRows[0][header] !== "" && (
                         <span className="ml-auto text-xs text-muted-foreground/60 truncate max-w-[120px] hidden sm:inline">
-                          ex: {previewRows[0][header]}
+                          ex: {typeof previewRows[0][header] === "object" ? JSON.stringify(previewRows[0][header]) : String(previewRows[0][header])}
                         </span>
                       )}
                     </div>
@@ -1210,7 +1223,9 @@ export default function MigrationPage() {
                                     key={csvHeader}
                                     className="whitespace-nowrap px-4 py-2 text-muted-foreground max-w-[180px] truncate"
                                   >
-                                    {row[csvHeader] || (
+                                    {row[csvHeader] != null && row[csvHeader] !== "" ? (
+                                      typeof row[csvHeader] === "object" ? JSON.stringify(row[csvHeader]) : String(row[csvHeader])
+                                    ) : (
                                       <span className="text-muted-foreground/40 italic">
                                         vazio
                                       </span>
