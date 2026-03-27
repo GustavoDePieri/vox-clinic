@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/nps(.*)',
   '/booking(.*)',
   '/api/booking(.*)',
+  '/sala(.*)',
   '/manifest.json',
   '/sw.js',
 ])

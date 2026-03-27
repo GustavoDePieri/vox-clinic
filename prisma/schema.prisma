@@ -48,6 +48,12 @@ model Workspace {
   usageRecords      UsageRecord[]
   agendas           Agenda[]
   bookingConfig     BookingConfig?
+  charges           Charge[]
+  payments          Payment[]
+  expenses          Expense[]
+  expenseCategories ExpenseCategory[]
+  nfseConfig        NfseConfig?
+  nfses             Nfse[]
 }
 
 model Patient {
@@ -79,6 +85,8 @@ model Patient {
   documents       PatientDocument[]
   prescriptions    Prescription[]
   certificates     MedicalCertificate[]
+  charges          Charge[]
+  nfses            Nfse[]
 
   @@unique([workspaceId, document])
   @@index([workspaceId])
@@ -104,10 +112,17 @@ model Appointment {
   price        Float?      // valor da consulta em BRL
   source       String?     // "online", "whatsapp", null (manual/legacy)
   status       String      @default("completed")
+  type              String?   // "presencial" | "teleconsulta" (null = presencial for backward compat)
+  videoRoomName     String?   // Daily.co room name
+  videoRoomUrl      String?   // Daily.co room URL for joining
+  videoRecordingUrl String?   // Cloud recording download URL (post-call)
+  videoToken        String?   @unique // Token for patient to join teleconsulta (public access)
   reminderSentAt DateTime? // when reminder was sent (prevents duplicate sends)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   recordings   Recording[]
+  charges      Charge[]
+  nfses        Nfse[]
 
   @@index([patientId])
   @@index([workspaceId])
@@ -450,4 +465,158 @@ model MigrationSession {
   @@index([workspaceId])
   @@index([workspaceId, status])
   @@index([userId])
+}
+
+// ============================================================
+// f04 — Contas a Receber (Accounts Receivable)
+// ============================================================
+
+model Charge {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  patientId       String
+  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId   String?
+  appointment     Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  treatmentPlanId String?
+  description     String         // auto-filled from procedures
+  totalAmount     Int            // in centavos (R$ 150,00 = 15000)
+  discount        Int            @default(0)
+  netAmount       Int            // totalAmount - discount
+  status          String         @default("pending") // pending | partial | paid | overdue | cancelled
+  createdBy       String         // clerkId
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  payments        Payment[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, patientId])
+  @@index([workspaceId, createdAt])
+  @@index([appointmentId])
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  chargeId          String
+  charge            Charge   @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+  workspaceId       String
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  installmentNumber Int      @default(1)
+  totalInstallments Int      @default(1)
+  amount            Int      // in centavos — expected amount
+  dueDate           DateTime
+  paidAt            DateTime?
+  paidAmount        Int?     // actual amount paid (may differ)
+  paymentMethod     String?  // dinheiro | pix | credito | debito | boleto | convenio | transferencia | outro
+  status            String   @default("pending") // pending | paid | overdue | cancelled | refunded
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([chargeId])
+  @@index([workspaceId, dueDate, status])
+  @@index([workspaceId, status])
+}
+
+// ============================================================
+// f05 — Fluxo de Caixa (Cash Flow — Expense side)
+// ============================================================
+
+model Expense {
+  id            String           @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  description   String
+  amount        Int              // in centavos
+  dueDate       DateTime
+  paidAt        DateTime?
+  paidAmount    Int?
+  paymentMethod String?          // dinheiro | pix | credito | debito | boleto | transferencia | outro
+  status        String           @default("pending") // pending | paid | overdue | cancelled
+  recurrence    String?          // null | monthly | weekly | yearly
+  recurrenceEnd DateTime?
+  parentId      String?
+  parent        Expense?         @relation("ExpenseRecurrence", fields: [parentId], references: [id], onDelete: SetNull)
+  children      Expense[]        @relation("ExpenseRecurrence")
+  notes         String?
+  createdBy     String           // clerkId
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([workspaceId, dueDate])
+  @@index([workspaceId, status])
+  @@index([workspaceId, categoryId])
+}
+
+model ExpenseCategory {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  icon        String?   // lucide icon name
+  color       String?   // hex color
+  isDefault   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  expenses    Expense[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+// ============================================================
+// f06 — NFS-e (Electronic Invoice)
+// ============================================================
+
+model NfseConfig {
+  id                 String    @id @default(cuid())
+  workspaceId        String    @unique
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  cnpj               String    // 14 digits
+  inscricaoMunicipal String
+  codigoServico      String    // LC 116 item code (e.g. "4.17")
+  descricaoServico   String    // Default service description
+  aliquotaISS        Float     // e.g. 0.05 for 5%
+  regimeTributario   String    // simples_nacional | lucro_presumido | lucro_real | mei
+  provider           String    @default("nuvem_fiscal") // nuvem_fiscal | focus_nfe
+  apiKey             String    // aggregator API key
+  certificateId      String?   // reference in aggregator
+  clinicCity         String
+  clinicState        String
+  clinicCep          String
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Nfse {
+  id                String       @id @default(cuid())
+  workspaceId       String
+  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  appointmentId     String?
+  appointment       Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  patientId         String
+  patient           Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  chargeId          String?      // link to Charge if available
+  numero            String?      // NFS-e number (filled after authorization)
+  codigoVerificacao String?
+  status            String       @default("pending") // pending | processing | authorized | cancelled | error
+  valor             Int          // in centavos
+  issValor          Int          // ISS tax amount in centavos
+  description       String
+  externalId        String?      // aggregator reference ID
+  pdfUrl            String?
+  xmlUrl            String?
+  errorMessage      String?
+  emittedAt         DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, patientId])
+  @@index([appointmentId])
 }

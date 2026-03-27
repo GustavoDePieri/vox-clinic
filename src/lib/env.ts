@@ -48,6 +48,26 @@ const envSchema = z.object({
     .string()
     .optional()
     .default('https://app.voxclinic.com'),
+  STRIPE_SECRET_KEY: z
+    .string()
+    .optional()
+    .default(''),
+  STRIPE_WEBHOOK_SECRET: z
+    .string()
+    .optional()
+    .default(''),
+  STRIPE_PRICE_PRO: z
+    .string()
+    .optional()
+    .default(''),
+  STRIPE_PRICE_ENTERPRISE: z
+    .string()
+    .optional()
+    .default(''),
+  DAILY_API_KEY: z
+    .string()
+    .optional()
+    .default(''),
 })
 
 function validateEnv() {

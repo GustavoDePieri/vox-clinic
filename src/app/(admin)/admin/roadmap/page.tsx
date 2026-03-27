@@ -123,9 +123,9 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "f01", name: "Preco por consulta", description: "Valor em BRL por consulta, editavel", status: "done", priority: "essential", effort: "low", category: "Financeiro" },
   { id: "f02", name: "Recibos", description: "Impressao PDF com dados paciente e procedimentos", status: "done", priority: "essential", effort: "medium", category: "Financeiro" },
   { id: "f03", name: "Dashboard financeiro", description: "Receita total, ticket medio, por procedimento", status: "done", priority: "essential", effort: "medium", category: "Financeiro" },
-  { id: "f04", name: "Contas a receber", description: "Registro de pagamentos, parcelas, pendencias", status: "planned", priority: "essential", effort: "high", category: "Financeiro" },
-  { id: "f05", name: "Fluxo de caixa", description: "Visao diaria/mensal de entradas e saidas", status: "planned", priority: "essential", effort: "high", category: "Financeiro" },
-  { id: "f06", name: "NFS-e", description: "Geracao de nota fiscal de servico", status: "planned", priority: "essential", effort: "high", category: "Financeiro" },
+  { id: "f04", name: "Contas a receber", description: "Registro de pagamentos, parcelas, pendencias", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
+  { id: "f05", name: "Fluxo de caixa", description: "Visao diaria/mensal de entradas e saidas", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
+  { id: "f06", name: "NFS-e", description: "Geracao de nota fiscal de servico", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
   { id: "f07", name: "Gateway de pagamento", description: "Stripe, PagSeguro ou Mercado Pago", status: "planned", priority: "important", effort: "high", category: "Financeiro" },
   { id: "f08", name: "Gestao de convenios", description: "Tabela de precos por convenio, guias TISS", status: "planned", priority: "important", effort: "high", category: "Financeiro" },
 
@@ -156,7 +156,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "x01", name: "Painel superadmin", description: "Dashboard executivo com KPIs cross-workspace", status: "done", priority: "essential", effort: "high", category: "Admin" },
   { id: "x02", name: "Gestao de workspaces", description: "Lista, busca, drill-down, ativar/suspender", status: "done", priority: "essential", effort: "medium", category: "Admin" },
   { id: "x03", name: "Lista de usuarios", description: "Todos usuarios com role, plano, status", status: "done", priority: "essential", effort: "low", category: "Admin" },
-  { id: "x04", name: "Billing/planos", description: "Stripe integration, upgrade/downgrade, MRR", status: "planned", priority: "essential", effort: "high", category: "Admin" },
+  { id: "x04", name: "Billing/planos", description: "Stripe integration, upgrade/downgrade, MRR", status: "done", priority: "essential", effort: "high", category: "Admin" },
 
   // ── INFRAESTRUTURA ──
   { id: "i01", name: "Design responsivo", description: "Mobile-first, sidebar + bottom nav", status: "done", priority: "essential", effort: "medium", category: "Infraestrutura" },
@@ -168,7 +168,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "i07", name: "White-label", description: "Logo, cores e dominio customizaveis por clinica", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
 
   // ── TELEMEDICINA ──
-  { id: "t01", name: "Teleconsulta por video", description: "Videochamada integrada (WebRTC/Daily.co)", status: "planned", priority: "essential", effort: "high", category: "Telemedicina" },
+  { id: "t01", name: "Teleconsulta por video", description: "Videochamada integrada (WebRTC/Daily.co)", status: "done", priority: "essential", effort: "high", category: "Telemedicina" },
   { id: "t02", name: "Sala de espera virtual", description: "Paciente aguarda ate medico iniciar", status: "planned", priority: "important", effort: "medium", category: "Telemedicina" },
 
   // ── MARKETING ──

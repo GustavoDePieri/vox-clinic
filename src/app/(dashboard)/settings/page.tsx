@@ -61,7 +61,8 @@ import {
   updateBookingConfig,
   regenerateBookingToken,
 } from "@/server/actions/booking-config"
-import { CalendarDays, Globe, Copy, RefreshCw, Link2 } from "lucide-react"
+import { CalendarDays, Globe, Copy, RefreshCw, Link2, Receipt } from "lucide-react"
+import { FiscalTab } from "./fiscal-tab"
 
 import type { Procedure, CustomField } from "@/types"
 
@@ -348,6 +349,10 @@ export default function SettingsPage() {
           <TabsTrigger value="aparencia" className="gap-2 px-4 py-2.5 text-[13px]">
             <Palette className="size-4" />
             Aparencia
+          </TabsTrigger>
+          <TabsTrigger value="fiscal" className="gap-2 px-4 py-2.5 text-[13px]">
+            <Receipt className="size-4" />
+            Fiscal
           </TabsTrigger>
         </TabsList>
 
@@ -736,6 +741,11 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ─── Tab: Fiscal (NFS-e) ─── */}
+        <TabsContent value="fiscal" className="animate-fade-in space-y-4 pt-4">
+          <FiscalTab />
         </TabsContent>
       </Tabs>
 
