@@ -36,7 +36,7 @@ export default async function AdminDashboardPage() {
     enterprise: "bg-purple-500",
   }
 
-  const totalActivePlans = data.planCounts.reduce((sum, p) => sum + p._count, 0)
+  const totalActivePlans = data.planCounts.reduce((sum: number, p: { _count: number }) => sum + p._count, 0)
 
   return (
     <div className="mx-auto max-w-7xl">
