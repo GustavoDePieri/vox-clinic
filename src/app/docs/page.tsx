@@ -73,8 +73,8 @@ function CategorySection({ icon, title, description, count, children }: { icon: 
 }
 
 const FEATURES_SUMMARY = {
-  total: 72,
-  categories: 10,
+  total: 80,
+  categories: 11,
 }
 
 export default function DocsPage() {
@@ -134,6 +134,7 @@ export default function DocsPage() {
               { icon: "⚙️", label: "Configuracoes", id: "configuracoes" },
               { icon: "🔐", label: "Seguranca e LGPD", id: "seguranca-e-lgpd" },
               { icon: "📱", label: "Infraestrutura e UX", id: "infraestrutura-e-ux" },
+              { icon: "🎥", label: "Telemedicina", id: "telemedicina" },
             ].map((item) => (
               <a key={item.id} href={`#${item.id}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-slate-600 hover:bg-slate-50 hover:text-teal-600 transition-colors">
                 <span>{item.icon}</span>
@@ -206,10 +207,15 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 6. FINANCEIRO ── */}
-        <CategorySection icon="💰" title="Financeiro" description="Controle de precos, receitas e recibos por consulta." count={3}>
+        <CategorySection icon="💰" title="Financeiro" description="Controle completo de receitas, despesas, pagamentos, NFS-e e fluxo de caixa." count={8}>
           <FeatureCard title="Preco por Consulta" description="Cada consulta pode ter valor em BRL. Editavel na revisao e no historico. Procedimentos com preco configuravel." />
           <FeatureCard title="Recibos de Atendimento" description="Geracao automatica com dados do paciente, procedimentos e valor. Impressao em PDF (Ctrl+P). Assinatura manual." />
           <FeatureCard title="Dashboard Financeiro" description="Receita total, ticket medio, faturamento mensal, breakdown por procedimento. Exportacao para Excel." />
+          <FeatureCard title="Contas a Receber" description="Registro de cobrancas com parcelamento (1-24x), controle de pagamentos por metodo (PIX, cartao, dinheiro, boleto, convenio), deteccao automatica de vencidos, saldo por paciente." />
+          <FeatureCard title="Fluxo de Caixa" description="Visao diaria/mensal de entradas e saidas com grafico combinado (barras + linha de saldo). Despesas com categorias, recorrencia e projecao futura." />
+          <FeatureCard title="Gestao de Despesas" description="Cadastro de despesas com 8 categorias padrao (Aluguel, Salarios, Material, etc.), recorrencia semanal/mensal/anual, pagamento inline." />
+          <FeatureCard title="NFS-e (Nota Fiscal)" description="Emissao de Nota Fiscal de Servico Eletronica via API Nuvem Fiscal. Configuracao fiscal completa (CNPJ, ISS, regime tributario). Download PDF, cancelamento." />
+          <FeatureCard title="Tabela de Precos" description="Configuracao de precos por procedimento, editavel diretamente na pagina financeira." />
         </CategorySection>
 
         {/* ── 7. RELATORIOS ── */}
@@ -255,6 +261,13 @@ export default function DocsPage() {
           <FeatureCard title="Health Check" description="Endpoint /api/health para monitoramento de disponibilidade e integracao com ferramentas de uptime." />
           <FeatureCard title="Validacao de Ambiente" description="Todas as variaveis de ambiente validadas via Zod no startup. App falha rapido se configuracao incorreta." />
           <FeatureCard title="Indicador de Horario Atual" description="Linha vermelha nas visoes semanal e diaria mostrando a hora atual (useRef, sem re-renders no pai), com auto-scroll para o horario do dia." />
+        </CategorySection>
+
+        {/* ── 11. TELEMEDICINA ── */}
+        <CategorySection icon="🎥" title="Telemedicina" description="Teleconsulta por video integrada ao fluxo de atendimento." count={3}>
+          <FeatureCard title="Teleconsulta por Video" description="Videochamada integrada via Daily.co com sala privada, sala de espera (knocking), compartilhamento de tela e chat. Iframe embeddable sem dependencias." />
+          <FeatureCard title="Acesso do Paciente" description="Link publico de acesso (/sala/[token]) sem necessidade de login. Tela pre-chamada com consentimento LGPD, dados da consulta e botao de entrada." />
+          <FeatureCard title="Billing e Planos (Stripe)" description="Assinaturas via Stripe Checkout com planos Free/Pro/Enterprise. Customer Portal para autogestao, webhooks para sincronizacao de plano, suporte a PIX e boleto." />
         </CategorySection>
 
         {/* Footer */}
