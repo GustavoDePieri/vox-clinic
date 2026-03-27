@@ -59,7 +59,7 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
   - `/appointments/review` — Review AI summary before confirming
   - `/prescriptions/[id]` — Print-friendly prescription page (medications table, Ctrl+P → PDF)
   - `/certificates/[id]` — Print-friendly medical certificate page (atestado/declaracao/encaminhamento/laudo, Ctrl+P → PDF)
-  - `/settings` — Workspace config (procedures with duration, custom fields, clinic name)
+  - `/settings` — Workspace config (procedures with duration, custom fields, clinic name, agendas management with color picker)
   - `/settings/import` — CSV patient import with column mapping
   - `/settings/whatsapp` — WhatsApp Business API setup wizard (5-step: intro, connect, verify, templates, done)
 - `src/app/(admin)/` — Superadmin panel (own layout, no sidebar/nav)
