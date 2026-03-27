@@ -87,9 +87,9 @@ export default async function AppointmentsPage({
                     </div>
                     {apt.procedures.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {apt.procedures.map((proc, i) => (
+                        {(apt.procedures as any[]).map((proc, i) => (
                           <Badge key={i} variant="secondary" className="text-xs">
-                            {proc}
+                            {typeof proc === "string" ? proc : proc?.name || String(proc)}
                           </Badge>
                         ))}
                       </div>

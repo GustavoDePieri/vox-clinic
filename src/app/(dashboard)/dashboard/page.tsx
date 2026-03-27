@@ -242,7 +242,7 @@ export default async function DashboardPage() {
                       </p>
                       {apt.procedures.length > 0 && (
                         <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">
-                          {apt.procedures.join(", ")}
+                          {(apt.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name || String(p)).join(", ")}
                         </p>
                       )}
                     </div>
@@ -302,7 +302,7 @@ export default async function DashboardPage() {
                       <div className="hidden sm:flex gap-1 shrink-0">
                         {apt.procedures.slice(0, 2).map((proc, i) => (
                           <Badge key={i} variant="secondary" className="text-[10px]">
-                            {proc}
+                            {typeof proc === "string" ? proc : (proc as any)?.name || String(proc)}
                           </Badge>
                         ))}
                         {apt.procedures.length > 2 && (

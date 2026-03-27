@@ -288,7 +288,7 @@ export default async function PatientReportPage({
                         </td>
                         <td className="px-4 py-3 align-top">
                           {apt.procedures.length > 0
-                            ? apt.procedures.join(", ")
+                            ? (apt.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name || String(p)).join(", ")
                             : <span className="text-slate-400">-</span>}
                         </td>
                         <td className="px-4 py-3 align-top">
@@ -321,7 +321,7 @@ export default async function PatientReportPage({
                       <p className="text-xs font-medium text-slate-500 print:text-gray-600 mb-2">
                         {formatDate(apt.date)}
                         {apt.procedures.length > 0 &&
-                          ` - ${apt.procedures.join(", ")}`}
+                          ` - ${(apt.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name || String(p)).join(", ")}`}
                       </p>
                       <p className="text-sm leading-relaxed whitespace-pre-line text-slate-800 print:text-black">
                         {apt.aiSummary}

@@ -262,7 +262,7 @@ export default function FinancialPage() {
                       </p>
                       {tx.procedures.length > 0 && (
                         <p className="text-xs text-muted-foreground truncate">
-                          {tx.procedures.join(", ")}
+                          {(tx.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name || String(p)).join(", ")}
                         </p>
                       )}
                     </div>
