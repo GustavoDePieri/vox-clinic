@@ -1,21 +1,8 @@
 "use server"
 
-import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
-
-async function getWorkspaceId() {
-  const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true },
-  })
-  if (!user?.workspace) throw new Error("Workspace not configured")
-
-  return user.workspace.id
-}
+import { getWorkspaceId, getAuthContext } from "./_helpers"
 
 export async function getAppointments(page: number = 1, status?: string) {
   const workspaceId = await getWorkspaceId()
@@ -211,13 +198,10 @@ export async function scheduleAppointment(data: {
   agendaId: string
   notes?: string
   procedures?: string[]
+  durationMinutes?: number
   forceSchedule?: boolean
 }) {
-  const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
-  if (!user?.workspace) throw new Error("Workspace not configured")
-  const workspaceId = user.workspace.id
+  const { userId, workspaceId } = await getAuthContext()
 
   // Validate agenda belongs to workspace
   const agenda = await db.agenda.findFirst({
@@ -241,9 +225,9 @@ export async function scheduleAppointment(data: {
     await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
 
     if (!data.forceSchedule) {
-      const windowMs = 30 * 60 * 1000
-      const windowStart = new Date(targetDate.getTime() - windowMs)
-      const windowEnd = new Date(targetDate.getTime() + windowMs)
+      const durationMs = (data.durationMinutes || 30) * 60 * 1000
+      const windowStart = new Date(targetDate.getTime() - durationMs)
+      const windowEnd = new Date(targetDate.getTime() + durationMs)
 
       const conflicts = await tx.appointment.findMany({
         where: {
@@ -312,11 +296,7 @@ function hashStringToInt(str: string): number {
 }
 
 export async function updateAppointmentStatus(appointmentId: string, status: string) {
-  const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
-  if (!user?.workspace) throw new Error("Workspace not configured")
-  const workspaceId = user.workspace.id
+  const { userId, workspaceId } = await getAuthContext()
 
   const validStatuses = ["scheduled", "completed", "cancelled", "no_show"]
   if (!validStatuses.includes(status)) {
@@ -344,12 +324,8 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
   return { id: updated.id, status: updated.status }
 }
 
-export async function rescheduleAppointment(appointmentId: string, newDate: string) {
-  const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
-  if (!user?.workspace) throw new Error("Workspace not configured")
-  const workspaceId = user.workspace.id
+export async function rescheduleAppointment(appointmentId: string, newDate: string, forceSchedule = false) {
+  const { userId, workspaceId } = await getAuthContext()
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
@@ -364,22 +340,28 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
     const lockId = hashStringToInt(hourKey)
     await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
 
-    const windowMs = 30 * 60 * 1000
-    const windowStart = new Date(targetDate.getTime() - windowMs)
-    const windowEnd = new Date(targetDate.getTime() + windowMs)
+    if (!forceSchedule) {
+      const windowMs = 30 * 60 * 1000
+      const windowStart = new Date(targetDate.getTime() - windowMs)
+      const windowEnd = new Date(targetDate.getTime() + windowMs)
 
-    const conflicts = await tx.appointment.findMany({
-      where: {
-        workspaceId,
-        agendaId: existing.agendaId,
-        id: { not: appointmentId },
-        status: { in: ["scheduled", "completed"] },
-        date: { gte: windowStart, lte: windowEnd },
-      },
-    })
+      const conflicts = await tx.appointment.findMany({
+        where: {
+          workspaceId,
+          agendaId: existing.agendaId,
+          id: { not: appointmentId },
+          status: { in: ["scheduled", "completed"] },
+          date: { gte: windowStart, lte: windowEnd },
+        },
+        include: {
+          patient: { select: { id: true, name: true } },
+        },
+      })
 
-    if (conflicts.length > 0) {
-      throw new Error("Ja existe consulta proxima a este horario. Reagendamento cancelado.")
+      if (conflicts.length > 0) {
+        const names = conflicts.map((c) => c.patient.name).join(", ")
+        throw new Error(`CONFLICT:Ja existe consulta proxima a este horario (${names}). Deseja reagendar mesmo assim?`)
+      }
     }
 
     return tx.appointment.update({
@@ -400,11 +382,7 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
 }
 
 export async function deleteAppointment(appointmentId: string) {
-  const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
-  if (!user?.workspace) throw new Error("Workspace not configured")
-  const workspaceId = user.workspace.id
+  const { userId, workspaceId } = await getAuthContext()
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },

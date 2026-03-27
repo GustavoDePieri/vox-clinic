@@ -1,20 +1,7 @@
 "use server"
 
-import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-
-async function getWorkspaceId() {
-  const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true },
-  })
-  if (!user?.workspace) throw new Error("Workspace not configured")
-
-  return user.workspace.id
-}
+import { getWorkspaceId } from "./_helpers"
 
 export interface BlockedSlotItem {
   id: string
@@ -145,6 +132,40 @@ export async function createBlockedSlot(data: {
     allDay: slot.allDay,
     recurring: slot.recurring,
     agendaId: slot.agendaId,
+  }
+}
+
+export async function updateBlockedSlot(
+  id: string,
+  data: { title?: string; startDate?: string; endDate?: string; allDay?: boolean; recurring?: string | null }
+) {
+  const workspaceId = await getWorkspaceId()
+
+  const existing = await db.blockedSlot.findFirst({
+    where: { id, workspaceId },
+  })
+  if (!existing) throw new Error("Bloqueio nao encontrado")
+
+  const updateData: any = {}
+  if (data.title !== undefined) updateData.title = data.title.trim()
+  if (data.startDate !== undefined) updateData.startDate = new Date(data.startDate)
+  if (data.endDate !== undefined) updateData.endDate = new Date(data.endDate)
+  if (data.allDay !== undefined) updateData.allDay = data.allDay
+  if (data.recurring !== undefined) updateData.recurring = data.recurring || null
+
+  const updated = await db.blockedSlot.update({
+    where: { id },
+    data: updateData,
+  })
+
+  return {
+    id: updated.id,
+    title: updated.title,
+    startDate: updated.startDate.toISOString(),
+    endDate: updated.endDate.toISOString(),
+    allDay: updated.allDay,
+    recurring: updated.recurring,
+    agendaId: updated.agendaId,
   }
 }
 

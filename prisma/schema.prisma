@@ -110,6 +110,7 @@ model Appointment {
   @@index([workspaceId, date])
   @@index([agendaId])
   @@index([agendaId, date])
+  @@index([agendaId, status, date])
 }
 
 model Recording {
