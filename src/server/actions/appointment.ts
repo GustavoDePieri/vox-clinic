@@ -213,7 +213,11 @@ export async function scheduleAppointment(data: {
   procedures?: string[]
   forceSchedule?: boolean
 }) {
-  const workspaceId = await getWorkspaceId()
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
+  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user.workspace.id
 
   // Validate agenda belongs to workspace
   const agenda = await db.agenda.findFirst({
@@ -279,10 +283,9 @@ export async function scheduleAppointment(data: {
     })
   })
 
-  const { userId } = await auth()
   await logAudit({
     workspaceId,
-    userId: userId!,
+    userId,
     action: "appointment.scheduled",
     entityType: "Appointment",
     entityId: appointment.id,
@@ -309,7 +312,11 @@ function hashStringToInt(str: string): number {
 }
 
 export async function updateAppointmentStatus(appointmentId: string, status: string) {
-  const workspaceId = await getWorkspaceId()
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
+  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user.workspace.id
 
   const validStatuses = ["scheduled", "completed", "cancelled", "no_show"]
   if (!validStatuses.includes(status)) {
@@ -326,10 +333,9 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
     data: { status },
   })
 
-  const { userId } = await auth()
   await logAudit({
     workspaceId,
-    userId: userId!,
+    userId,
     action: `appointment.${status}`,
     entityType: "Appointment",
     entityId: appointmentId,
@@ -339,7 +345,11 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
 }
 
 export async function rescheduleAppointment(appointmentId: string, newDate: string) {
-  const workspaceId = await getWorkspaceId()
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
+  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user.workspace.id
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
@@ -366,12 +376,10 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
         status: { in: ["scheduled", "completed"] },
         date: { gte: windowStart, lte: windowEnd },
       },
-      include: { patient: { select: { name: true } } },
     })
 
     if (conflicts.length > 0) {
-      const names = conflicts.map((c) => c.patient.name).join(", ")
-      throw new Error(`CONFLICT:Ja existe consulta proxima a este horario (${names}).`)
+      throw new Error("Ja existe consulta proxima a este horario. Reagendamento cancelado.")
     }
 
     return tx.appointment.update({
@@ -380,10 +388,9 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
     })
   })
 
-  const { userId } = await auth()
   await logAudit({
     workspaceId,
-    userId: userId!,
+    userId,
     action: "appointment.rescheduled",
     entityType: "Appointment",
     entityId: appointmentId,
@@ -393,7 +400,11 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
 }
 
 export async function deleteAppointment(appointmentId: string) {
-  const workspaceId = await getWorkspaceId()
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true } })
+  if (!user?.workspace) throw new Error("Workspace not configured")
+  const workspaceId = user.workspace.id
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
@@ -404,10 +415,9 @@ export async function deleteAppointment(appointmentId: string) {
     where: { id: appointmentId },
   })
 
-  const { userId } = await auth()
   await logAudit({
     workspaceId,
-    userId: userId!,
+    userId,
     action: "appointment.deleted",
     entityType: "Appointment",
     entityId: appointmentId,

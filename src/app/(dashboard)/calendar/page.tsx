@@ -515,8 +515,9 @@ export default function CalendarPage() {
     try {
       await rescheduleAppointment(appointment.id, newDate.toISOString())
       loadAppointments()
+      toast.success("Consulta reagendada")
     } catch (err: any) {
-      alert(err.message || "Erro ao reagendar consulta")
+      toast.error(err.message || "Erro ao reagendar consulta")
     }
   }
 
@@ -718,14 +719,14 @@ export default function CalendarPage() {
             </div>
 
             {/* Time grid */}
-            <div ref={weekGridRef} className="relative grid grid-cols-[56px_repeat(7,1fr)] max-h-[calc(100vh-260px)] overflow-y-auto min-w-[700px]">
+            <div ref={weekGridRef} className="relative grid grid-cols-[56px_repeat(7,1fr)] max-h-[calc(100vh-260px)] overflow-y-auto min-w-[700px]" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}>
               {/* "Now" indicator line */}
               {nowLineTop !== null && (() => {
                 const todayIndex = weekDays.findIndex((d) => isToday(d))
                 if (todayIndex === -1) return null
                 return (
                   <div
-                    className="absolute left-[60px] right-0 z-10 pointer-events-none"
+                    className="absolute left-[56px] right-0 z-10 pointer-events-none"
                     style={{ top: `${nowLineTop}px` }}
                   >
                     {/* Line across today's column only */}
