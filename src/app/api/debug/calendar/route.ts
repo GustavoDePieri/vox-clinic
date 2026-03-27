@@ -65,7 +65,7 @@ export async function GET() {
     // 6. Test transaction with advisory lock
     try {
       await db.$transaction(async (tx) => {
-        await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, 12345)
+        await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, 12345)
         return true
       })
       results.advisoryLock = "OK"

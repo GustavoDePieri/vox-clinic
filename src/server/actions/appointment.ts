@@ -238,7 +238,7 @@ export async function scheduleAppointment(data: {
     // Advisory lock on agendaId + hour window to serialize scheduling
     const hourKey = `${data.agendaId}-${targetDate.toISOString().slice(0, 13)}`
     const lockId = hashStringToInt(hourKey)
-    await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
+    await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
 
     if (!data.forceSchedule) {
       const windowMs = 30 * 60 * 1000
@@ -362,7 +362,7 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
   const updated = await db.$transaction(async (tx) => {
     const hourKey = `${existing.agendaId}-${targetDate.toISOString().slice(0, 13)}`
     const lockId = hashStringToInt(hourKey)
-    await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
+    await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
 
     if (!forceSchedule) {
       const windowMs = 30 * 60 * 1000
@@ -469,7 +469,7 @@ export async function scheduleRecurringAppointments(data: {
       // Advisory lock per agenda+hour (same pattern as scheduleAppointment)
       const hourKey = `${data.agendaId}-${date.toISOString().slice(0, 13)}`
       const lockId = hashStringToInt(hourKey)
-      await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
+      await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
 
       const windowMs = 30 * 60 * 1000
       const conflicts = await tx.appointment.findMany({
