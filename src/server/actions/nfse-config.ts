@@ -19,13 +19,30 @@ async function getWorkspaceId() {
   return workspaceId
 }
 
+function validateCpf(cpf: string): boolean {
+  const digits = cpf.replace(/\D/g, "")
+  if (digits.length !== 11) return false
+  if (/^(\d)\1{10}$/.test(digits)) return false
+
+  const calc = (slice: string, factor: number) => {
+    let sum = 0
+    for (let i = 0; i < slice.length; i++) {
+      sum += parseInt(slice[i]) * (factor - i)
+    }
+    const rest = sum % 11
+    return rest < 2 ? 0 : 11 - rest
+  }
+
+  if (parseInt(digits[9]) !== calc(digits.slice(0, 9), 10)) return false
+  if (parseInt(digits[10]) !== calc(digits.slice(0, 10), 11)) return false
+  return true
+}
+
 function validateCnpj(cnpj: string): boolean {
   const digits = cnpj.replace(/\D/g, "")
   if (digits.length !== 14) return false
-  // Check all same digit
   if (/^(\d)\1{13}$/.test(digits)) return false
 
-  // Check digit validation
   const calc = (slice: string, weights: number[]) => {
     let sum = 0
     for (let i = 0; i < weights.length; i++) {
@@ -45,6 +62,13 @@ function validateCnpj(cnpj: string): boolean {
   if (parseInt(digits[13]) !== d2) return false
 
   return true
+}
+
+function validateCpfCnpj(value: string): boolean {
+  const digits = value.replace(/\D/g, "")
+  if (digits.length === 11) return validateCpf(digits)
+  if (digits.length === 14) return validateCnpj(digits)
+  return false
 }
 
 export async function getNfseConfig() {
@@ -89,10 +113,10 @@ export async function saveNfseConfig(data: {
 }) {
   const workspaceId = await getWorkspaceId()
 
-  // Clean CNPJ
+  // Clean and validate CPF/CNPJ
   const cnpjDigits = data.cnpj.replace(/\D/g, "")
-  if (!validateCnpj(cnpjDigits)) {
-    throw new Error("CNPJ invalido")
+  if (!validateCpfCnpj(cnpjDigits)) {
+    throw new Error(cnpjDigits.length === 11 ? "CPF invalido" : "CNPJ invalido")
   }
 
   // Validate required fields
