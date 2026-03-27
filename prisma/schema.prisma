@@ -46,6 +46,7 @@ model Workspace {
   blockedSlots      BlockedSlot[]
   usageRecords      UsageRecord[]
   agendas           Agenda[]
+  bookingConfig     BookingConfig?
 }
 
 model Patient {
@@ -98,6 +99,7 @@ model Appointment {
   audioUrl     String?
   transcript   String?
   price        Float?      // valor da consulta em BRL
+  source       String?     // "online", "whatsapp", null (manual/legacy)
   status       String      @default("completed")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -402,4 +404,22 @@ model Agenda {
   blockedSlots BlockedSlot[]
 
   @@index([workspaceId])
+}
+
+model BookingConfig {
+  id                  String   @id @default(cuid())
+  workspaceId         String   @unique
+  workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  token               String   @unique @default(cuid())
+  isActive            Boolean  @default(false)
+  allowedAgendaIds    String[] @default([])
+  allowedProcedureIds String[] @default([])
+  maxDaysAhead        Int      @default(30)
+  startHour           Int      @default(8)
+  endHour             Int      @default(18)
+  welcomeMessage      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([token])
 }

@@ -55,7 +55,13 @@ import {
   updateAgenda,
   deleteAgenda,
 } from "@/server/actions/agenda"
-import { CalendarDays } from "lucide-react"
+import {
+  getBookingConfig,
+  toggleBooking,
+  updateBookingConfig,
+  regenerateBookingToken,
+} from "@/server/actions/booking-config"
+import { CalendarDays, Globe, Copy, RefreshCw, Link2 } from "lucide-react"
 
 type Procedure = { id: string; name: string; category: string; duration?: number }
 type CustomField = { id: string; name: string; type: string; required: boolean }
@@ -332,6 +338,10 @@ export default function SettingsPage() {
             <CalendarDays className="size-4" />
             Agendas
           </TabsTrigger>
+          <TabsTrigger value="booking" className="gap-2 px-4 py-2.5 text-[13px]">
+            <Globe className="size-4" />
+            Online
+          </TabsTrigger>
           <TabsTrigger value="mensagens" className="gap-2 px-4 py-2.5 text-[13px]">
             <MessageSquare className="size-4" />
             Mensagens
@@ -589,6 +599,11 @@ export default function SettingsPage() {
         {/* ─── Tab: Agendas ─── */}
         <TabsContent value="agendas" className="animate-fade-in space-y-4 pt-4">
           <AgendasTab />
+        </TabsContent>
+
+        {/* ─── Tab: Booking Online ─── */}
+        <TabsContent value="booking" className="animate-fade-in space-y-4 pt-4">
+          <BookingTab />
         </TabsContent>
 
         {/* ─── Tab: Mensagens ─── */}
@@ -1229,6 +1244,179 @@ function AgendasTab() {
             <CalendarDays className="size-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm">Nenhuma agenda encontrada</p>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ────────────────────── Booking Tab ──────────────────────
+
+function BookingTab() {
+  const [loading, setLoading] = useState(true)
+  const [config, setConfig] = useState<{
+    token: string; isActive: boolean; maxDaysAhead: number; startHour: number; endHour: number; welcomeMessage: string | null
+  } | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const loadConfig = useCallback(async () => {
+    try {
+      const data = await getBookingConfig()
+      setConfig(data)
+    } catch {
+      // No config yet
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadConfig() }, [loadConfig])
+
+  async function handleToggle(enabled: boolean) {
+    setActionLoading(true)
+    try {
+      const result = await toggleBooking(enabled)
+      setConfig((prev) => prev ? { ...prev, ...result } : { ...result, maxDaysAhead: 30, startHour: 8, endHour: 18, welcomeMessage: null })
+      toast.success(enabled ? "Agendamento online ativado" : "Agendamento online desativado")
+    } catch (err: any) {
+      toast.error(err.message || "Erro")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleRegenerate() {
+    if (!confirm("Regenerar o link? O link anterior deixara de funcionar.")) return
+    setActionLoading(true)
+    try {
+      const result = await regenerateBookingToken()
+      setConfig((prev) => prev ? { ...prev, token: result.token } : null)
+      toast.success("Link regenerado")
+    } catch (err: any) {
+      toast.error(err.message || "Erro")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleSaveConfig(data: { maxDaysAhead?: number; startHour?: number; endHour?: number; welcomeMessage?: string | null }) {
+    setActionLoading(true)
+    try {
+      const result = await updateBookingConfig(data)
+      setConfig((prev) => prev ? { ...prev, ...result } : null)
+      toast.success("Configuracao salva")
+    } catch (err: any) {
+      toast.error(err.message || "Erro")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const bookingUrl = config?.token ? `${typeof window !== "undefined" ? window.location.origin : ""}/booking/${config.token}` : ""
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6 space-y-3">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-16 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Globe className="size-4 text-vox-primary" />
+          Agendamento Online
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Permita que pacientes agendem consultas diretamente pelo link. Compartilhe no Instagram, WhatsApp ou site.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {/* Toggle */}
+        <div className="flex items-center justify-between rounded-xl border border-border/40 p-4">
+          <div>
+            <div className="text-sm font-medium">Ativar agendamento online</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Pacientes poderao agendar pelo link</div>
+          </div>
+          <Switch
+            checked={config?.isActive ?? false}
+            onCheckedChange={handleToggle}
+            disabled={actionLoading}
+          />
+        </div>
+
+        {/* Booking URL */}
+        {config?.isActive && (
+          <>
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Link2 className="size-3.5" />
+                Link de agendamento
+              </Label>
+              <div className="flex gap-2">
+                <Input value={bookingUrl} readOnly className="rounded-xl text-xs bg-muted/30" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl shrink-0 gap-1.5"
+                  onClick={() => { navigator.clipboard.writeText(bookingUrl); toast.success("Link copiado!") }}
+                >
+                  <Copy className="size-3.5" />
+                  Copiar
+                </Button>
+              </div>
+              <button onClick={handleRegenerate} disabled={actionLoading} className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <RefreshCw className="size-3" />
+                Regenerar link
+              </button>
+            </div>
+
+            <Separator />
+
+            {/* Config */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Horario inicio</Label>
+                <select
+                  value={config.startHour}
+                  onChange={(e) => handleSaveConfig({ startHour: parseInt(e.target.value) })}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-vox-primary/30"
+                >
+                  {Array.from({ length: 14 }, (_, i) => i + 6).map((h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Horario fim</Label>
+                <select
+                  value={config.endHour}
+                  onChange={(e) => handleSaveConfig({ endHour: parseInt(e.target.value) })}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-vox-primary/30"
+                >
+                  {Array.from({ length: 14 }, (_, i) => i + 8).map((h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Dias no futuro (max)</Label>
+                <Input
+                  type="number"
+                  min={7}
+                  max={90}
+                  value={config.maxDaysAhead}
+                  onChange={(e) => handleSaveConfig({ maxDaysAhead: Math.min(90, Math.max(7, parseInt(e.target.value) || 30)) })}
+                  className="rounded-xl text-sm"
+                />
+              </div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

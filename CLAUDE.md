@@ -59,7 +59,7 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
   - `/appointments/review` — Review AI summary before confirming
   - `/prescriptions/[id]` — Print-friendly prescription page (medications table, Ctrl+P → PDF)
   - `/certificates/[id]` — Print-friendly medical certificate page (atestado/declaracao/encaminhamento/laudo, Ctrl+P → PDF)
-  - `/settings` — Workspace config (procedures with duration, custom fields, clinic name, agendas management with color picker)
+  - `/settings` — Workspace config (procedures with duration, custom fields, clinic name, agendas management with color picker, online booking toggle and config)
   - `/settings/import` — CSV patient import with column mapping
   - `/settings/whatsapp` — WhatsApp Business API setup wizard (5-step: intro, connect, verify, templates, done)
 - `src/app/(admin)/` — Superadmin panel (own layout, no sidebar/nav)
@@ -74,10 +74,13 @@ This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.c
 - `src/app/api/birthdays/` — Cron-triggered birthday messages (WhatsApp preferred, email fallback)
 - `src/app/api/nps/` — NPS survey API (GET survey by token, POST submit score+comment, public/token-based)
 - `src/app/api/nps/send/` — Cron-triggered NPS survey sending after completed appointments
+- `src/app/api/booking/` — Public booking API (GET config by token, POST create booking)
+- `src/app/api/booking/slots/` — Public available slots API (GET by date/agenda/duration)
 - `src/app/api/export/patients/` — Excel export of all active patients
 - `src/app/api/export/reports/` — Excel export of reports data (multi-sheet: Resumo, Mensal, Procedimentos)
 - `src/app/api/whatsapp/webhook/` — WhatsApp webhook (GET for Meta verification, POST for incoming messages/status updates/appointment confirmations)
 - `src/app/nps/[token]/` — Public NPS survey page (no auth, token-based access, 0-10 score + comment)
+- `src/app/booking/[token]/` — Public online booking page (no auth, token-based, multi-step: procedure → date/time → patient info → confirm)
 
 ### Command Palette (Ctrl+K)
 - `src/components/command-palette.tsx` — Global search accessible from any page
@@ -105,6 +108,7 @@ All data mutations use Server Actions with `"use server"` directive:
 - `certificate.ts` — createCertificate (auto-generates content for atestado/declaracao), getCertificate, getPatientCertificates, deleteCertificate
 - `blocked-slot.ts` — getBlockedSlots (expands weekly recurring, optional agendaIds filter), createBlockedSlot (requires agendaId), deleteBlockedSlot
 - `agenda.ts` — getAgendas, getDefaultAgendaId, getDefaultAgendaIdForWorkspace, createAgenda, updateAgenda, deleteAgenda
+- `booking-config.ts` — getBookingConfig, toggleBooking, updateBookingConfig, regenerateBookingToken
 - `reports.ts` — getReportsData (analytics: monthly revenue, patient trends, procedure ranking, hour heatmap, return rate, no-show rate, patient ranking by frequency/revenue, NPS score)
 - `dashboard.ts` — getDashboardData (stats, today's agenda, recent activity, trends)
 - `reminder.ts` — sendAppointmentReminder, sendBulkReminders
@@ -214,6 +218,7 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 - **Prescription**: patientId, workspaceId, appointmentId?, medications (JSON: [{ name, dosage, frequency, duration, notes }]), notes. Print-to-PDF via `/prescriptions/[id]`
 - **MedicalCertificate**: patientId, workspaceId, type (atestado/declaracao_comparecimento/encaminhamento/laudo), content (auto-generated for standard types), days?, cid?. Print-to-PDF via `/certificates/[id]`
 - **Agenda**: workspaceId, name, color (hex), isDefault, isActive. One default agenda per workspace ("Agenda Principal"). Appointments and BlockedSlots belong to an agenda. Multiple agendas per workspace for multi-professional clinics
+- **BookingConfig**: workspaceId (unique), token (unique, public URL), isActive, allowedAgendaIds, allowedProcedureIds, maxDaysAhead (default 30), startHour (default 8), endHour (default 18), welcomeMessage. Controls public online booking page
 - **BlockedSlot**: workspaceId, agendaId, title, startDate, endDate, allDay, recurring (null=one-time, "weekly"=repeats). Shown as gray bars in calendar
 - **NpsSurvey**: workspaceId, patientId, appointmentId? (unique), score (0-10), comment, token (unique, public access), sentAt, answeredAt. Public survey page at `/nps/[token]`
 - **AuditLog**: workspaceId, userId, action, entityType, entityId, details (Json)

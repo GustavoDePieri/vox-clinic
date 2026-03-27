@@ -10,6 +10,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks(.*)',
   '/api/whatsapp(.*)',
   '/api/nps(.*)',
+  '/booking(.*)',
+  '/api/booking(.*)',
   '/manifest.json',
   '/sw.js',
 ])

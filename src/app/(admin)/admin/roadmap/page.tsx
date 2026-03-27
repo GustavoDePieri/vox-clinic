@@ -83,7 +83,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "a04", name: "Bloqueio de horarios", description: "Almoco, ferias, feriados — unicos e recorrentes semanais", status: "done", priority: "essential", effort: "medium", category: "Agendamento" },
   { id: "a05", name: "Agenda recorrente", description: "Semanal/quinzenal, 2-52 ocorrencias, criacao atomica", status: "done", priority: "important", effort: "medium", category: "Agendamento" },
   { id: "a06", name: "Duracao por procedimento", description: "Campo de duracao em minutos por procedimento", status: "done", priority: "important", effort: "low", category: "Agendamento" },
-  { id: "a07", name: "Agendamento online (paciente)", description: "Link publico para paciente agendar sozinho", status: "planned", priority: "essential", effort: "high", category: "Agendamento" },
+  { id: "a07", name: "Agendamento online (paciente)", description: "Link publico para paciente agendar sozinho", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
   { id: "a08", name: "Multiplas agendas", description: "Suporte a varias agendas por profissional", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
   { id: "a09", name: "Lista de espera", description: "Fila quando nao ha horario, notificacao automatica", status: "planned", priority: "important", effort: "medium", category: "Agendamento" },
   { id: "a10", name: "Google Calendar sync", description: "Sincronizacao bidirecional com calendario pessoal", status: "planned", priority: "differential", effort: "high", category: "Integracoes" },

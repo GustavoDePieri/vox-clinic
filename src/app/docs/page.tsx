@@ -73,7 +73,7 @@ function CategorySection({ icon, title, description, count, children }: { icon: 
 }
 
 const FEATURES_SUMMARY = {
-  total: 71,
+  total: 72,
   categories: 10,
 }
 
@@ -159,7 +159,8 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 2. AGENDAMENTO ── */}
-        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendario completo com multiplas visoes, bloqueio de horarios, agendamentos recorrentes e multiplas agendas." count={9}>
+        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendario completo com multiplas visoes, bloqueio de horarios, agendamentos recorrentes, multiplas agendas e agendamento online." count={10}>
+          <FeatureCard title="Agendamento Online (Paciente)" description="Link publico para pacientes agendarem sozinhos. Multi-step: procedimento, data/hora com slots disponiveis, dados do paciente. Sem login. Configura em Settings > Online. Advisory lock anti-double-booking." />
           <FeatureCard title="Multiplas Agendas" description="Suporte a varias agendas por workspace (por profissional ou sala). Pills coloridos para filtrar. Conflitos e bloqueios por agenda. CRUD completo em Configuracoes > Agendas." />
           <FeatureCard title="Calendario Multi-visao" description="Visualizacao diaria, semanal, mensal e em lista. Navegacao por data, responsivo. Acoes rapidas de status por consulta." />
           <FeatureCard title="Drag and Drop" description="Arraste consultas na visao semanal para reagendar. Integrado com @dnd-kit/core. Atualiza data automaticamente." />
