@@ -17,7 +17,7 @@ export const mockDb: any = {
   whatsAppConversation: { findMany: vi.fn(), upsert: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
   whatsAppMessage: { findMany: vi.fn(), upsert: vi.fn(), create: vi.fn() },
   workspaceInvite: { findMany: vi.fn(), create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
-  blockedSlot: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn(), findFirst: vi.fn() },
+  blockedSlot: { findMany: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), findFirst: vi.fn() },
   agenda: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   bookingConfig: { findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn(), create: vi.fn() },
   npsSurvey: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
@@ -27,6 +27,7 @@ export const mockDb: any = {
   $transaction: vi.fn((fn: any) => fn(mockDb)),
   $queryRaw: vi.fn(),
   $queryRawUnsafe: vi.fn(),
+  $executeRawUnsafe: vi.fn(),
 }
 
 vi.mock("@/lib/db", () => ({ db: mockDb }))

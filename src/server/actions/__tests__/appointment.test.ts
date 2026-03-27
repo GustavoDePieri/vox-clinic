@@ -84,7 +84,7 @@ describe("appointment actions", () => {
     it("creates appointment when no conflicts", async () => {
       mockDb.patient.findFirst.mockResolvedValue({ id: "p1", workspaceId: WORKSPACE_ID })
       // Transaction mock: tx has the same methods as mockDb
-      mockDb.$queryRawUnsafe.mockResolvedValue(undefined)
+      mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       mockDb.appointment.findMany.mockResolvedValue([]) // no conflicts
       const createdAppointment = {
         id: "a_new", date: new Date("2024-06-15T10:00:00Z"),
@@ -107,7 +107,7 @@ describe("appointment actions", () => {
 
     it("rejects with CONFLICT: prefix when overlap found", async () => {
       mockDb.patient.findFirst.mockResolvedValue({ id: "p1", workspaceId: WORKSPACE_ID })
-      mockDb.$queryRawUnsafe.mockResolvedValue(undefined)
+      mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       mockDb.appointment.findMany.mockResolvedValue([
         { id: "a_existing", patient: { id: "p2", name: "Joao" }, date: new Date(), status: "scheduled" },
       ])
@@ -119,7 +119,7 @@ describe("appointment actions", () => {
 
     it("allows override with forceSchedule:true", async () => {
       mockDb.patient.findFirst.mockResolvedValue({ id: "p1", workspaceId: WORKSPACE_ID })
-      mockDb.$queryRawUnsafe.mockResolvedValue(undefined)
+      mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       const createdAppointment = {
         id: "a_forced", date: new Date("2024-06-15T10:00:00Z"),
         patient: { id: "p1", name: "Maria" },
@@ -202,9 +202,9 @@ describe("appointment actions", () => {
 
   // ─── rescheduleAppointment ───────────────────────────────────
   describe("rescheduleAppointment", () => {
-    it("updates the appointment date", async () => {
+    it("updates the appointment date when no conflicts", async () => {
       mockDb.appointment.findFirst.mockResolvedValueOnce({ id: "a1", workspaceId: WORKSPACE_ID, agendaId: AGENDA_ID })
-      mockDb.$queryRawUnsafe.mockResolvedValue(undefined)
+      mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       mockDb.appointment.findMany.mockResolvedValue([]) // no conflicts
       const newDate = new Date("2024-07-01T14:00:00Z")
       mockDb.appointment.update.mockResolvedValue({ id: "a1", date: newDate })
@@ -213,6 +213,33 @@ describe("appointment actions", () => {
 
       expect(result.id).toBe("a1")
       expect(result.date).toBe(newDate.toISOString())
+      expect(mockDb.$transaction).toHaveBeenCalled()
+    })
+
+    it("rejects with CONFLICT: prefix when overlap found", async () => {
+      mockDb.appointment.findFirst.mockResolvedValueOnce({ id: "a1", workspaceId: WORKSPACE_ID, agendaId: AGENDA_ID })
+      mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
+      mockDb.appointment.findMany.mockResolvedValue([
+        { id: "a_existing", patient: { id: "p2", name: "Joao" }, date: new Date(), status: "scheduled" },
+      ])
+
+      await expect(
+        rescheduleAppointment("a1", "2024-07-01T14:00:00Z")
+      ).rejects.toThrow(/^CONFLICT:/)
+    })
+
+    it("allows override with forceSchedule=true", async () => {
+      mockDb.appointment.findFirst.mockResolvedValueOnce({ id: "a1", workspaceId: WORKSPACE_ID, agendaId: AGENDA_ID })
+      mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
+      const newDate = new Date("2024-07-01T14:00:00Z")
+      mockDb.appointment.update.mockResolvedValue({ id: "a1", date: newDate })
+
+      const result = await rescheduleAppointment("a1", "2024-07-01T14:00:00Z", true)
+
+      expect(result.id).toBe("a1")
+      expect(result.date).toBe(newDate.toISOString())
+      // Should not check for conflicts when forceSchedule is true
+      expect(mockDb.appointment.findMany).not.toHaveBeenCalled()
     })
 
     it("throws when appointment not in workspace", async () => {
