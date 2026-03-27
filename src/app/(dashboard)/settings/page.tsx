@@ -62,7 +62,8 @@ import {
   regenerateBookingToken,
 } from "@/server/actions/booking-config"
 import { CalendarDays, Globe, Copy, RefreshCw, Link2, Receipt, CreditCard } from "lucide-react"
-import { FiscalTab } from "./fiscal-tab"
+import dynamic from "next/dynamic"
+const FiscalTab = dynamic(() => import("./fiscal-tab").then(m => m.FiscalTab), { ssr: false })
 
 import type { Procedure, CustomField } from "@/types"
 

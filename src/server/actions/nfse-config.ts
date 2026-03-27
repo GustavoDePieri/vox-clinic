@@ -4,21 +4,6 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { NfseClient } from "@/lib/nfse/client"
 
-async function getWorkspaceId() {
-  const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
-  })
-
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
-
-  return workspaceId
-}
-
 function validateCpf(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "")
   if (digits.length !== 11) return false
@@ -72,7 +57,14 @@ function validateCpfCnpj(value: string): boolean {
 }
 
 export async function getNfseConfig() {
-  const workspaceId = await getWorkspaceId()
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const user = await db.user.findUnique({
+    where: { clerkId: userId },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
+  })
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const config = await db.nfseConfig.findUnique({
     where: { workspaceId },
@@ -111,7 +103,14 @@ export async function saveNfseConfig(data: {
   clinicState: string
   clinicCep: string
 }) {
-  const workspaceId = await getWorkspaceId()
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const user = await db.user.findUnique({
+    where: { clerkId: userId },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
+  })
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   // Clean and validate CPF/CNPJ
   const cnpjDigits = data.cnpj.replace(/\D/g, "")
@@ -169,7 +168,14 @@ export async function saveNfseConfig(data: {
 }
 
 export async function testNfseConnection() {
-  const workspaceId = await getWorkspaceId()
+  const { userId } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const user = await db.user.findUnique({
+    where: { clerkId: userId },
+    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
+  })
+  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  if (!workspaceId) throw new Error("Workspace not configured")
 
   const config = await db.nfseConfig.findUnique({
     where: { workspaceId },
