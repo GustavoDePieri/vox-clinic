@@ -163,10 +163,38 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
 
     // Ensure company is registered in NuvemFiscal before emitting
     try {
+      const workspace = await db.workspace.findUnique({
+        where: { id: workspaceId },
+        include: { user: { select: { name: true, clinicName: true, email: true } } },
+      })
+
+      // Fetch IBGE code and full address from CEP via ViaCEP
+      let logradouro = "Rua nao informada"
+      let bairro = "Centro"
+      let codigoMunicipio = ""
+      try {
+        const cepRes = await fetch(`https://viacep.com.br/ws/${config.clinicCep}/json/`)
+        const cepData = await cepRes.json()
+        if (!cepData.erro) {
+          logradouro = cepData.logradouro || logradouro
+          bairro = cepData.bairro || bairro
+          codigoMunicipio = cepData.ibge || ""
+        }
+      } catch { /* ViaCEP offline — continue with defaults */ }
+
       await client.registerCompany({
         cpf_cnpj: config.cnpj,
         inscricao_municipal: config.inscricaoMunicipal,
-        nome_razao_social: config.cnpj.length === 11 ? "Profissional" : "Empresa",
+        nome_razao_social: workspace?.user?.clinicName || workspace?.user?.name || "Clinica",
+        email: workspace?.user?.email || "noreply@voxclinic.com",
+        endereco: {
+          logradouro,
+          numero: "S/N",
+          bairro,
+          codigo_municipio: codigoMunicipio,
+          uf: config.clinicState,
+          cep: config.clinicCep,
+        },
       })
       await client.configureNfse(config.cnpj, {
         ambiente: isSandbox ? "homologacao" : "producao",
