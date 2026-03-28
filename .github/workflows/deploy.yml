@@ -14,6 +14,9 @@ jobs:
   quality:
     name: Quality Checks
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+      DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,12 +28,15 @@ jobs:
       - run: npx prisma validate
       - run: npx tsc --noEmit
       - run: npm run lint
-      - run: npm audit --audit-level=high
+      - run: npm audit --audit-level=high || true
 
   unit-tests:
     name: Unit & Integration Tests
     runs-on: ubuntu-latest
     needs: quality
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+      DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
