@@ -2,6 +2,15 @@ import { db } from "@/lib/db"
 import { getPlanLimits, isWithinLimit, isFeatureAllowed } from "@/lib/plan-limits"
 import type { PlanLimits } from "@/lib/plan-limits"
 
+/** Minimal Prisma client interface for transaction support */
+export type PrismaLike = {
+  patient: { count: (args: any) => Promise<number> }
+  appointment: { count: (args: any) => Promise<number> }
+  recording: { count: (args: any) => Promise<number> }
+  workspaceMember: { count: (args: any) => Promise<number> }
+  agenda: { count: (args: any) => Promise<number> }
+}
+
 export interface PlanCheckResult {
   allowed: boolean
   reason?: string
@@ -11,12 +20,14 @@ export interface PlanCheckResult {
 
 /**
  * Check if a workspace can add more patients (active count vs plan limit).
+ * Accepts an optional transaction client (`tx`) — defaults to global `db`.
  */
-export async function checkPatientLimit(workspaceId: string, plan: string): Promise<PlanCheckResult> {
+export async function checkPatientLimit(workspaceId: string, plan: string, client?: PrismaLike): Promise<PlanCheckResult> {
+  const prisma = client ?? db
   const limits = getPlanLimits(plan)
   if (limits.maxPatients === -1) return { allowed: true }
 
-  const count = await db.patient.count({
+  const count = await prisma.patient.count({
     where: { workspaceId, isActive: true },
   })
 
@@ -33,8 +44,10 @@ export async function checkPatientLimit(workspaceId: string, plan: string): Prom
 
 /**
  * Check if a workspace can create more appointments this month.
+ * Accepts an optional transaction client (`tx`) — defaults to global `db`.
  */
-export async function checkAppointmentLimit(workspaceId: string, plan: string): Promise<PlanCheckResult> {
+export async function checkAppointmentLimit(workspaceId: string, plan: string, client?: PrismaLike): Promise<PlanCheckResult> {
+  const prisma = client ?? db
   const limits = getPlanLimits(plan)
   if (limits.maxAppointmentsPerMonth === -1) return { allowed: true }
 
@@ -42,7 +55,7 @@ export async function checkAppointmentLimit(workspaceId: string, plan: string): 
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
-  const count = await db.appointment.count({
+  const count = await prisma.appointment.count({
     where: {
       workspaceId,
       createdAt: { gte: startOfMonth, lte: endOfMonth },

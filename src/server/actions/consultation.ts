@@ -12,23 +12,24 @@ import { recordConsent } from "@/lib/consent"
 import { getDefaultAgendaIdForWorkspace } from "@/server/actions/agenda"
 import { readProcedures, toJsonValue, readMedicalHistory } from "@/lib/json-helpers"
 import { logger } from "@/lib/logger"
+import { sendInngestEvent, isInngestEnabled } from "@/lib/inngest/client"
 import type { AppointmentSummary } from "@/types"
 import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ActionError, safeAction } from "@/lib/error-messages"
 
 export const processConsultation = safeAction(async (formData: FormData, patientId: string) => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   // Load workspace if not available via ownership (member fallback)
   const workspace = user?.workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
-  if (!workspace) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!workspace) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const audioFile = formData.get("audio") as File | null
   if (!audioFile) throw new ActionError(ERR_NO_AUDIO)
@@ -40,6 +41,36 @@ export const processConsultation = safeAction(async (formData: FormData, patient
   const arrayBuffer = await audioFile.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
+  // --- Inngest path: send event and return immediately ---
+  if (isInngestEnabled()) {
+    // Create a placeholder recording with "processing" status
+    const recording = await db.recording.create({
+      data: {
+        workspaceId,
+        audioUrl: "__processing__",
+        status: "processing",
+        patientId,
+        fileSize: audioFile.size,
+      },
+    })
+
+    await sendInngestEvent("app/audio.uploaded", {
+      workspaceId,
+      userId,
+      patientId,
+      type: "consultation",
+      audioBuffer: buffer.toString("base64"),
+      filename: audioFile.name || "consultation.webm",
+      fileSize: audioFile.size,
+    })
+
+    return {
+      recordingId: recording.id,
+      status: "processing" as const,
+    }
+  }
+
+  // --- Inline path: existing synchronous pipeline (default) ---
   let audioPath: string | null = null
   let transcript: string | null = null
 
@@ -145,6 +176,9 @@ export async function getRecordingForReview(recordingId: string) {
   })
   if (!recording) throw new Error(ERR_RECORDING_NOT_FOUND)
 
+  // Fire-and-forget audit log — non-blocking (CFM 1.821/2007 read access tracking)
+  logAudit({ workspaceId, userId, action: "recording.accessed", entityType: "Recording", entityId: recording.id }).catch(() => {})
+
   return {
     recordingId: recording.id,
     transcript: recording.transcript ?? "",
@@ -161,16 +195,17 @@ export const confirmConsultation = safeAction(async (data: {
   audioPath: string
   transcript: string
   price?: number
+  cidCodes?: { code: string; description: string }[]
 }) => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const agendaId = await getDefaultAgendaIdForWorkspace(workspaceId)
 
@@ -195,12 +230,13 @@ export const confirmConsultation = safeAction(async (data: {
         patientId: data.patientId,
         workspaceId,
         agendaId,
-        procedures: data.summary.procedures,
+        procedures: Array.isArray(data.summary.procedures) ? data.summary.procedures : [],
         notes: data.summary.observations,
         aiSummary: JSON.stringify(data.summary),
         audioUrl: data.audioPath,
         transcript: data.transcript,
         price: data.price ?? null,
+        cidCodes: data.cidCodes ?? [],
       },
     })
 

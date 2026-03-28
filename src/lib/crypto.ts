@@ -42,15 +42,28 @@ export function decrypt(encryptedText: string): string {
   }
 
   const [ivB64, tagB64, ciphertextB64] = parts
+
+  // Validate that parts look like base64 (our encrypted format uses short base64 strings for IV and tag)
+  // IV is 12 bytes = 16 base64 chars, tag is 16 bytes = 24 base64 chars
+  // If IV part is too long, this is likely a legacy plaintext token that happens to contain ":"
   const iv = Buffer.from(ivB64, "base64")
-  const tag = Buffer.from(tagB64, "base64")
-  const ciphertext = Buffer.from(ciphertextB64, "base64")
+  if (iv.length !== IV_LENGTH) {
+    return encryptedText
+  }
 
-  const decipher = createDecipheriv(ALGORITHM, key, iv)
-  decipher.setAuthTag(tag)
+  try {
+    const tag = Buffer.from(tagB64, "base64")
+    const ciphertext = Buffer.from(ciphertextB64, "base64")
 
-  let decrypted = decipher.update(ciphertext)
-  decrypted = Buffer.concat([decrypted, decipher.final()])
+    const decipher = createDecipheriv(ALGORITHM, key, iv)
+    decipher.setAuthTag(tag)
 
-  return decrypted.toString("utf8")
+    let decrypted = decipher.update(ciphertext)
+    decrypted = Buffer.concat([decrypted, decipher.final()])
+
+    return decrypted.toString("utf8")
+  } catch {
+    // Decryption failed — likely a legacy plaintext token with colons
+    return encryptedText
+  }
 }

@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { sendEmail } from "@/lib/email"
-import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NO_EMAIL, ERR_PATIENT_NO_PHONE, ERR_WHATSAPP_NOT_CONFIGURED, ERR_INVALID_CHANNEL, ActionError, safeAction } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NO_EMAIL, ERR_PATIENT_NO_PHONE, ERR_PATIENT_NO_WHATSAPP_CONSENT, ERR_WHATSAPP_NOT_CONFIGURED, ERR_INVALID_CHANNEL, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -102,6 +102,7 @@ export const sendAppointmentMessage = safeAction(async ({ appointmentId, channel
 
   if (channel === "whatsapp") {
     if (!appointment.patient.phone) throw new ActionError(ERR_PATIENT_NO_PHONE)
+    if (!appointment.patient.whatsappConsent) throw new ActionError(ERR_PATIENT_NO_WHATSAPP_CONSENT)
 
     const waConfig = await db.whatsAppConfig.findFirst({
       where: { workspaceId, isActive: true },

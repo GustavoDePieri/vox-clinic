@@ -12,6 +12,7 @@ import { recordConsent } from "@/lib/consent"
 import { getDefaultAgendaIdForWorkspace } from "@/server/actions/agenda"
 import { readProcedures, readCustomFields, toJsonValue } from "@/lib/json-helpers"
 import { logger } from "@/lib/logger"
+import { sendInngestEvent, isInngestEnabled } from "@/lib/inngest/client"
 import type { ExtractedPatientData } from "@/types"
 import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ActionError, safeAction } from "@/lib/error-messages"
 
@@ -40,6 +41,34 @@ export const processVoiceRegistration = safeAction(async (formData: FormData) =>
   const arrayBuffer = await audioFile.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
+  // --- Inngest path: send event and return immediately ---
+  if (isInngestEnabled()) {
+    // Create a placeholder recording with "processing" status
+    const recording = await db.recording.create({
+      data: {
+        workspaceId,
+        audioUrl: "__processing__",
+        status: "processing",
+        fileSize: audioFile.size,
+      },
+    })
+
+    await sendInngestEvent("app/audio.uploaded", {
+      workspaceId,
+      userId,
+      type: "registration",
+      audioBuffer: buffer.toString("base64"),
+      filename: audioFile.name || "recording.webm",
+      fileSize: audioFile.size,
+    })
+
+    return {
+      recordingId: recording.id,
+      status: "processing" as const,
+    }
+  }
+
+  // --- Inline path: existing synchronous pipeline (default) ---
   let audioPath: string | null = null
   let transcript: string | null = null
 

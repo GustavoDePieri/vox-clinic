@@ -1,11 +1,14 @@
+import Link from "next/link"
 import { getAdminUsers } from "@/server/actions/admin"
 
 function formatDate(date: Date) {
   return new Date(date).toLocaleDateString("pt-BR")
 }
 
-export default async function AdminUsersPage() {
-  const users = await getAdminUsers()
+export default async function AdminUsersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const params = await searchParams
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1)
+  const { users, total, totalPages } = await getAdminUsers(page)
 
   return (
     <div className="space-y-6">
@@ -81,9 +84,40 @@ export default async function AdminUsersPage() {
         </table>
       </div>
 
-      <p className="text-xs text-slate-400 text-center">
-        {users.length} usuario{users.length !== 1 ? "s" : ""} na plataforma
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-400">
+          {total} usuario{total !== 1 ? "s" : ""} na plataforma
+          {totalPages > 1 ? ` — Pagina ${page} de ${totalPages}` : ""}
+        </p>
+        {totalPages > 1 && (
+          <div className="flex gap-2">
+            {page > 1 ? (
+              <Link
+                href={`/admin/usuarios?page=${page - 1}`}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                Anterior
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-300 cursor-not-allowed">
+                Anterior
+              </span>
+            )}
+            {page < totalPages ? (
+              <Link
+                href={`/admin/usuarios?page=${page + 1}`}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                Proximo
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-300 cursor-not-allowed">
+                Proximo
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

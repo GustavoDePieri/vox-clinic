@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getAvailableSlots } from "@/lib/booking-availability"
 import { logger } from "@/lib/logger"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 // GET /api/booking/slots?token=abc&date=2026-04-01&agendaId=ag1&duration=30
 export async function GET(request: NextRequest) {
+  // Rate limit: 60 GET requests per minute per IP
+  const ip = getClientIp(request)
+  const rl = rateLimit(`booking:slots:${ip}`, 60_000, 60)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   try {
     const { searchParams } = request.nextUrl
     const token = searchParams.get("token")

@@ -9,84 +9,106 @@ datasource db {
 }
 
 model User {
-  id                 String    @id @default(cuid())
-  clerkId            String    @unique
+  id                 String            @id @default(cuid())
+  clerkId            String            @unique
   name               String
-  email              String    @unique
+  email              String            @unique
   profession         String?
   clinicName         String?
-  onboardingComplete Boolean   @default(false)
-  role               String    @default("user") // "user" | "superadmin"
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  onboardingComplete Boolean           @default(false)
+  role               String            @default("user") // "user" | "superadmin"
+  tourCompleted      Boolean           @default(false)
+  tourStep           Int               @default(0) // 0=not started, 1-10=last step, -1=skipped
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   workspace          Workspace?
   memberships        WorkspaceMember[]
 }
 
 model Workspace {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  professionType    String
-  timezone          String   @default("America/Sao_Paulo") // IANA timezone identifier
-  customFields      Json     @default("[]")
-  procedures        Json     @default("[]")
-  anamnesisTemplate Json     @default("[]")
-  categories        Json     @default("[]")
-  plan              String   @default("free")     // "free" | "pro" | "enterprise"
-  planStatus        String   @default("active")   // "active" | "suspended" | "cancelled"
-  stripeCustomerId  String?
-  stripeSubId       String?
-  trialEndsAt       DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  patients          Patient[]
-  appointments      Appointment[]
-  recordings        Recording[]
-  members           WorkspaceMember[]
-  blockedSlots      BlockedSlot[]
-  usageRecords      UsageRecord[]
-  agendas           Agenda[]
-  bookingConfig     BookingConfig?
-  charges           Charge[]
-  payments          Payment[]
-  expenses          Expense[]
-  expenseCategories ExpenseCategory[]
-  nfseConfig        NfseConfig?
-  nfses             Nfse[]
+  id                  String              @id @default(cuid())
+  userId              String              @unique
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professionType      String
+  timezone            String              @default("America/Sao_Paulo") // IANA timezone identifier
+  customFields        Json                @default("[]")
+  procedures          Json                @default("[]")
+  anamnesisTemplate   Json                @default("[]")
+  categories          Json                @default("[]")
+  plan                String              @default("free") // "free" | "pro" | "enterprise"
+  planStatus          String              @default("active") // "active" | "suspended" | "cancelled"
+  stripeCustomerId    String?
+  stripeSubId         String?
+  trialEndsAt         DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  patients            Patient[]
+  appointments        Appointment[]
+  recordings          Recording[]
+  members             WorkspaceMember[]
+  blockedSlots        BlockedSlot[]
+  usageRecords        UsageRecord[]
+  agendas             Agenda[]
+  bookingConfig       BookingConfig?
+  charges             Charge[]
+  payments            Payment[]
+  expenses            Expense[]
+  expenseCategories   ExpenseCategory[]
+  nfseConfig          NfseConfig?
+  nfses               Nfse[]
+  operadoras          Operadora[]
+  tissConfig          TissConfig?
+  tissGuides          TissGuide[]
+  formTemplates       FormTemplate[]
+  formResponses       FormResponse[]
+  memedPrescribers    MemedPrescriber[]
+  waitlistEntries     WaitlistEntry[]
+  commissionRules     CommissionRule[]
+  commissionEntries   CommissionEntry[]
+  inventoryCategories InventoryCategory[]
+  inventoryItems      InventoryItem[]
+  gatewayConfig       GatewayConfig?
+  webhookLogs         GatewayWebhookLog[]
 }
 
 model Patient {
-  id             String        @id @default(cuid())
-  workspaceId    String
-  workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name           String
-  document       String?
-  rg             String?
-  phone          String?
-  email          String?
-  birthDate      DateTime?
-  gender         String?       // masculino, feminino, outro, nao_informado
-  address        Json?         // { street, number, complement, neighborhood, city, state, zipCode }
-  insurance      String?       // convenio / plano de saude
-  guardian       String?       // responsavel (para menores)
-  source         String?       // instagram, google, indicacao, convenio, site, facebook, outro
-  tags           String[]      @default([])
-  medicalHistory Json          @default("{}") // { allergies: [], chronicDiseases: [], medications: [], bloodType, notes }
-  customData     Json          @default("{}")
-  alerts         Json          @default("[]")
-  lastBirthdaySentYear Int?    // year when birthday message was last sent (prevents duplicate sends)
-  isActive       Boolean       @default(true)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  appointments    Appointment[]
-  recordings      Recording[]
-  treatmentPlans  TreatmentPlan[]
-  documents       PatientDocument[]
-  prescriptions    Prescription[]
-  certificates     MedicalCertificate[]
-  charges          Charge[]
-  nfses            Nfse[]
+  id                   String               @id @default(cuid())
+  workspaceId          String
+  workspace            Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name                 String
+  document             String?
+  rg                   String?
+  phone                String?
+  email                String?
+  birthDate            DateTime?
+  gender               String? // masculino, feminino, outro, nao_informado
+  address              Json? // { street, number, complement, neighborhood, city, state, zipCode }
+  insurance            String? // convenio / plano de saude
+  guardian             String? // responsavel (para menores)
+  source               String? // instagram, google, indicacao, convenio, site, facebook, outro
+  tags                 String[]             @default([])
+  medicalHistory       Json                 @default("{}") // { allergies: [], chronicDiseases: [], medications: [], bloodType, notes }
+  customData           Json                 @default("{}")
+  alerts               Json                 @default("[]")
+  whatsappConsent      Boolean              @default(false)
+  whatsappConsentAt    DateTime?
+  lastBirthdaySentYear Int? // year when birthday message was last sent (prevents duplicate sends)
+  isActive             Boolean              @default(true)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  appointments         Appointment[]
+  recordings           Recording[]
+  treatmentPlans       TreatmentPlan[]
+  documents            PatientDocument[]
+  prescriptions        Prescription[]
+  certificates         MedicalCertificate[]
+  charges              Charge[]
+  nfses                Nfse[]
+  tissGuides           TissGuide[]
+  insuranceData        Json? // Structured: { operadoraId, cardNumber, planName, planCode, validUntil }
+  formResponses        FormResponse[]
+  waitlistEntries      WaitlistEntry[]
+  clinicalImages       ClinicalImage[]
 
   @@unique([workspaceId, document])
   @@index([workspaceId])
@@ -96,33 +118,40 @@ model Patient {
 }
 
 model Appointment {
-  id           String      @id @default(cuid())
-  patientId    String
-  patient      Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  workspaceId  String
-  workspace    Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  agendaId     String
-  agenda       Agenda      @relation(fields: [agendaId], references: [id], onDelete: Cascade)
-  date         DateTime    @default(now())
-  procedures   Json        @default("[]")
-  notes        String?
-  aiSummary    String?
-  audioUrl     String?
-  transcript   String?
-  price        Float?      // valor da consulta em BRL
-  source       String?     // "online", "whatsapp", null (manual/legacy)
-  status       String      @default("completed")
-  type              String?   // "presencial" | "teleconsulta" (null = presencial for backward compat)
-  videoRoomName     String?   // Daily.co room name
-  videoRoomUrl      String?   // Daily.co room URL for joining
-  videoRecordingUrl String?   // Cloud recording download URL (post-call)
-  videoToken        String?   @unique // Token for patient to join teleconsulta (public access)
-  reminderSentAt DateTime? // when reminder was sent (prevents duplicate sends)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  recordings   Recording[]
-  charges      Charge[]
-  nfses        Nfse[]
+  id                String            @id @default(cuid())
+  patientId         String
+  patient           Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  workspaceId       String
+  workspace         Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agendaId          String
+  agenda            Agenda            @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  date              DateTime          @default(now())
+  procedures        Json              @default("[]")
+  notes             String?
+  aiSummary         String?
+  audioUrl          String?
+  transcript        String?
+  price             Float? // valor da consulta em BRL
+  source            String? // "online", "whatsapp", null (manual/legacy)
+  status            String            @default("completed")
+  type              String? // "presencial" | "teleconsulta" (null = presencial for backward compat)
+  videoRoomName     String? // Daily.co room name
+  videoRoomUrl      String? // Daily.co room URL for joining
+  videoRecordingUrl String? // Cloud recording download URL (post-call)
+  videoToken        String?           @unique // Token for patient to join teleconsulta (public access)
+  cidCodes          Json              @default("[]") // [{ code: "J06.9", description: "Infecção aguda das vias aéreas superiores" }]
+  reminderSentAt    DateTime? // when reminder was sent (prevents duplicate sends)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  recordings        Recording[]
+  charges           Charge[]
+  nfses             Nfse[]
+  tissGuides        TissGuide[]
+  formResponses     FormResponse[]
+  clinicalImages    ClinicalImage[]
+  professionalId    String? // WorkspaceMember who performed the appointment (for commissions)
+  professional      WorkspaceMember?  @relation(fields: [professionalId], references: [id], onDelete: SetNull)
+  commissionEntries CommissionEntry[]
 
   @@index([patientId])
   @@index([workspaceId])
@@ -134,24 +163,25 @@ model Appointment {
 }
 
 model Recording {
-  id              String      @id @default(cuid())
+  id              String       @id @default(cuid())
   workspaceId     String?
-  workspace       Workspace?  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace       Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   appointmentId   String?
   appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   patientId       String?
-  patient         Patient?    @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  patient         Patient?     @relation(fields: [patientId], references: [id], onDelete: SetNull)
   audioUrl        String
   transcript      String?
   aiExtractedData Json?
-  status          String      @default("pending")
+  status          String       @default("pending")
   errorMessage    String?
   duration        Int?
   fileSize        Int?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @default(now()) @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @default(now()) @updatedAt
 
   @@index([workspaceId])
+  @@index([workspaceId, createdAt])
   @@index([appointmentId])
   @@index([patientId])
 }
@@ -160,10 +190,10 @@ model AuditLog {
   id          String   @id @default(cuid())
   workspaceId String
   userId      String
-  action      String   // "patient.created", "patient.updated", "appointment.created", etc.
-  entityType  String   // "Patient", "Appointment", "Recording"
+  action      String // "patient.created", "patient.updated", "appointment.created", etc.
+  entityType  String // "Patient", "Appointment", "Recording"
   entityId    String
-  details     Json?    // optional before/after snapshot
+  details     Json? // optional before/after snapshot
   createdAt   DateTime @default(now())
 
   @@index([workspaceId])
@@ -176,9 +206,9 @@ model ConsentRecord {
   workspaceId String
   patientId   String?
   recordingId String?
-  consentType String   // "audio_recording", "data_processing"
+  consentType String // "audio_recording", "data_processing"
   givenAt     DateTime @default(now())
-  givenBy     String   // clerkId of the professional who obtained consent
+  givenBy     String // clerkId of the professional who obtained consent
   details     String?
 
   @@index([workspaceId])
@@ -186,21 +216,21 @@ model ConsentRecord {
 }
 
 model TreatmentPlan {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   patientId         String
-  patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
   workspaceId       String
-  name              String   // e.g. "Tratamento de canal", "Clareamento 6 sessoes"
-  procedures        Json     @default("[]") // list of procedure names involved
+  name              String // e.g. "Tratamento de canal", "Clareamento 6 sessoes"
+  procedures        Json      @default("[]") // list of procedure names involved
   totalSessions     Int
-  completedSessions Int      @default(0)
-  status            String   @default("active") // active, completed, cancelled, paused
+  completedSessions Int       @default(0)
+  status            String    @default("active") // active, completed, cancelled, paused
   notes             String?
-  startDate         DateTime @default(now())
+  startDate         DateTime  @default(now())
   estimatedEndDate  DateTime?
   completedAt       DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([patientId])
   @@index([workspaceId])
@@ -210,11 +240,11 @@ model TreatmentPlan {
 model Notification {
   id          String   @id @default(cuid())
   workspaceId String
-  userId      String   // clerkId of the recipient
-  type        String   // "appointment_soon", "appointment_missed", "treatment_complete", "system"
+  userId      String // clerkId of the recipient
+  type        String // "appointment_soon", "appointment_missed", "treatment_complete", "system"
   title       String
   body        String?
-  entityType  String?  // "Appointment", "Patient", "TreatmentPlan"
+  entityType  String? // "Appointment", "Patient", "TreatmentPlan"
   entityId    String?
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -224,16 +254,16 @@ model Notification {
 }
 
 model NpsSurvey {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   workspaceId   String
   patientId     String
-  appointmentId String?  @unique // one survey per appointment
-  score         Int?     // 0-10 NPS score
+  appointmentId String?   @unique // one survey per appointment
+  score         Int? // 0-10 NPS score
   comment       String?
-  token         String   @unique @default(cuid()) // public access token
-  sentAt        DateTime @default(now())
+  token         String    @unique @default(cuid()) // public access token
+  sentAt        DateTime  @default(now())
   answeredAt    DateTime?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   @@index([workspaceId])
   @@index([patientId])
@@ -245,9 +275,9 @@ model PatientDocument {
   patientId   String
   patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   workspaceId String
-  name        String   // original filename
-  url         String   // storage path
-  type        String   // "image", "pdf", "other"
+  name        String // original filename
+  url         String // storage path
+  type        String // "image", "pdf", "other"
   mimeType    String?
   fileSize    Int?
   createdAt   DateTime @default(now())
@@ -257,13 +287,17 @@ model PatientDocument {
 }
 
 model WorkspaceMember {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role        String   @default("member") // "owner", "admin", "member"
-  invitedAt   DateTime @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String    @default("doctor") // "owner" | "admin" | "doctor" | "secretary" | "viewer" (legacy: "member" → "doctor")
+  invitedAt   DateTime  @default(now())
+
+  appointments      Appointment[]
+  commissionRules   CommissionRule[]
+  commissionEntries CommissionEntry[]
 
   @@unique([workspaceId, userId])
   @@index([workspaceId])
@@ -274,26 +308,26 @@ model WorkspaceInvite {
   id          String   @id @default(cuid())
   workspaceId String
   email       String
-  role        String   @default("member")
+  role        String   @default("doctor") // "admin" | "doctor" | "secretary" | "viewer"
   token       String   @unique @default(cuid())
-  invitedBy   String   // clerkId
+  invitedBy   String // clerkId
   status      String   @default("pending") // pending, accepted, expired
   createdAt   DateTime @default(now())
   expiresAt   DateTime
 
+  @@unique([workspaceId, email])
   @@index([workspaceId])
   @@index([email])
-  @@unique([workspaceId, email])
 }
 
 model WhatsAppConfig {
   id                 String   @id @default(cuid())
   workspaceId        String
   phoneNumberId      String
-  wabaId             String   // WhatsApp Business Account ID
+  wabaId             String // WhatsApp Business Account ID
   displayPhoneNumber String
   businessName       String
-  accessToken        String   // Encrypted at rest
+  accessToken        String // Encrypted at rest
   webhookSecret      String
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
@@ -333,8 +367,8 @@ model WhatsAppMessage {
   conversationId String
   workspaceId    String
   waMessageId    String   @unique
-  direction      String   // inbound, outbound
-  type           String   // text, image, document, audio, video, etc.
+  direction      String // inbound, outbound
+  type           String // text, image, document, audio, video, etc.
   content        String
   mediaUrl       String?
   status         String   @default("pending") // pending, sent, delivered, read, failed
@@ -354,11 +388,11 @@ model BlockedSlot {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   agendaId    String
   agenda      Agenda    @relation(fields: [agendaId], references: [id], onDelete: Cascade)
-  title       String    // "Almoco", "Ferias", "Feriado", "Reuniao", etc.
+  title       String // "Almoco", "Ferias", "Feriado", "Reuniao", etc.
   startDate   DateTime
   endDate     DateTime
   allDay      Boolean   @default(false)
-  recurring   String?   // null = one-time, "weekly" = repeats weekly
+  recurring   String? // null = one-time, "weekly" = repeats weekly
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId])
@@ -368,42 +402,82 @@ model BlockedSlot {
 }
 
 model Prescription {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   patientId     String
-  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient       Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
   workspaceId   String
   appointmentId String?
-  medications   Json     // [{ name, dosage, frequency, duration, notes }]
+  medications   Json // [{ name, dosage, frequency, duration, notes, activeIngredient?, concentration?, pharmaceuticalForm?, quantity?, route?, anvisaCode?, isContinuousUse?, controlType?, order? }]
   notes         String?
-  createdAt     DateTime @default(now())
+  source        String  @default("manual") // "manual" | "memed"
+
+  // Prescription metadata
+  status      String    @default("draft") // "draft" | "signed" | "sent" | "cancelled" | "expired"
+  type        String    @default("simple") // "simple" | "special_control" | "antimicrobial" | "manipulated"
+  validUntil  DateTime? // 30 days default for simple, 10 days for antimicrobial
+  sentVia     String[]  @default([]) // ["whatsapp", "email"]
+  sentAt      DateTime?
+  cancelledAt DateTime?
+  cancelReason String?
+
+  // Memed digital prescription fields
+  memedPrescriptionId String? // UUID from Memed
+  memedStatus         String? // "signed" | "pending"
+  signedPdfUrl        String? // Signed PDF URL (Memed or ICP-Brasil)
+  memedDigitalLink    String? // Link for patient
+  memedPayload        Json? // Full event payload
+
+  // ICP-Brasil digital signature fields
+  signedAt           DateTime? // When the document was digitally signed
+  signatureProvider  String? // "a1_server" | "birdid" | "vidaas" | "webpki"
+  certificateSerial  String? // Certificate serial number
+  certificateSubject String? // CN of the cert (e.g. "JOAO DA SILVA:12345678900")
+  signedByUserId     String? // clerkId of the signer
+  verificationToken  String?   @unique // Public token for verification page
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([workspaceId])
+  @@index([workspaceId, status])
+  @@index([memedPrescriptionId])
 }
 
 model MedicalCertificate {
-  id          String   @id @default(cuid())
-  patientId   String
-  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  workspaceId String
-  type        String   // "atestado", "declaracao_comparecimento", "encaminhamento", "laudo"
-  content     String   // the certificate text
-  days        Int?     // days off (for atestado)
-  cid         String?  // CID code if applicable
-  createdAt   DateTime @default(now())
+  id             String  @id @default(cuid())
+  patientId      String
+  patient        Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  workspaceId    String
+  type           String // "atestado", "declaracao_comparecimento", "encaminhamento", "laudo"
+  content        String // the certificate text
+  days           Int? // days off (for atestado)
+  cid            String? // CID code if applicable
+  cidDescription String? // Human-readable CID description
+
+  // ICP-Brasil digital signature fields
+  signedPdfUrl       String? // Path in Supabase Storage
+  signedAt           DateTime? // When the document was digitally signed
+  signatureProvider  String? // "a1_server" | "birdid" | "vidaas" | "webpki"
+  certificateSerial  String? // Certificate serial number
+  certificateSubject String? // CN of the cert (e.g. "JOAO DA SILVA:12345678900")
+  signedByUserId     String? // clerkId of the signer
+  verificationToken  String?   @unique // Public token for verification page
+
+  createdAt DateTime @default(now())
 
   @@index([patientId])
   @@index([workspaceId])
 }
 
 model UsageRecord {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  period      String   // "2026-03" (YYYY-MM)
-  metric      String   // "patients" | "appointments" | "recordings" | "storage_mb" | "whatsapp_messages"
-  value       Float    @default(0)
-  updatedAt   DateTime @updatedAt
+  period      String // "2026-03" (YYYY-MM)
+  metric      String // "patients" | "appointments" | "recordings" | "storage_mb" | "whatsapp_messages"
+  value       Float     @default(0)
+  updatedAt   DateTime  @updatedAt
 
   @@unique([workspaceId, period, metric])
   @@index([workspaceId])
@@ -414,53 +488,54 @@ model Agenda {
   id          String    @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name        String    // "Agenda Principal", "Dr. Silva", "Sala 1"
+  name        String // "Agenda Principal", "Dr. Silva", "Sala 1"
   color       String    @default("#14B8A6")
   isDefault   Boolean   @default(false)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  appointments Appointment[]
-  blockedSlots BlockedSlot[]
+  appointments    Appointment[]
+  blockedSlots    BlockedSlot[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([workspaceId])
 }
 
 model BookingConfig {
-  id                  String   @id @default(cuid())
-  workspaceId         String   @unique
+  id                  String    @id @default(cuid())
+  workspaceId         String    @unique
   workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  token               String   @unique @default(cuid())
-  isActive            Boolean  @default(false)
-  allowedAgendaIds    String[] @default([])
-  allowedProcedureIds String[] @default([])
-  maxDaysAhead        Int      @default(30)
-  startHour           Int      @default(8)
-  endHour             Int      @default(18)
+  token               String    @unique @default(cuid())
+  isActive            Boolean   @default(false)
+  allowedAgendaIds    String[]  @default([])
+  allowedProcedureIds String[]  @default([])
+  maxDaysAhead        Int       @default(30)
+  startHour           Int       @default(8)
+  endHour             Int       @default(18)
   welcomeMessage      String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@index([token])
 }
 
 model MigrationSession {
-  id            String    @id @default(cuid())
-  workspaceId   String
-  userId        String    // clerkId
-  source        String    // "csv" | "excel" | "iclinic" | "feegow" | "ai_pdf" | "db_dump"
-  status        String    @default("parsing")
-  config        Json      @default("{}")
-  stats         Json      @default("{}")
-  errors        Json      @default("[]")
-  preview       Json?
-  resolutions   Json?
-  fileName      String?
-  startedAt     DateTime  @default(now())
-  completedAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String // clerkId
+  source      String // "csv" | "excel" | "iclinic" | "feegow" | "ai_pdf" | "db_dump"
+  status      String    @default("parsing")
+  config      Json      @default("{}")
+  stats       Json      @default("{}")
+  errors      Json      @default("[]")
+  preview     Json?
+  resolutions Json?
+  fileName    String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([workspaceId])
   @@index([workspaceId, status])
@@ -472,23 +547,23 @@ model MigrationSession {
 // ============================================================
 
 model Charge {
-  id              String         @id @default(cuid())
+  id              String       @id @default(cuid())
   workspaceId     String
-  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   patientId       String
-  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient         Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
   appointmentId   String?
-  appointment     Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   treatmentPlanId String?
-  description     String         // auto-filled from procedures
-  totalAmount     Int            // in centavos (R$ 150,00 = 15000)
-  discount        Int            @default(0)
-  netAmount       Int            // totalAmount - discount
-  status          String         @default("pending") // pending | partial | paid | overdue | cancelled
-  createdBy       String         // clerkId
+  description     String // auto-filled from procedures
+  totalAmount     Int // in centavos (R$ 150,00 = 15000)
+  discount        Int          @default(0)
+  netAmount       Int // totalAmount - discount
+  status          String       @default("pending") // pending | partial | paid | overdue | cancelled
+  createdBy       String // clerkId
   notes           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   payments        Payment[]
 
   @@index([workspaceId, status])
@@ -498,26 +573,39 @@ model Charge {
 }
 
 model Payment {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   chargeId          String
-  charge            Charge   @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+  charge            Charge    @relation(fields: [chargeId], references: [id], onDelete: Cascade)
   workspaceId       String
   workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  installmentNumber Int      @default(1)
-  totalInstallments Int      @default(1)
-  amount            Int      // in centavos — expected amount
+  installmentNumber Int       @default(1)
+  totalInstallments Int       @default(1)
+  amount            Int // in centavos — expected amount
   dueDate           DateTime
   paidAt            DateTime?
-  paidAmount        Int?     // actual amount paid (may differ)
-  paymentMethod     String?  // dinheiro | pix | credito | debito | boleto | convenio | transferencia | outro
-  status            String   @default("pending") // pending | paid | overdue | cancelled | refunded
+  paidAmount        Int? // actual amount paid (may differ)
+  paymentMethod     String? // dinheiro | pix | credito | debito | boleto | convenio | transferencia | outro
+  status            String    @default("pending") // pending | paid | overdue | cancelled | refunded
   notes             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+
+  // Gateway fields
+  gatewayProvider   String? // "asaas" | "stripe" | null (manual)
+  gatewayChargeId   String? // ID in the gateway (e.g., "pay_abc123")
+  gatewayStatus     String? // raw status from gateway
+  paymentLink       String? // URL for patient to pay
+  pixQrCode         String? // Base64 QR code PNG
+  pixCopiaECola     String? // PIX copy-paste code
+  boletoUrl         String? // Boleto PDF URL
+  boletoBarcode     String? // Boleto barcode digits
+  webhookReceivedAt DateTime? // when webhook confirmed payment
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([chargeId])
   @@index([workspaceId, dueDate, status])
   @@index([workspaceId, status])
+  @@index([gatewayChargeId])
 }
 
 // ============================================================
@@ -531,19 +619,19 @@ model Expense {
   categoryId    String?
   category      ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   description   String
-  amount        Int              // in centavos
+  amount        Int // in centavos
   dueDate       DateTime
   paidAt        DateTime?
   paidAmount    Int?
-  paymentMethod String?          // dinheiro | pix | credito | debito | boleto | transferencia | outro
+  paymentMethod String? // dinheiro | pix | credito | debito | boleto | transferencia | outro
   status        String           @default("pending") // pending | paid | overdue | cancelled
-  recurrence    String?          // null | monthly | weekly | yearly
+  recurrence    String? // null | monthly | weekly | yearly
   recurrenceEnd DateTime?
   parentId      String?
   parent        Expense?         @relation("ExpenseRecurrence", fields: [parentId], references: [id], onDelete: SetNull)
   children      Expense[]        @relation("ExpenseRecurrence")
   notes         String?
-  createdBy     String           // clerkId
+  createdBy     String // clerkId
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
@@ -557,8 +645,8 @@ model ExpenseCategory {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   name        String
-  icon        String?   // lucide icon name
-  color       String?   // hex color
+  icon        String? // lucide icon name
+  color       String? // hex color
   isDefault   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   expenses    Expense[]
@@ -575,15 +663,15 @@ model NfseConfig {
   id                 String    @id @default(cuid())
   workspaceId        String    @unique
   workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  cnpj               String    // 14 digits
+  cnpj               String // 14 digits
   inscricaoMunicipal String
-  codigoServico      String    // LC 116 item code (e.g. "4.17")
-  descricaoServico   String    // Default service description
-  aliquotaISS        Float     // e.g. 0.05 for 5%
-  regimeTributario   String    // simples_nacional | lucro_presumido | lucro_real | mei
+  codigoServico      String // LC 116 item code (e.g. "4.17")
+  descricaoServico   String // Default service description
+  aliquotaISS        Float // e.g. 0.05 for 5%
+  regimeTributario   String // simples_nacional | lucro_presumido | lucro_real | mei
   provider           String    @default("nuvem_fiscal") // nuvem_fiscal | focus_nfe
-  apiKey             String    // aggregator API key
-  certificateId      String?   // reference in aggregator
+  apiKey             String // aggregator API key
+  certificateId      String? // reference in aggregator
   clinicCity         String
   clinicState        String
   clinicCep          String
@@ -600,14 +688,14 @@ model Nfse {
   appointment       Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   patientId         String
   patient           Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  chargeId          String?      // link to Charge if available
-  numero            String?      // NFS-e number (filled after authorization)
+  chargeId          String? // link to Charge if available
+  numero            String? // NFS-e number (filled after authorization)
   codigoVerificacao String?
   status            String       @default("pending") // pending | processing | authorized | cancelled | error
-  valor             Int          // in centavos
-  issValor          Int          // ISS tax amount in centavos
+  valor             Int // in centavos
+  issValor          Int // ISS tax amount in centavos
   description       String
-  externalId        String?      // aggregator reference ID
+  externalId        String? // aggregator reference ID
   pdfUrl            String?
   xmlUrl            String?
   errorMessage      String?
@@ -619,4 +707,500 @@ model Nfse {
   @@index([workspaceId, status])
   @@index([workspaceId, patientId])
   @@index([appointmentId])
+}
+
+// ============================================================
+// TISS — Troca de Informacao em Saude Suplementar
+// ============================================================
+
+model Operadora {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  registroAns String // 6-digit ANS registry number
+  nome        String
+  cnpj        String?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  guides TissGuide[]
+
+  @@unique([workspaceId, registroAns])
+  @@index([workspaceId])
+}
+
+model TissConfig {
+  id          String    @id @default(cuid())
+  workspaceId String    @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Provider identification
+  cnes            String? // 7-digit CNES code
+  codigoPrestador String? // Provider code
+  cbos            String? // 6-digit CBO occupation code
+
+  // Professional council
+  conselhoProfissional String? // "CRM", "CRO", "CRN", etc.
+  numeroConselho       String?
+  ufConselho           String?
+
+  // TISS versioning
+  versaoTiss String @default("4.01.00")
+
+  // Numbering (auto-increment)
+  sequencialGuia Int @default(1)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TissGuide {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  operadoraId   String
+  operadora     Operadora    @relation(fields: [operadoraId], references: [id])
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  chargeId      String?
+
+  // Guide identification
+  type             String // "consulta" | "sp_sadt"
+  numeroGuia       String
+  numeroCarteira   String
+  validadeCarteira DateTime?
+
+  // Consultation-specific
+  codigoConsulta String? // TUSS code for consultation type
+
+  // Procedures (SP/SADT)
+  procedimentos Json @default("[]")
+
+  // Clinical data
+  dataAtendimento  DateTime
+  tipoAtendimento  String?
+  indicacaoClinica String?
+  observacao       String?
+
+  // Financial (in centavos)
+  valorTotal Int
+
+  // XML
+  xmlContent String? @db.Text
+  xmlHash    String?
+
+  // Lifecycle
+  status      String    @default("draft") // draft | submitted | paid | denied | cancelled
+  submittedAt DateTime?
+  paidAt      DateTime?
+  paidAmount  Int? // in centavos
+  glosaAmount Int? // denied amount in centavos
+  glosaMotivo String?
+
+  // CID
+  cidCode        String?
+  cidDescription String?
+
+  createdBy String // clerkId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, operadoraId])
+  @@index([workspaceId, patientId])
+  @@index([workspaceId, createdAt])
+  @@index([appointmentId])
+}
+
+// ============================================================
+// LGPD — DPO Requests (Art. 41 / Art. 18)
+// ============================================================
+
+model DpoRequest {
+  id          String    @id @default(cuid())
+  name        String
+  email       String
+  requestType String // acesso | correcao | exclusao | portabilidade | revogacao | informacao | oposicao | outro
+  description String
+  status      String    @default("pending") // pending | in_progress | resolved | rejected
+  response    String? // DPO response text
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// ============================================================
+// Form Builder — Custom Forms & Anamnesis Templates
+// ============================================================
+
+model FormTemplate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name        String // e.g., "Anamnese Odontologica", "Avaliacao Nutricional"
+  description String?
+  category    String? // "anamnese" | "avaliacao" | "consentimento" | "retorno" | "custom"
+  icon        String? // Lucide icon name
+
+  fields   Json // FormField[] — ordered array of field definitions
+  sections Json? // FormSection[] — optional grouping of fields into sections
+
+  isActive      Boolean @default(true)
+  isDefault     Boolean @default(false)
+  allowMultiple Boolean @default(true) // Can be filled multiple times per patient
+
+  version Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  responses FormResponse[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, isActive])
+}
+
+model FormResponse {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  templateId    String
+  template      FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  answers         Json // Record<string, unknown> — { [fieldId]: value }
+  templateVersion Int  @default(1)
+
+  status      String    @default("draft") // "draft" | "completed"
+  completedAt DateTime?
+  completedBy String? // clerkId of the user who completed
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+  @@index([patientId])
+  @@index([workspaceId, patientId])
+  @@index([appointmentId])
+}
+
+// ============================================================
+// Memed — Digital Prescription Integration
+// ============================================================
+
+model MemedPrescriber {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId          String // clerkId
+  memedExternalId String
+  memedToken      String // encrypted via src/lib/crypto.ts
+  boardCode       String // CRM, CRO, COREN, CRN, etc.
+  boardNumber     String
+  boardState      String // UF (e.g. SP, RJ, MG)
+  status          String    @default("pending") // pending | active | inactive
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+}
+
+// ============================================================
+// ICP-Brasil Digital Signature Configuration
+// ============================================================
+
+model SignatureConfig {
+  id                 String   @id @default(cuid())
+  workspaceId        String   @unique
+  useNfseCertificate Boolean  @default(false) // Reuse A1 certificate from NFS-e config
+  cloudProvider      String? // "birdid" | "vidaas"
+  cloudClientId      String?
+  cloudClientSecret  String? // encrypted
+  defaultMethod      String   @default("none") // "none" | "a1_server" | "birdid" | "vidaas" | "webpki"
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ============================================================
+// Lista de Espera (Waitlist)
+// ============================================================
+
+model WaitlistEntry {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  agendaId    String? // preferred agenda (null = any)
+  agenda      Agenda?   @relation(fields: [agendaId], references: [id], onDelete: SetNull)
+
+  procedureName      String? // preferred procedure (matches workspace procedure name)
+  preferredDays      String[] @default([]) // ["seg", "ter", "qua", "qui", "sex", "sab"] or empty = any
+  preferredTimeStart String? // "08:00" — earliest acceptable time (null = any)
+  preferredTimeEnd   String? // "12:00" — latest acceptable time (null = any)
+
+  priority Int     @default(0) // 0=normal, 1=high, 2=urgent
+  status   String  @default("waiting") // "waiting" | "notified" | "scheduled" | "expired" | "cancelled"
+  notes    String?
+
+  notifiedAt             DateTime? // when patient was last notified of available slot
+  notifiedVia            String? // "whatsapp" | "email" | "phone" (manual)
+  scheduledAppointmentId String? // filled when patient is actually scheduled
+
+  createdBy String // clerkId of staff who added
+  expiresAt DateTime? // optional auto-expiry
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, agendaId, status])
+  @@index([workspaceId, patientId])
+  @@index([workspaceId, priority, createdAt])
+}
+
+// ============================================================
+// Comissoes / Repasse de Profissionais (Professional Commissions)
+// ============================================================
+
+model CommissionRule {
+  id            String           @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  memberId      String? // null = default rule for all members
+  member        WorkspaceMember? @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  procedureName String? // null = applies to all procedures; matches Procedure.name
+  type          String           @default("percentage") // "percentage" | "fixed"
+  percentage    Float? // e.g. 50.0 for 50%
+  fixedAmount   Int? // in centavos (R$ 80,00 = 8000)
+  priority      Int              @default(0) // higher = more specific (used in rule resolution)
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, memberId])
+  @@index([workspaceId, procedureName])
+}
+
+model CommissionEntry {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        WorkspaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  appointmentId String
+  appointment   Appointment     @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  ruleId        String? // which rule was applied (snapshot for audit)
+  procedureName String // snapshot of procedure at calculation time
+  baseAmount    Int // appointment price portion in centavos
+  percentage    Float? // applied percentage (snapshot)
+  fixedAmount   Int? // applied fixed amount (snapshot)
+  amount        Int // calculated commission in centavos
+  status        String          @default("pending") // "pending" | "approved" | "paid" | "cancelled"
+  paidAt        DateTime?
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([appointmentId, memberId, procedureName])
+  @@index([workspaceId, memberId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, createdAt])
+  @@index([appointmentId])
+}
+
+// ============================================================
+// Estoque — Inventory Control
+// ============================================================
+
+model InventoryCategory {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  icon        String?
+  color       String?
+  createdAt   DateTime  @default(now())
+
+  items InventoryItem[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model InventoryItem {
+  id           String             @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  categoryId   String?
+  category     InventoryCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name         String
+  sku          String?
+  unit         String             @default("un")
+  currentStock Float              @default(0)
+  minStock     Float              @default(0)
+  costPerUnit  Int?
+  supplier     String?
+  isActive     Boolean            @default(true)
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  movements InventoryMovement[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@index([workspaceId, isActive])
+  @@index([workspaceId, categoryId])
+}
+
+model InventoryMovement {
+  id            String        @id @default(cuid())
+  workspaceId   String
+  itemId        String
+  item          InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type          String
+  quantity      Float
+  reason        String
+  appointmentId String?
+  createdBy     String
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  @@index([itemId])
+  @@index([workspaceId, createdAt])
+  @@index([appointmentId])
+}
+
+// ============================================================
+// Gateway de Pagamento (Asaas / Stripe)
+// ============================================================
+
+model GatewayConfig {
+  id            String    @id @default(cuid())
+  workspaceId   String    @unique
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  provider      String    @default("asaas") // "asaas" | "stripe"
+  apiKey        String // encrypted via src/lib/crypto.ts
+  walletId      String? // Asaas wallet ID or Stripe Connected Account ID
+  webhookSecret String? // to validate incoming webhooks
+  isActive      Boolean   @default(false)
+  sandboxMode   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model GatewayWebhookLog {
+  id          String    @id @default(cuid())
+  workspaceId String
+  provider    String
+  eventType   String // "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", etc.
+  paymentId   String? // FK to Payment (logical, not enforced)
+  rawPayload  Json
+  processed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([paymentId])
+}
+
+model ClinicalImage {
+  id            String       @id @default(cuid())
+  workspaceId   String
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  // Image storage
+  url          String // Supabase Storage path
+  thumbnailUrl String?
+  mimeType     String  @default("image/jpeg")
+  fileSize     Int?
+
+  // Clinical metadata
+  bodyRegion String? // face, torso_front, torso_back, arm, leg, mouth, teeth, skin, other
+  category   String  @default("general") // before, after, progress, general, intraoral
+
+  // Before/After pairing
+  pairedImageId String?        @unique
+  pairedImage   ClinicalImage? @relation("ImagePair", fields: [pairedImageId], references: [id])
+  pairedWith    ClinicalImage? @relation("ImagePair")
+
+  // Annotations
+  annotations Json @default("[]")
+
+  // Organization
+  tags    String[]  @default([])
+  notes   String?
+  takenAt DateTime?
+
+  createdBy String // clerkId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, patientId])
+  @@index([workspaceId, patientId, bodyRegion])
+  @@index([workspaceId, patientId, category])
+  @@index([appointmentId])
+}
+
+// ============================================================
+// MEDICATION DATABASE (ANVISA)
+// ============================================================
+
+model MedicationDatabase {
+  id                 String   @id @default(cuid())
+  anvisaCode         String   @unique // Registro ANVISA
+  name               String // Nome comercial
+  activeIngredient   String // Principio ativo
+  concentration      String? // Ex: "500mg", "10mg/ml"
+  pharmaceuticalForm String? // Ex: "comprimido", "solucao oral"
+  manufacturer       String?
+  category           String? // "referencia" | "generico" | "similar"
+  controlType        String   @default("none") // "none" | "c1" | "c2" | "antimicrobial"
+  requiresSpecialForm Boolean @default(false)
+  isActive           Boolean  @default(true)
+  updatedAt          DateTime @updatedAt
+
+  @@index([name])
+  @@index([activeIngredient])
+  @@index([controlType])
+}
+
+model MedicationFavorite {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  userId          String // clerkId
+  medicationName  String
+  activeIngredient String?
+  defaultDosage   String?
+  defaultFrequency String?
+  defaultQuantity String?
+  usageCount      Int      @default(1)
+  lastUsedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@unique([workspaceId, userId, medicationName])
+  @@index([workspaceId, userId])
 }

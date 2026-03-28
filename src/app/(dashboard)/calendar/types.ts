@@ -18,6 +18,7 @@ export interface AppointmentItem {
   source?: string | null
   agendaId: string
   agenda?: { id: string; name: string; color: string }
+  cidCodes?: { code: string; description: string }[]
 }
 
 export interface PatientOption {

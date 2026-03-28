@@ -40,7 +40,7 @@ export default async function ReceiptPage({
   return (
     <>
       {/* Top bar - hidden on print */}
-      <div className="print:hidden mb-8 flex items-center justify-between gap-4">
+      <div className="print:hidden mb-6 flex items-center justify-between gap-4">
         <Link
           href="/calendar"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -51,116 +51,103 @@ export default async function ReceiptPage({
         <PrintButton />
       </div>
 
-      {/* Receipt content */}
-      <div className="mx-auto max-w-2xl bg-white print:bg-white print:max-w-none print:mx-0">
-        <div className="rounded-xl border border-border print:border-0 print:shadow-none p-8 print:p-0 space-y-8">
+      {/* Receipt — A4 page simulation */}
+      <div className="mx-auto max-w-[210mm] print:max-w-none print:mx-0">
+        <div className="bg-white text-gray-900 shadow-lg print:shadow-none rounded-lg print:rounded-none border border-gray-200 print:border-0 min-h-[297mm] flex flex-col" style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>
 
-          {/* Header */}
-          <header className="border-b border-border pb-6 print:border-b-gray-300 text-center">
-            <h2 className="text-sm font-medium text-vox-primary uppercase tracking-wider">
-              VoxClinic
-            </h2>
-            <p className="text-lg font-semibold mt-1">{receipt.clinicName}</p>
-            <p className="text-sm text-muted-foreground">{receipt.profession}</p>
+          {/* ── Header with teal accent bar ── */}
+          <header className="relative px-10 pt-8 pb-6">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-teal-500 to-teal-400 print:from-teal-600 print:to-teal-500 rounded-t-lg print:rounded-none" />
+
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                  {receipt.clinicName}
+                </h1>
+                <p className="text-sm text-gray-500 mt-0.5">{receipt.profession}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-medium uppercase tracking-widest text-teal-600">
+                  Recibo
+                </p>
+                <p className="text-xs text-gray-400 mt-1">{today}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 border-b-2 border-gray-100 print:border-gray-200" />
           </header>
 
-          {/* Title */}
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold tracking-tight print:text-3xl">
-              RECIBO DE ATENDIMENTO
-            </h1>
-          </div>
-
-          {/* Patient Info */}
-          <section>
-            <h2 className="text-base font-semibold mb-3 text-foreground">
-              Dados do Paciente
-            </h2>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          {/* ── Patient info strip ── */}
+          <section className="px-10 py-4 bg-gray-50 print:bg-gray-50 border-y border-gray-100 print:border-gray-200">
+            <div className="flex flex-wrap gap-x-10 gap-y-2 text-sm">
               <div>
-                <span className="text-muted-foreground">Nome</span>
-                <p className="font-medium">{receipt.patientName}</p>
+                <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Paciente</span>
+                <p className="font-semibold text-gray-900">{receipt.patientName}</p>
               </div>
               {receipt.patientDocument && (
                 <div>
-                  <span className="text-muted-foreground">CPF</span>
-                  <p className="font-medium">{receipt.patientDocument}</p>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">CPF</span>
+                  <p className="font-semibold text-gray-900">{receipt.patientDocument}</p>
                 </div>
               )}
-              <div>
-                <span className="text-muted-foreground">Data do Atendimento</span>
-                <p className="font-medium">{formatDate(receipt.date)}</p>
+              <div className="ml-auto text-right">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Data do Atendimento</span>
+                <p className="font-semibold text-gray-900">{formatDate(receipt.date)}</p>
               </div>
             </div>
           </section>
 
-          {/* Procedures Table */}
-          <section>
-            <h2 className="text-base font-semibold mb-3 text-foreground">
-              Procedimentos Realizados
-            </h2>
-            <div className="border border-border rounded-xl overflow-hidden print:border-gray-300 overflow-x-auto print:overflow-visible">
-              <table className="w-full text-sm min-w-[400px] print:min-w-0">
-                <thead>
-                  <tr className="bg-muted/50 print:bg-gray-100">
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Procedimento
-                    </th>
-                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
-                      Valor
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {receipt.procedures.length > 0 ? (
-                    receipt.procedures.map((proc, index) => (
-                      <tr
-                        key={index}
-                        className={
-                          index % 2 === 0
-                            ? "bg-white print:bg-white"
-                            : "bg-muted/30 print:bg-gray-50"
-                        }
-                      >
-                        <td className="px-4 py-3">{proc}</td>
-                        <td className="px-4 py-3 text-right text-muted-foreground">
-                          -
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr className="bg-white print:bg-white">
-                      <td className="px-4 py-3 text-muted-foreground" colSpan={2}>
-                        Nenhum procedimento registrado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t border-border print:border-t-gray-300 font-semibold">
-                    <td className="px-4 py-3">Total</td>
-                    <td className="px-4 py-3 text-right">
-                      {totalPrice > 0 ? formatCurrency(totalPrice) : "-"}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+          {/* ── Procedures ── */}
+          <section className="flex-1 px-10 py-8">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400 mb-4">Procedimentos Realizados</p>
+
+            {receipt.procedures.length > 0 ? (
+              <div className="space-y-0">
+                {receipt.procedures.map((proc, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-3.5 border-b border-dashed border-gray-200 last:border-b-0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center justify-center size-7 rounded-full bg-teal-50 text-teal-700 text-xs font-bold print:bg-teal-50 print:text-teal-700 border border-teal-200/60">
+                        {index + 1}
+                      </span>
+                      <span className="text-[15px] text-gray-800">{proc}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic py-4">Nenhum procedimento registrado</p>
+            )}
+
+            {/* Total */}
+            <div className="mt-8 flex items-center justify-between rounded-lg bg-gray-50 border border-gray-200 px-5 py-4 print:bg-gray-50">
+              <span className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total</span>
+              <span className="text-xl font-bold text-gray-900">
+                {totalPrice > 0 ? formatCurrency(totalPrice) : "—"}
+              </span>
             </div>
           </section>
 
-          {/* Signature */}
-          <section className="pt-8 text-center">
-            <div className="inline-block">
-              <p className="text-sm mb-1">___________________________</p>
-              <p className="text-sm font-medium">{receipt.clinicName}</p>
+          {/* ── Signature ── */}
+          <section className="px-10 pb-4 pt-8">
+            <div className="mx-auto max-w-xs text-center">
+              <div className="border-b-2 border-gray-900 mb-2" />
+              <p className="text-sm font-semibold text-gray-900">{receipt.clinicName}</p>
             </div>
           </section>
 
-          {/* Footer */}
-          <footer className="border-t border-border pt-6 print:border-t-gray-300 mt-8">
-            <p className="text-xs text-muted-foreground text-center">
-              Documento gerado pelo VoxClinic em {today}
-            </p>
+          {/* ── Footer ── */}
+          <footer className="px-10 py-4 mt-auto">
+            <div className="border-t border-gray-100 print:border-gray-200 pt-4 flex items-center justify-between">
+              <p className="text-[10px] text-gray-400">
+                Documento gerado pelo VoxClinic em {today}
+              </p>
+              <p className="text-[10px] text-gray-400 font-medium tracking-wide">
+                VOXCLINIC
+              </p>
+            </div>
           </footer>
         </div>
       </div>

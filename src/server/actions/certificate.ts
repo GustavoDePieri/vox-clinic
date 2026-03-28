@@ -52,6 +52,7 @@ export const createCertificate = safeAction(async (data: {
   type: string
   days?: number
   cid?: string
+  cidDescription?: string
   startTime?: string
   endTime?: string
   content?: string
@@ -69,7 +70,7 @@ export const createCertificate = safeAction(async (data: {
   const patient = await db.patient.findFirst({
     where: { id: data.patientId, workspaceId },
   })
-  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
+  if (!patient) throw new ActionError(ERR_PATIENT_NOT_FOUND)
 
   const content = generateCertificateContent(data.type, patient.name, patient.document, {
     days: data.days,
@@ -88,6 +89,7 @@ export const createCertificate = safeAction(async (data: {
       content,
       days: data.days ?? null,
       cid: data.cid || null,
+      cidDescription: data.cidDescription || null,
     },
   })
 
@@ -121,6 +123,7 @@ export async function getCertificate(id: string) {
     content: certificate.content,
     days: certificate.days,
     cid: certificate.cid,
+    cidDescription: certificate.cidDescription,
     patientName: certificate.patient.name,
     patientDocument: certificate.patient.document,
     createdAt: certificate.createdAt.toISOString(),
@@ -149,6 +152,7 @@ export async function getPatientCertificates(patientId: string) {
     content: c.content,
     days: c.days,
     cid: c.cid,
+    cidDescription: c.cidDescription,
     createdAt: c.createdAt.toISOString(),
   }))
 }
@@ -159,7 +163,7 @@ export const deleteCertificate = safeAction(async (id: string) => {
   const certificate = await db.medicalCertificate.findFirst({
     where: { id, workspaceId },
   })
-  if (!certificate) throw new Error(ERR_CERTIFICATE_NOT_FOUND)
+  if (!certificate) throw new ActionError(ERR_CERTIFICATE_NOT_FOUND)
 
   await db.medicalCertificate.delete({ where: { id } })
 

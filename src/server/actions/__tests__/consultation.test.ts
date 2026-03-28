@@ -1,5 +1,22 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 
+// Mock modules that trigger env validation (workspace-cache → cache → redis → env.ts)
+vi.mock("@/lib/redis", () => ({ redis: null }))
+vi.mock("@/lib/cache", () => ({ cached: vi.fn((_k: string, _t: number, fn: () => unknown) => fn()), invalidate: vi.fn() }))
+vi.mock("@/lib/workspace-cache", () => ({
+  getWorkspaceIdCached: vi.fn().mockResolvedValue("ws_test_123"),
+  invalidateWorkspaceCache: vi.fn(),
+}))
+vi.mock("@/lib/plan-enforcement", () => ({
+  checkAgendaLimit: vi.fn().mockResolvedValue({ allowed: true }),
+  checkAppointmentLimit: vi.fn().mockResolvedValue({ allowed: true }),
+}))
+vi.mock("@/lib/inngest/client", () => ({
+  isInngestEnabled: vi.fn().mockReturnValue(false),
+  sendInngestEvent: vi.fn().mockResolvedValue(false),
+}))
+vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }))
+
 import { mockDb } from "@/test/mocks/db"
 import { mockAuth } from "@/test/mocks/auth"
 import {
@@ -159,12 +176,13 @@ describe("consultation actions", () => {
       })
     })
 
-    it("throws Unauthorized when not authenticated", async () => {
+    it("returns error when not authenticated", async () => {
       mockAuth.mockResolvedValue({ userId: null })
       const formData = new FormData()
       formData.set("audio", createAudioFile())
 
-      await expect(processConsultation(formData, "p1")).rejects.toThrow(ERR_UNAUTHORIZED)
+      const result = await processConsultation(formData, "p1")
+      expect(result).toHaveProperty("error", ERR_UNAUTHORIZED)
     })
 
     it("passes workspace procedure names to Whisper as hints", async () => {
@@ -336,10 +354,55 @@ describe("consultation actions", () => {
       expect(mockDb.appointment.create).not.toHaveBeenCalled()
     })
 
-    it("Unauthorized when not authenticated", async () => {
+    it("returns error when not authenticated", async () => {
       mockAuth.mockResolvedValue({ userId: null })
 
-      await expect(confirmConsultation(confirmData)).rejects.toThrow(ERR_UNAUTHORIZED)
+      const result = await confirmConsultation(confirmData)
+      expect(result).toHaveProperty("error", ERR_UNAUTHORIZED)
+    })
+
+    it("rejects when recording already has appointmentId (double-confirm guard via findFirst)", async () => {
+      // Simulate a recording that was already confirmed by another request
+      mockDb.$queryRawUnsafe.mockResolvedValue([
+        { id: "rec_1", appointmentId: "existing_apt_id" },
+      ])
+
+      const result = await confirmConsultation(confirmData)
+
+      expect("error" in result).toBe(true)
+      if ("error" in result) expect(result.error).toBe(ERR_ALREADY_CONFIRMED)
+
+      // Must NOT create a duplicate appointment
+      expect(mockDb.appointment.create).not.toHaveBeenCalled()
+      expect(mockDb.recording.update).not.toHaveBeenCalled()
+    })
+
+    it("validates procedures array is safe when summary.procedures is undefined", async () => {
+      mockDb.$queryRawUnsafe.mockResolvedValue([{ id: "rec_1", appointmentId: null }])
+      mockDb.appointment.create.mockResolvedValue({ id: "a_safe" })
+      mockDb.recording.update.mockResolvedValue({ id: "rec_1" })
+
+      const dataWithUndefinedProcedures = {
+        ...confirmData,
+        summary: {
+          ...confirmData.summary,
+          procedures: undefined as unknown as string[],
+        },
+      }
+
+      const result = await confirmConsultation(dataWithUndefinedProcedures)
+
+      expect("error" in result).toBe(false)
+      if (!("error" in result)) {
+        expect(result.appointmentId).toBe("a_safe")
+      }
+
+      // Verify procedures defaults to empty array, not undefined/null
+      expect(mockDb.appointment.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          procedures: [],
+        }),
+      })
     })
   })
 })

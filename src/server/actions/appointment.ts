@@ -5,21 +5,18 @@ import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
 import { revalidateTag } from "next/cache"
 import { checkAppointmentLimit } from "@/lib/plan-enforcement"
+import { getWorkspaceIdCached } from "@/lib/workspace-cache"
+import { invalidate } from "@/lib/cache"
 import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
-  })
+  const cached = await getWorkspaceIdCached(userId)
+  if (!cached) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
-
-  return workspaceId
+  return cached
 }
 
 export async function getAppointments(page: number = 1, status?: string) {
@@ -56,6 +53,7 @@ export async function getAppointments(page: number = 1, status?: string) {
       notes: a.notes,
       aiSummary: a.aiSummary,
       status: a.status,
+      cidCodes: (Array.isArray(a.cidCodes) ? a.cidCodes : []) as { code: string; description: string }[],
     })),
     total,
     totalPages: Math.ceil(total / pageSize),
@@ -108,6 +106,7 @@ export async function getAppointmentsByDateRange(startDate: string, endDate: str
     source: a.source,
     agendaId: a.agendaId,
     agenda: a.agenda,
+    cidCodes: (Array.isArray(a.cidCodes) ? a.cidCodes : []) as { code: string; description: string }[],
   }))
 }
 
@@ -223,15 +222,9 @@ export const scheduleAppointment = safeAction(async (data: {
   price?: number
 }) => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
-
-  // Plan enforcement: check appointment limit
-  const workspacePlan = user?.workspace?.plan ?? (await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } }))?.plan ?? "free"
-  const planCheck = await checkAppointmentLimit(workspaceId, workspacePlan)
-  if (!planCheck.allowed) throw new ActionError(planCheck.reason!)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
+  const workspaceId = await getWorkspaceIdCached(userId)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   // Validate agenda belongs to workspace
   const agenda = await db.agenda.findFirst({
@@ -243,17 +236,22 @@ export const scheduleAppointment = safeAction(async (data: {
   const patient = await db.patient.findFirst({
     where: { id: data.patientId, workspaceId },
   })
-  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
+  if (!patient) throw new ActionError(ERR_PATIENT_NOT_FOUND)
 
   const targetDate = new Date(data.date)
 
-  // Atomic conflict check + create to prevent double-booking
+  // Atomic conflict check + plan limit check + create to prevent double-booking and race on limits
   const appointment = await db.$transaction(async (tx) => {
     // Advisory lock on agendaId + 30-min bucket to serialize scheduling
     const thirtyMinBucket = Math.floor(targetDate.getTime() / (30 * 60 * 1000))
     const hourKey = `${data.agendaId}-${thirtyMinBucket}`
     const lockId = hashStringToInt(hourKey)
     await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock($1)`, lockId)
+
+    // Plan enforcement inside transaction (after lock) to prevent concurrent requests bypassing limits
+    const workspace = await tx.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+    const planCheck = await checkAppointmentLimit(workspaceId, workspace?.plan ?? "free", tx)
+    if (!planCheck.allowed) throw new ActionError(planCheck.reason!)
 
     if (!data.forceSchedule) {
       const windowMs = 30 * 60 * 1000
@@ -309,6 +307,7 @@ export const scheduleAppointment = safeAction(async (data: {
   })
 
   revalidateTag("dashboard", "max")
+  await invalidate(`ws:dashboard:${workspaceId}`)
 
   return {
     id: appointment.id,
@@ -332,10 +331,9 @@ function hashStringToInt(str: string): number {
 
 export const updateAppointmentStatus = safeAction(async (appointmentId: string, status: string) => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
+  const workspaceId = await getWorkspaceIdCached(userId)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const validStatuses = ["scheduled", "completed", "cancelled", "no_show"]
   if (!validStatuses.includes(status)) {
@@ -345,7 +343,7 @@ export const updateAppointmentStatus = safeAction(async (appointmentId: string, 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
   })
-  if (!existing) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
+  if (!existing) throw new ActionError(ERR_APPOINTMENT_NOT_FOUND)
 
   const updated = await db.appointment.update({
     where: { id: appointmentId },
@@ -360,22 +358,60 @@ export const updateAppointmentStatus = safeAction(async (appointmentId: string, 
     entityId: appointmentId,
   })
 
-  revalidateTag("dashboard", "max")
+  // Waitlist hook: when appointment is cancelled, find matching waitlist entries and notify staff
+  let waitlistMatches = 0
+  if (status === "cancelled" && existing.agendaId) {
+    try {
+      const { findMatchesForSlot } = await import("@/server/actions/waitlist")
+      const matches = await findMatchesForSlot(workspaceId, existing.date, existing.agendaId)
+      waitlistMatches = matches.length
+      if (matches.length > 0) {
+        const timeStr = existing.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+        const dateStr = existing.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+        await db.notification.create({
+          data: {
+            workspaceId,
+            userId,
+            type: "waitlist_match",
+            title: "Lista de espera: horario disponivel",
+            body: `Horario disponivel: ${dateStr} as ${timeStr}. ${matches.length} paciente${matches.length > 1 ? "s" : ""} na lista de espera.`,
+            entityType: "Appointment",
+            entityId: appointmentId,
+          },
+        })
+      }
+    } catch {
+      // Non-critical: don't fail the status update if waitlist check fails
+    }
+  }
 
-  return { id: updated.id, status: updated.status }
+  // Auto-calculate commissions when appointment is completed with a price
+  if (status === "completed" && updated.price && updated.price > 0) {
+    try {
+      const { calculateCommissions } = await import("./commission")
+      await calculateCommissions(appointmentId)
+    } catch (err) {
+      // Commission calculation failure should not block status update
+      console.error("[updateAppointmentStatus] Commission calculation failed:", err)
+    }
+  }
+
+  revalidateTag("dashboard", "max")
+  await invalidate(`ws:dashboard:${workspaceId}`)
+
+  return { id: updated.id, status: updated.status, waitlistMatches }
 })
 
 export const rescheduleAppointment = safeAction(async (appointmentId: string, newDate: string, forceSchedule = false) => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
+  const workspaceId = await getWorkspaceIdCached(userId)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
   })
-  if (!existing) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
+  if (!existing) throw new ActionError(ERR_APPOINTMENT_NOT_FOUND)
 
   const targetDate = new Date(newDate)
 
@@ -429,15 +465,14 @@ export const rescheduleAppointment = safeAction(async (appointmentId: string, ne
 
 export const deleteAppointment = safeAction(async (appointmentId: string) => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
+  const workspaceId = await getWorkspaceIdCached(userId)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
   })
-  if (!existing) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
+  if (!existing) throw new ActionError(ERR_APPOINTMENT_NOT_FOUND)
 
   await db.appointment.delete({
     where: { id: appointmentId },
@@ -452,6 +487,7 @@ export const deleteAppointment = safeAction(async (appointmentId: string) => {
   })
 
   revalidateTag("dashboard", "max")
+  await invalidate(`ws:dashboard:${workspaceId}`)
 
   return { success: true }
 })
@@ -475,7 +511,7 @@ export const scheduleRecurringAppointments = safeAction(async (data: {
   const patient = await db.patient.findFirst({
     where: { id: data.patientId, workspaceId },
   })
-  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
+  if (!patient) throw new ActionError(ERR_PATIENT_NOT_FOUND)
 
   const intervalDays = data.recurrence === "weekly" ? 7 : 14
   const baseDate = new Date(data.startDate)

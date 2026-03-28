@@ -24,6 +24,8 @@ export const mockDb: any = {
   usageRecord: { findMany: vi.fn(), upsert: vi.fn(), create: vi.fn() },
   prescription: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
   medicalCertificate: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
+  medicationDatabase: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn(), upsert: vi.fn() },
+  medicationFavorite: { findMany: vi.fn(), findFirst: vi.fn(), upsert: vi.fn(), delete: vi.fn() },
   $transaction: vi.fn((fn: any) => fn(mockDb)),
   $queryRaw: vi.fn(),
   $queryRawUnsafe: vi.fn(),

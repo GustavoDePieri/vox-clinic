@@ -127,7 +127,7 @@ export default async function PatientPage({
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <div title="Criar nova prescricao de medicamentos para este paciente">
-              <CreatePrescriptionButton patientId={patient.id} patientName={patient.name} />
+              <CreatePrescriptionButton patientId={patient.id} patientName={patient.name} patientCpf={patient.document} patientPhone={patient.phone} />
             </div>
             <div title="Gerar atestado, declaracao de comparecimento, encaminhamento ou laudo">
               <CreateCertificateButton patientId={patient.id} patientName={patient.name} />

@@ -7,7 +7,6 @@ import {
   getUnreadCount,
   markAsRead,
   markAllAsRead,
-  generateUpcomingNotifications,
 } from "@/server/actions/notification"
 
 type NotificationItem = {
@@ -43,8 +42,6 @@ export function NotificationBell() {
 
   const refresh = useCallback(async () => {
     try {
-      // Generate any pending notifications first
-      await generateUpcomingNotifications()
       const [items, count] = await Promise.all([
         getNotifications(),
         getUnreadCount(),

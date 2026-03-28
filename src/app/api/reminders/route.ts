@@ -57,10 +57,12 @@ export async function POST(req: Request) {
       const timeStr = appointment.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
 
       // Try WhatsApp first (preferred), then email fallback
+      // Only send WhatsApp if patient has given explicit consent (LGPD)
       const waConfig = configByWorkspace.get(appointment.workspaceId)
       const phone = appointment.patient.phone?.replace(/\D/g, "")
+      const hasWhatsAppConsent = appointment.patient.whatsappConsent
 
-      if (waConfig && phone && phone.length >= 10) {
+      if (waConfig && phone && phone.length >= 10 && hasWhatsAppConsent) {
         try {
           const client = new WhatsAppClient(decrypt(waConfig.accessToken), waConfig.phoneNumberId)
           await client.sendButtons(

@@ -59,20 +59,20 @@ function DroppableCell({ id, children, className, ghostMinute }: {
     <div ref={setNodeRef} className={`relative ${className ?? ""} ${isOver ? "bg-vox-primary/10 ring-1 ring-vox-primary/30" : ""}`}>
       {children}
       {/* Ghost indicator showing exact drop time */}
-      {isOver && ghostMinute !== null && ghostMinute !== undefined && (
-        <div
-          className="absolute left-0 right-0 h-[2px] bg-vox-primary/60 pointer-events-none z-10"
-          style={{ top: `${(ghostMinute / 60) * ROW_HEIGHT}px` }}
-        >
-          <div className="absolute -left-0.5 -top-[3px] size-2 rounded-full bg-vox-primary/60" />
-          <span className="absolute left-3 -top-3 text-[9px] font-bold text-vox-primary bg-background/80 px-1 rounded">
-            {formatHourMinute(
-              parseInt(id.substring(id.lastIndexOf("-") + 1), 10),
-              ghostMinute
-            )}
-          </span>
-        </div>
-      )}
+      {isOver && ghostMinute !== null && ghostMinute !== undefined && (() => {
+        const hour = parseInt(id.substring(id.lastIndexOf("-") + 1), 10)
+        return (
+          <div
+            className="absolute left-0 right-0 h-[2px] bg-vox-primary pointer-events-none z-20"
+            style={{ top: `${(ghostMinute / 60) * ROW_HEIGHT}px` }}
+          >
+            <div className="absolute -left-0.5 -top-[4px] size-[10px] rounded-full bg-vox-primary shadow-sm shadow-vox-primary/40" />
+            <span className="absolute -left-14 -top-[10px] text-[11px] font-bold text-white bg-vox-primary px-1.5 py-0.5 rounded-md shadow-sm tabular-nums">
+              {formatHourMinute(hour, ghostMinute)}
+            </span>
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -155,12 +155,14 @@ function WeekViewInner({
     const result = calculateMinuteFromPointer(event)
     if (result) {
       setGhostMinute(result.minute)
+      setDragOverlayTime(formatHourMinute(result.hour, result.minute))
       dropMinuteRef.current = result.minute
       dropHourRef.current = result.hour
       dropDateRef.current = result.dateIso
       setOverCellId(event.over?.id as string || null)
     } else {
       setGhostMinute(null)
+      setDragOverlayTime(null)
       setOverCellId(null)
     }
   }
@@ -169,6 +171,7 @@ function WeekViewInner({
     const dragId = activeDragId
     setActiveDragId(null)
     setGhostMinute(null)
+    setDragOverlayTime(null)
     setOverCellId(null)
 
     const { active, over } = event
@@ -195,11 +198,8 @@ function WeekViewInner({
     }
   }
 
-  // Format time for drag overlay showing target time
-  const dragOverlayTime = useMemo(() => {
-    if (!activeDragId || ghostMinute === null) return null
-    return formatHourMinute(dropHourRef.current, dropMinuteRef.current)
-  }, [activeDragId, ghostMinute])
+  // Track drag overlay time in state for reactive updates
+  const [dragOverlayTime, setDragOverlayTime] = useState<string | null>(null)
 
   return (
     <DndContext
@@ -315,14 +315,12 @@ function WeekViewInner({
           const a = appointments.find((ap) => ap.id === activeDragId)
           if (!a) return null
           return (
-            <div className={`truncate rounded-md px-2 py-1.5 text-[10px] font-medium leading-tight shadow-lg border ${
-              STATUS_CONFIG[a.status]?.className ?? "bg-muted text-muted-foreground"
-            }`}>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold tabular-nums">
+            <div className="rounded-xl px-3 py-2 text-[11px] font-medium leading-tight shadow-xl border border-vox-primary/30 bg-background/95 backdrop-blur-sm min-w-[120px]">
+              <div className="flex items-center gap-2">
+                <span className="font-bold tabular-nums text-vox-primary text-sm">
                   {dragOverlayTime || formatTime(a.date)}
                 </span>
-                <span>{a.patient.name.split(" ")[0]}</span>
+                <span className="truncate text-foreground">{a.patient.name.split(" ")[0]}</span>
               </div>
             </div>
           )

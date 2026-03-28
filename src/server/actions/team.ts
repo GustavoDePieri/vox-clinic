@@ -7,6 +7,8 @@ import { checkTeamMemberLimit } from "@/lib/plan-enforcement"
 import { sendEmail } from "@/lib/email"
 import { logger } from "@/lib/logger"
 import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_TEAM_PERMISSION, ERR_ALREADY_MEMBER, ERR_IS_OWNER, ERR_INVITE_PENDING, ERR_INVITE_NOT_FOUND, ERR_MEMBER_NOT_FOUND, ERR_ALREADY_IN_WORKSPACE, ERR_INVITE_USED, ERR_INVITE_EXPIRED, ERR_INVITE_WRONG_EMAIL, ActionError, safeAction } from "@/lib/error-messages"
+import { INVITABLE_ROLES, ROLE_LABELS, normalizeRole, type WorkspaceRole } from "@/lib/permissions"
+import { invalidateWorkspaceCache } from "@/lib/workspace-cache"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -32,7 +34,7 @@ async function requireOwnerOrAdmin(workspaceId: string, userId: string) {
     where: { workspaceId, user: { clerkId: userId } },
   })
   if (member?.role === "admin" || member?.role === "owner") return member.role
-  throw new Error(ERR_TEAM_PERMISSION)
+  throw new ActionError(ERR_TEAM_PERMISSION)
 }
 
 export async function getTeamMembers() {
@@ -91,8 +93,8 @@ export const inviteTeamMember = safeAction(async (email: string, role: string = 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email.trim())) throw new ActionError("Formato de email invalido.")
 
-  const validRoles = ["admin", "member"]
-  if (!validRoles.includes(role)) throw new ActionError("Role invalido")
+  const validRoles: string[] = INVITABLE_ROLES
+  if (!validRoles.includes(role)) throw new ActionError("Role invalido. Roles validos: " + validRoles.join(", "))
 
   // Plan enforcement: check team member limit
   const workspace = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
@@ -137,7 +139,7 @@ export const inviteTeamMember = safeAction(async (email: string, role: string = 
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
           <h2 style="color: #14B8A6;">VoxClinic</h2>
-          <p><strong>${user.name}</strong> convidou voce para participar do workspace <strong>${user.clinicName ?? "VoxClinic"}</strong> como <strong>${role === "admin" ? "Administrador" : "Membro"}</strong>.</p>
+          <p><strong>${user.name}</strong> convidou voce para participar do workspace <strong>${user.clinicName ?? "VoxClinic"}</strong> como <strong>${ROLE_LABELS[role as WorkspaceRole] ?? role}</strong>.</p>
           <p>Para aceitar o convite, crie uma conta ou faca login no VoxClinic usando este email (<strong>${email}</strong>).</p>
           <p style="color: #666; font-size: 12px;">Este convite expira em 7 dias.</p>
         </div>
@@ -166,7 +168,7 @@ export const cancelInvite = safeAction(async (inviteId: string) => {
   const invite = await db.workspaceInvite.findFirst({
     where: { id: inviteId, workspaceId, status: "pending" },
   })
-  if (!invite) throw new Error(ERR_INVITE_NOT_FOUND)
+  if (!invite) throw new ActionError(ERR_INVITE_NOT_FOUND)
 
   await db.workspaceInvite.update({
     where: { id: inviteId },
@@ -180,18 +182,24 @@ export const updateMemberRole = safeAction(async (memberId: string, role: string
   const { userId, workspaceId } = await getAuthContext()
   await requireOwnerOrAdmin(workspaceId, userId)
 
-  const validRoles = ["admin", "member"]
-  if (!validRoles.includes(role)) throw new ActionError("Role invalido")
+  const validRoles: string[] = INVITABLE_ROLES
+  if (!validRoles.includes(role)) throw new ActionError("Role invalido. Roles validos: " + validRoles.join(", "))
 
   const member = await db.workspaceMember.findFirst({
     where: { id: memberId, workspaceId },
+    include: { user: { select: { clerkId: true } } },
   })
-  if (!member) throw new Error(ERR_MEMBER_NOT_FOUND)
+  if (!member) throw new ActionError(ERR_MEMBER_NOT_FOUND)
 
   await db.workspaceMember.update({
     where: { id: memberId },
     data: { role },
   })
+
+  // Invalidate workspace role cache for the affected member
+  if (member.user?.clerkId) {
+    await invalidateWorkspaceCache(member.user.clerkId)
+  }
 
   await logAudit({
     workspaceId,
@@ -211,10 +219,16 @@ export const removeMember = safeAction(async (memberId: string) => {
 
   const member = await db.workspaceMember.findFirst({
     where: { id: memberId, workspaceId },
+    include: { user: { select: { clerkId: true } } },
   })
-  if (!member) throw new Error(ERR_MEMBER_NOT_FOUND)
+  if (!member) throw new ActionError(ERR_MEMBER_NOT_FOUND)
 
   await db.workspaceMember.delete({ where: { id: memberId } })
+
+  // Invalidate workspace role cache for the removed member
+  if (member.user?.clerkId) {
+    await invalidateWorkspaceCache(member.user.clerkId)
+  }
 
   await logAudit({
     workspaceId,
@@ -231,7 +245,7 @@ export const acceptInvite = safeAction(async (token: string) => {
   const { userId } = await getAuthContext()
 
   const user = await db.user.findUnique({ where: { clerkId: userId } })
-  if (!user) throw new Error(ERR_UNAUTHORIZED)
+  if (!user) throw new ActionError(ERR_UNAUTHORIZED)
 
   const result = await db.$transaction(async (tx) => {
     const invite = await tx.workspaceInvite.findUnique({ where: { token } })
@@ -261,6 +275,9 @@ export const acceptInvite = safeAction(async (token: string) => {
 
     return { workspaceId: invite.workspaceId }
   })
+
+  // Invalidate workspace role cache — user now belongs to a workspace
+  await invalidateWorkspaceCache(userId)
 
   return result
 })

@@ -63,6 +63,11 @@ export interface PatientInfoUpdates {
   chronicDiseases?: string[]
 }
 
+export interface CidCode {
+  code: string
+  description: string
+}
+
 export interface AppointmentSummary {
   procedures: string[]
   observations: string | null
@@ -71,4 +76,5 @@ export interface AppointmentSummary {
   diagnosis?: string | null
   medications?: ConsultationMedication[]
   patientInfoUpdates?: PatientInfoUpdates
+  cidCodes?: CidCode[]
 }

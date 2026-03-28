@@ -11,6 +11,8 @@ import { NavBottom } from "@/components/nav-bottom"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CommandPalette } from "@/components/command-palette"
 import { NotificationBell } from "@/components/notification-bell"
+import { TourProvider } from "@/components/tour/tour-provider"
+import { normalizeRole, type WorkspaceRole } from "@/lib/permissions"
 
 export default async function DashboardLayout({
   children,
@@ -22,12 +24,27 @@ export default async function DashboardLayout({
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
-    include: { workspace: true },
+    include: {
+      workspace: true,
+      memberships: { select: { workspaceId: true, role: true }, take: 1 },
+    },
   })
 
-  if (!user || !user.onboardingComplete || !user.workspace) {
+  if (!user || !user.onboardingComplete) {
     redirect("/onboarding")
   }
+
+  // User must have a workspace (either as owner or member)
+  const isOwner = !!user.workspace
+  const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
+  if (!workspaceId) {
+    redirect("/onboarding")
+  }
+
+  // Resolve workspace role
+  const role: WorkspaceRole = isOwner
+    ? "owner"
+    : normalizeRole(user.memberships?.[0]?.role ?? "doctor")
 
   return (
     <div className="min-h-full flex flex-col">
@@ -73,12 +90,19 @@ export default async function DashboardLayout({
         </div>
       </header>
       <div className="flex flex-1">
-        <NavSidebar clinicName={user.clinicName} />
+        <NavSidebar clinicName={user.clinicName} role={role} />
         <main className="flex-1 overflow-auto">
-          <div className="px-4 py-5 pb-24 md:px-6 md:py-6 md:pb-8 lg:px-8">{children}</div>
+          <div className="px-4 py-5 pb-24 md:px-6 md:py-6 md:pb-8 lg:px-8">
+            <TourProvider
+              initialTourCompleted={user.tourCompleted}
+              initialTourStep={user.tourStep}
+            >
+              {children}
+            </TourProvider>
+          </div>
         </main>
       </div>
-      <NavBottom />
+      <NavBottom role={role} />
     </div>
   )
 }

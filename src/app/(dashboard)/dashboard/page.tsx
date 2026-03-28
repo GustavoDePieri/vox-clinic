@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* ─── Hero Greeting ─── */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-vox-primary/[0.05] via-card to-vox-primary/[0.02] p-5 sm:p-6">
+      <div data-tour="hero-card" className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-vox-primary/[0.05] via-card to-vox-primary/[0.02] p-5 sm:p-6">
         <div className="pointer-events-none absolute -right-20 -top-20 size-56 rounded-full bg-vox-primary/[0.06] blur-3xl" />
         <div className="pointer-events-none absolute -left-10 -bottom-10 size-32 rounded-full bg-vox-primary/[0.03] blur-2xl" />
         <div className="relative flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -80,6 +80,7 @@ export default async function DashboardPage() {
           <Link
             href="/appointments/new"
             aria-label="Nova Consulta"
+            data-tour="cta-nova-consulta"
             className="mt-3 sm:mt-0 inline-flex items-center gap-2 rounded-xl bg-vox-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-vox-primary/25 transition-all hover:bg-vox-primary/90 hover:shadow-xl hover:shadow-vox-primary/30 hover:-translate-y-px active:translate-y-0 active:shadow-md focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2 outline-none"
           >
             <Mic className="size-4" />
@@ -89,7 +90,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ─── Stat Cards ─── */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+      <div data-tour="stats-grid" className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <Card className="group relative overflow-hidden transition-shadow hover:shadow-md">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-vox-primary/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           <CardContent className="pt-5 pb-4">
@@ -160,7 +161,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ─── Quick Actions Row ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div data-tour="quick-actions" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { href: "/appointments/new", label: "Nova Consulta", icon: Stethoscope, accent: true },
           { href: "/patients/new/voice", label: "Cadastro por Voz", icon: Mic },

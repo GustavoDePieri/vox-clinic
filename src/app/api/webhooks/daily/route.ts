@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createHmac, timingSafeEqual } from "crypto"
 import { db } from "@/lib/db"
-import { uploadVideo } from "@/lib/storage"
+import { uploadVideoBlob } from "@/lib/storage"
 import { logger } from "@/lib/logger"
 
 function validateSignature(rawBody: string, signature: string | null, secret: string): boolean {
@@ -19,13 +19,16 @@ export async function POST(request: Request) {
 
   const webhookSecret = process.env.DAILY_WEBHOOK_SECRET
 
-  // Verify signature if secret is configured
-  if (webhookSecret) {
-    const signature = request.headers.get("x-webhook-signature")
-    if (!validateSignature(rawBody, signature, webhookSecret)) {
-      logger.warn("Daily webhook signature verification failed", { action: "POST /api/webhooks/daily" })
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
-    }
+  // Verify signature — require secret to prevent SSRF via crafted download URLs
+  if (!webhookSecret) {
+    logger.error("DAILY_WEBHOOK_SECRET not configured — rejecting webhook", { action: "POST /api/webhooks/daily" })
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 })
+  }
+
+  const signature = request.headers.get("x-webhook-signature")
+  if (!validateSignature(rawBody, signature, webhookSecret)) {
+    logger.warn("Daily webhook signature verification failed", { action: "POST /api/webhooks/daily" })
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
   }
 
   let payload: Record<string, unknown>
@@ -78,17 +81,7 @@ async function handleRecordingReady(payload: Record<string, unknown>) {
     return
   }
 
-  // Skip if recording already saved
-  const existing = await db.appointment.findUnique({
-    where: { id: appointment.id },
-    select: { videoRecordingUrl: true },
-  })
-  if (existing?.videoRecordingUrl) {
-    logger.info("Daily webhook: recording already saved, skipping", { action: "handleRecordingReady", appointmentId: appointment.id })
-    return
-  }
-
-  // Download the recording from Daily.co
+  // Download the recording from Daily.co (use blob to avoid extra Buffer copy)
   logger.info("Daily webhook: downloading recording", { action: "handleRecordingReady", appointmentId: appointment.id, roomName })
 
   const response = await fetch(downloadUrl)
@@ -96,17 +89,21 @@ async function handleRecordingReady(payload: Record<string, unknown>) {
     throw new Error(`Failed to download recording: ${response.status}`)
   }
 
-  const arrayBuffer = await response.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
+  const blob = await response.blob()
 
   // Upload to Supabase Storage
-  const videoPath = await uploadVideo(buffer, `teleconsulta-${appointment.id}.mp4`)
+  const videoPath = await uploadVideoBlob(blob, `teleconsulta-${appointment.id}.mp4`)
 
-  // Update appointment with recording URL
-  await db.appointment.update({
-    where: { id: appointment.id },
+  // Atomic update: only set videoRecordingUrl if not already set (prevents duplicate saves)
+  const { count } = await db.appointment.updateMany({
+    where: { id: appointment.id, videoRecordingUrl: null },
     data: { videoRecordingUrl: videoPath },
   })
 
-  logger.info("Daily webhook: recording saved", { action: "handleRecordingReady", appointmentId: appointment.id, videoPath, sizeBytes: buffer.length })
+  if (count === 0) {
+    logger.info("Daily webhook: recording already saved, skipping", { action: "handleRecordingReady", appointmentId: appointment.id })
+    return
+  }
+
+  logger.info("Daily webhook: recording saved", { action: "handleRecordingReady", appointmentId: appointment.id, videoPath, sizeBytes: blob.size })
 }

@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { getAdminWorkspaces } from "@/server/actions/admin"
 
-type Workspace = Awaited<ReturnType<typeof getAdminWorkspaces>>[number]
+type AdminWorkspacesResult = Awaited<ReturnType<typeof getAdminWorkspaces>>
+type Workspace = AdminWorkspacesResult["workspaces"][number]
 
 const planBadge: Record<string, string> = {
   free: "bg-slate-100 text-slate-600",
@@ -30,22 +31,35 @@ export default function AdminWorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
 
-  useEffect(() => {
-    getAdminWorkspaces()
-      .then(setWorkspaces)
+  const fetchData = useCallback((p: number, q?: string) => {
+    setLoading(true)
+    getAdminWorkspaces(p, q || undefined)
+      .then((result) => {
+        setWorkspaces(result.workspaces)
+        setTotalPages(result.totalPages)
+        setTotal(result.total)
+      })
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = workspaces.filter((ws) => {
-    const q = search.toLowerCase()
-    if (!q) return true
-    return (
-      ws.user.name?.toLowerCase().includes(q) ||
-      ws.user.email?.toLowerCase().includes(q) ||
-      ws.professionType?.toLowerCase().includes(q)
-    )
-  })
+  useEffect(() => {
+    fetchData(page, search)
+  }, [page, fetchData])
+
+  // Debounced server-side search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1)
+      fetchData(1, search)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search, fetchData])
+
+  const filtered = workspaces
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -53,7 +67,7 @@ export default function AdminWorkspacesPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-slate-900">Workspaces</h1>
           <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-            {workspaces.length}
+            {total}
           </span>
         </div>
         <input
@@ -166,6 +180,30 @@ export default function AdminWorkspacesPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-xs text-slate-400">
+            Pagina {page} de {totalPages} ({total} workspaces)
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Proximo
+            </button>
           </div>
         </div>
       )}

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 // GET: Fetch survey data by token (public)
 export async function GET(req: Request) {
+  // Rate limit: 30 GET requests per minute per IP
+  const ip = getClientIp(req)
+  const rl = rateLimit(`nps:get:${ip}`, 60_000, 30)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   try {
     const { searchParams } = new URL(req.url)
     const token = searchParams.get("token")
@@ -30,6 +36,11 @@ export async function GET(req: Request) {
 
 // POST: Submit NPS answer (public, token-based)
 export async function POST(req: Request) {
+  // Rate limit: 10 POST requests per minute per IP
+  const ip = getClientIp(req)
+  const rl = rateLimit(`nps:post:${ip}`, 60_000, 10)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   try {
     const body = await req.json()
     const { token, score, comment } = body

@@ -3,7 +3,7 @@
 import { useState, memo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Clock, Check, XCircle, AlertTriangle, X, Video, Copy, ExternalLink, Globe, MessageCircle, Bell, Loader2 } from "lucide-react"
+import { Clock, Check, XCircle, AlertTriangle, X, Video, Globe, MessageCircle, Bell, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { toast } from "sonner"
@@ -32,7 +32,6 @@ function AppointmentCardInner({
 }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
-  const [copyingLink, setCopyingLink] = useState(false)
   const [startingRoom, setStartingRoom] = useState(false)
   const [sendingReminder, setSendingReminder] = useState(false)
 
@@ -41,7 +40,15 @@ function AppointmentCardInner({
     try {
       const result = await createTeleconsultaRoom(appointment.id)
       if ('error' in result) { toast.error(result.error); setStartingRoom(false); return }
-      // Full navigation (not router.push) to ensure server component re-fetches fresh data
+      // Copy patient link and show it
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+      const link = `${baseUrl}/sala/${result.videoToken}`
+      await navigator.clipboard.writeText(link).catch(() => {})
+      toast.success("Sala criada! Link do paciente copiado.", {
+        description: link,
+        duration: 10000,
+      })
+      // Navigate to the teleconsulta room
       window.location.href = `/teleconsulta/${appointment.id}`
     } catch {
       toast.error("Erro ao criar sala de teleconsulta")
@@ -49,20 +56,14 @@ function AppointmentCardInner({
     }
   }
 
-  async function handleCopyPatientLink() {
-    setCopyingLink(true)
-    try {
-      const result = await createTeleconsultaRoom(appointment.id)
-      if ('error' in result) { toast.error(result.error); return }
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-      const link = `${baseUrl}/sala/${result.videoToken}`
-      await navigator.clipboard.writeText(link)
-      toast.success("Link copiado! Envie ao paciente.")
-    } catch {
-      toast.error("Erro ao gerar link da teleconsulta")
-    } finally {
-      setCopyingLink(false)
-    }
+  // Show teleconsulta button only within 1h before → 3h after appointment
+  function isTeleconsultaWindowOpen() {
+    if (appointment.type !== "teleconsulta" || appointment.status !== "scheduled") return false
+    const now = Date.now()
+    const appointmentTime = new Date(appointment.date).getTime()
+    const oneHourBefore = appointmentTime - 60 * 60 * 1000
+    const threeHoursAfter = appointmentTime + 3 * 60 * 60 * 1000
+    return now >= oneHourBefore && now <= threeHoursAfter
   }
 
   if (compact) {
@@ -133,15 +134,11 @@ function AppointmentCardInner({
         {expanded && (
           <div className="mt-3 pt-3 border-t border-border/30 space-y-3" onClick={(e) => e.stopPropagation()}>
             {appointment.notes && <p className="text-xs text-muted-foreground">{appointment.notes}</p>}
-            {appointment.type === "teleconsulta" && appointment.status === "scheduled" && (
+            {isTeleconsultaWindowOpen() && (
               <div className="flex flex-wrap gap-2 pb-2 border-b border-border/30">
-                <Button size="sm" onClick={handleCopyPatientLink} disabled={copyingLink}
+                <Button size="sm" onClick={handleStartTeleconsulta} disabled={startingRoom}
                   className="rounded-xl text-[11px] h-7 gap-1 bg-vox-primary hover:bg-vox-primary/90 text-white">
-                  <Copy className="size-3" />{copyingLink ? "Gerando..." : "Copiar Link do Paciente"}
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleStartTeleconsulta} disabled={startingRoom}
-                  className="rounded-xl text-[11px] h-7 gap-1 text-vox-primary border-vox-primary/30 hover:bg-vox-primary/5">
-                  {startingRoom ? <Loader2 className="size-3 animate-spin" /> : <ExternalLink className="size-3" />}
+                  {startingRoom ? <Loader2 className="size-3 animate-spin" /> : <Video className="size-3" />}
                   {startingRoom ? "Criando sala..." : "Iniciar Teleconsulta"}
                 </Button>
               </div>

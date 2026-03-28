@@ -55,3 +55,6 @@ next-env.d.ts
 checklist_crm_clinica.xlsx
 dbsetup.js
 .env*.local
+
+# Sentry Config File
+.env.sentry-build-plugin

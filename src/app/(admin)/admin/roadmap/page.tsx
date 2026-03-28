@@ -85,7 +85,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "a06", name: "Duracao por procedimento", description: "Campo de duracao em minutos por procedimento", status: "done", priority: "important", effort: "low", category: "Agendamento" },
   { id: "a07", name: "Agendamento online (paciente)", description: "Link publico para paciente agendar sozinho", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
   { id: "a08", name: "Multiplas agendas", description: "Suporte a varias agendas por profissional", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
-  { id: "a09", name: "Lista de espera", description: "Fila quando nao ha horario, notificacao automatica", status: "planned", priority: "important", effort: "medium", category: "Agendamento" },
+  { id: "a09", name: "Lista de espera", description: "Waitlist com preferencias (dias/horarios/agenda), matching automatico em cancelamento, panel no calendario, notificacao de matches, prioridade (normal/alta/urgente)", status: "done", priority: "important", effort: "medium", category: "Agendamento" },
   { id: "a10", name: "Google Calendar sync", description: "Sincronizacao bidirecional com calendario pessoal", status: "planned", priority: "differential", effort: "high", category: "Integracoes" },
   { id: "a11", name: "Controle de salas", description: "Vincular agendamento a sala ou equipamento", status: "planned", priority: "important", effort: "medium", category: "Agendamento" },
 
@@ -96,9 +96,9 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "c04", name: "Revisao antes de salvar", description: "Profissional revisa e edita antes de confirmar", status: "done", priority: "essential", effort: "medium", category: "Prontuario e IA" },
   { id: "c05", name: "Templates por especialidade", description: "IA gera templates no onboarding por profissao", status: "done", priority: "essential", effort: "medium", category: "Prontuario e IA" },
   { id: "c06", name: "Planos de tratamento", description: "Multiplas sessoes, progresso, status", status: "done", priority: "important", effort: "medium", category: "Prontuario e IA" },
-  { id: "c07", name: "Anamnese customizada", description: "Template de perguntas por profissao", status: "done", priority: "important", effort: "medium", category: "Prontuario e IA" },
-  { id: "c08", name: "CID-10/CID-11", description: "Busca e vinculacao de codigos CID ao diagnostico", status: "planned", priority: "important", effort: "medium", category: "Prontuario e IA" },
-  { id: "c09", name: "Assinatura digital ICP-Brasil", description: "Validade juridica do prontuario eletronico", status: "planned", priority: "important", effort: "high", category: "Prontuario e IA" },
+  { id: "c07", name: "Formularios customizaveis", description: "Editor visual de formularios (11 tipos de campo), biblioteca de 5 templates por especialidade, historico de respostas por paciente/consulta, compatibilidade com anamnese legada", status: "done", priority: "important", effort: "high", category: "Prontuario e IA" },
+  { id: "c08", name: "CID-10/CID-11", description: "1022 codigos PT-BR, autocomplete accent-insensitive, sugestao por IA via Claude, vinculado a consultas e atestados", status: "done", priority: "important", effort: "medium", category: "Prontuario e IA" },
+  { id: "c09", name: "Assinatura digital ICP-Brasil", description: "Schema preparado (SignatureConfig, campos assinatura em Prescricao/Certificado, verificationToken). Pagina publica /verificar/[token]. Implementacao de signing em fase futura.", status: "in_progress", priority: "important", effort: "high", category: "Prontuario e IA" },
   { id: "c10", name: "SOAP estruturado", description: "Formato Subjetivo/Objetivo/Avaliacao/Plano", status: "planned", priority: "differential", effort: "medium", category: "Prontuario e IA" },
 
   // ── PRESCRICOES E DOCUMENTOS ──
@@ -106,7 +106,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "d02", name: "Atestados medicos", description: "Texto auto-gerado, CID opcional, impressao PDF", status: "done", priority: "essential", effort: "medium", category: "Prescricoes e Documentos" },
   { id: "d03", name: "Declaracao de comparecimento", description: "Horario entrada/saida, impressao PDF", status: "done", priority: "essential", effort: "low", category: "Prescricoes e Documentos" },
   { id: "d04", name: "Encaminhamento e laudo", description: "Texto livre, impressao PDF padronizada", status: "done", priority: "essential", effort: "low", category: "Prescricoes e Documentos" },
-  { id: "d05", name: "Solicitacao de exames", description: "Pedidos de exames com modelos por tipo", status: "planned", priority: "important", effort: "medium", category: "Prescricoes e Documentos" },
+  { id: "d05", name: "Integracao Memed", description: "Prescricao digital via Memed (60k+ medicamentos, interacoes, assinatura ICP-Brasil). Gratuito. Hook useMemed, panel embed, settings, sync prescricaoImpressa", status: "done", priority: "important", effort: "medium", category: "Prescricoes e Documentos" },
 
   // ── COMUNICACAO ──
   { id: "m01", name: "WhatsApp Business API", description: "Meta Cloud API, setup wizard, envio e recebimento", status: "done", priority: "essential", effort: "high", category: "Comunicacao" },
@@ -127,7 +127,8 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "f05", name: "Fluxo de caixa", description: "Visao diaria/mensal de entradas e saidas", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
   { id: "f06", name: "NFS-e", description: "Geracao de nota fiscal de servico", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
   { id: "f07", name: "Gateway de pagamento", description: "Stripe, PagSeguro ou Mercado Pago", status: "planned", priority: "important", effort: "high", category: "Financeiro" },
-  { id: "f08", name: "Gestao de convenios", description: "Tabela de precos por convenio, guias TISS", status: "planned", priority: "important", effort: "high", category: "Financeiro" },
+  { id: "f08", name: "Gestao de convenios e TISS", description: "Operadoras, Guia de Consulta, Guia SP/SADT, XML ANS 4.01.00, lote batch, dados de convenio no paciente, ciclo de vida de guias", status: "done", priority: "important", effort: "high", category: "Financeiro" },
+  { id: "f09", name: "Comissao / repasse profissionais", description: "Regras de comissao (% ou fixo) por profissional/procedimento, calculo automatico na conclusao de consulta, tab financeiro com relatorio e bulk payment", status: "done", priority: "important", effort: "medium", category: "Financeiro" },
 
   // ── RELATORIOS ──
   { id: "r01", name: "Dashboard KPIs", description: "Pacientes, consultas, receita, retorno, no-show, NPS", status: "done", priority: "essential", effort: "medium", category: "Relatorios" },
@@ -150,7 +151,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "g03", name: "Auditoria completa", description: "Log de todas operacoes com usuario e timestamp", status: "done", priority: "essential", effort: "medium", category: "Seguranca e LGPD" },
   { id: "g04", name: "Soft delete (20 anos)", description: "Pacientes desativados, nunca deletados (CFM)", status: "done", priority: "essential", effort: "low", category: "Seguranca e LGPD" },
   { id: "g05", name: "Criptografia tokens", description: "WhatsApp tokens AES, audio URLs assinadas", status: "done", priority: "essential", effort: "medium", category: "Seguranca e LGPD" },
-  { id: "g06", name: "RBAC granular", description: "Permissoes detalhadas por role (recepcionista, medico, financeiro)", status: "planned", priority: "important", effort: "high", category: "Seguranca e LGPD" },
+  { id: "g06", name: "RBAC granular", description: "5 roles (owner/admin/doctor/secretary/viewer), 20 permissoes, nav filtrada por role, settings guard, team invite com roles expandidos", status: "done", priority: "important", effort: "high", category: "Seguranca e LGPD" },
 
   // ── ADMIN ──
   { id: "x01", name: "Painel superadmin", description: "Dashboard executivo com KPIs cross-workspace", status: "done", priority: "essential", effort: "high", category: "Admin" },
@@ -163,6 +164,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "i02", name: "PWA", description: "Manifest + service worker, instalavel", status: "done", priority: "important", effort: "low", category: "Infraestrutura" },
   { id: "i03", name: "Busca global Cmd+K", description: "Command palette com pacientes, paginas, acoes", status: "done", priority: "important", effort: "medium", category: "Infraestrutura" },
   { id: "i04", name: "Onboarding com IA", description: "Wizard 4 etapas, workspace gerado por Claude", status: "done", priority: "essential", effort: "high", category: "Infraestrutura" },
+  { id: "i04b", name: "Tour guiado pos-onboarding", description: "10 steps com TourProvider, data-tour attributes, progress tracking, skip/restart, desktop/mobile adaptacao", status: "done", priority: "important", effort: "medium", category: "Infraestrutura" },
   { id: "i05", name: "Multi-idioma", description: "Suporte a portugues, ingles, espanhol", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
   { id: "i06", name: "Modo offline", description: "Funcionalidades basicas sem internet", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
   { id: "i07", name: "White-label", description: "Logo, cores e dominio customizaveis por clinica", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
@@ -181,7 +183,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
   { id: "n02", name: "Zapier / Make", description: "Conectar a centenas de apps via no-code", status: "planned", priority: "differential", effort: "medium", category: "Integracoes" },
 
   // ── ESTOQUE ──
-  { id: "e01", name: "Controle de estoque", description: "Cadastro de produtos, entrada/saida, alerta minimo", status: "planned", priority: "important", effort: "high", category: "Estoque" },
+  { id: "e01", name: "Controle de estoque", description: "Categorias, itens com SKU/unidade/custo/minimo, movimentacoes atomicas (entrada/saida/ajuste), alerta de estoque baixo, tab financeiro", status: "done", priority: "important", effort: "high", category: "Estoque" },
 ]
 
 export default function RoadmapPage() {

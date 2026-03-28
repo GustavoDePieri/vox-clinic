@@ -2,7 +2,7 @@
 
 import { memo, useState } from "react"
 import Link from "next/link"
-import { Clock, Check, XCircle, AlertTriangle, X, ExternalLink, User, Video, Copy } from "lucide-react"
+import { Clock, Check, XCircle, AlertTriangle, X, ExternalLink, User, Video, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import type { AppointmentItem } from "../types"
@@ -31,22 +31,34 @@ function AppointmentPopoverInner({
   onStatusChange: (id: string, status: string) => void
   onDelete: (id: string) => void
 }) {
-  const [copyingLink, setCopyingLink] = useState(false)
+  const [startingRoom, setStartingRoom] = useState(false)
 
-  async function handleCopyLink() {
-    setCopyingLink(true)
+  async function handleStartTeleconsulta() {
+    setStartingRoom(true)
     try {
       const result = await createTeleconsultaRoom(appointment.id)
-      if ('error' in result) { toast.error(result.error); return }
+      if ('error' in result) { toast.error(result.error); setStartingRoom(false); return }
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
       const link = `${baseUrl}/sala/${result.videoToken}`
-      await navigator.clipboard.writeText(link)
-      toast.success("Link copiado! Envie ao paciente.")
+      await navigator.clipboard.writeText(link).catch(() => {})
+      toast.success("Sala criada! Link do paciente copiado.", {
+        description: link,
+        duration: 10000,
+      })
+      window.location.href = `/teleconsulta/${appointment.id}`
     } catch {
-      toast.error("Erro ao gerar link da teleconsulta")
-    } finally {
-      setCopyingLink(false)
+      toast.error("Erro ao criar sala de teleconsulta")
+      setStartingRoom(false)
     }
+  }
+
+  function isTeleconsultaWindowOpen() {
+    if (appointment.type !== "teleconsulta" || appointment.status !== "scheduled") return false
+    const now = Date.now()
+    const appointmentTime = new Date(appointment.date).getTime()
+    const oneHourBefore = appointmentTime - 60 * 60 * 1000
+    const threeHoursAfter = appointmentTime + 3 * 60 * 60 * 1000
+    return now >= oneHourBefore && now <= threeHoursAfter
   }
 
   return (
@@ -113,6 +125,14 @@ function AppointmentPopoverInner({
             </div>
           )}
 
+          {/* CID codes */}
+          {appointment.cidCodes && (appointment.cidCodes as any[]).length > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              <span className="font-medium">CID:</span>{" "}
+              {(appointment.cidCodes as any[]).map((c: any) => c.code).join(", ")}
+            </p>
+          )}
+
           {/* Notes */}
           {appointment.notes && (
             <p className="text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-1.5 line-clamp-3">
@@ -121,17 +141,13 @@ function AppointmentPopoverInner({
           )}
 
           {/* Teleconsulta Actions */}
-          {appointment.type === "teleconsulta" && appointment.status === "scheduled" && (
+          {isTeleconsultaWindowOpen() && (
             <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/30">
-              <Button size="sm" onClick={handleCopyLink} disabled={copyingLink}
+              <Button size="sm" onClick={handleStartTeleconsulta} disabled={startingRoom}
                 className="rounded-xl text-[10px] h-7 gap-1 bg-vox-primary hover:bg-vox-primary/90 text-white">
-                <Copy className="size-3" />{copyingLink ? "Gerando..." : "Copiar Link"}
+                {startingRoom ? <Loader2 className="size-3 animate-spin" /> : <Video className="size-3" />}
+                {startingRoom ? "Criando..." : "Iniciar Teleconsulta"}
               </Button>
-              <Link href={`/teleconsulta/${appointment.id}`}>
-                <Button size="sm" variant="outline" className="rounded-xl text-[10px] h-7 gap-1 text-vox-primary border-vox-primary/30 hover:bg-vox-primary/5">
-                  <Video className="size-3" />Iniciar
-                </Button>
-              </Link>
             </div>
           )}
 

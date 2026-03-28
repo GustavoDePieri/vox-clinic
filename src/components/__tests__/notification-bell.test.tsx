@@ -6,15 +6,12 @@ const mockGetNotifications = vi.fn()
 const mockGetUnreadCount = vi.fn()
 const mockMarkAsRead = vi.fn()
 const mockMarkAllAsRead = vi.fn()
-const mockGenerateUpcomingNotifications = vi.fn()
 
 vi.mock("@/server/actions/notification", () => ({
   getNotifications: (...args: any[]) => mockGetNotifications(...args),
   getUnreadCount: (...args: any[]) => mockGetUnreadCount(...args),
   markAsRead: (...args: any[]) => mockMarkAsRead(...args),
   markAllAsRead: (...args: any[]) => mockMarkAllAsRead(...args),
-  generateUpcomingNotifications: (...args: any[]) =>
-    mockGenerateUpcomingNotifications(...args),
 }))
 
 vi.mock("@/components/ui/button", () => ({
@@ -50,7 +47,6 @@ const sampleNotifications = [
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockGenerateUpcomingNotifications.mockResolvedValue(undefined)
   mockGetNotifications.mockResolvedValue([])
   mockGetUnreadCount.mockResolvedValue(0)
   mockMarkAsRead.mockResolvedValue(undefined)

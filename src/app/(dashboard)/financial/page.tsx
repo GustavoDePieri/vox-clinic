@@ -25,6 +25,20 @@ import { ReceivablesTab } from "./receivables-tab"
 import ExpensesTab from "./expenses-tab"
 import CashflowTab from "./cashflow-tab"
 import { NfseTab } from "./nfse-tab"
+import dynamic from "next/dynamic"
+
+const TissTab = dynamic(
+  () => import("./tiss-tab").then((m) => m.TissTab),
+  { ssr: false }
+)
+const CommissionsTab = dynamic(
+  () => import("./commissions-tab").then((m) => m.CommissionsTab),
+  { ssr: false }
+)
+const InventoryTab = dynamic(
+  () => import("./inventory-tab").then((m) => m.InventoryTab),
+  { ssr: false }
+)
 
 const formatBRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
@@ -34,7 +48,7 @@ const monthNames = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ]
 
-type Tab = "resumo" | "receivables" | "expenses" | "cashflow" | "nfse" | "pricing"
+type Tab = "resumo" | "receivables" | "expenses" | "cashflow" | "nfse" | "tiss" | "commissions" | "inventory" | "pricing"
 
 export default function FinancialPage() {
   const [activeTab, setActiveTab] = useState<Tab>("resumo")
@@ -96,6 +110,9 @@ export default function FinancialPage() {
     { key: "expenses", label: "Despesas" },
     { key: "cashflow", label: "Fluxo de Caixa" },
     { key: "nfse", label: "NFS-e" },
+    { key: "tiss", label: "TISS" },
+    { key: "commissions", label: "Comissoes" },
+    { key: "inventory", label: "Estoque" },
     { key: "pricing", label: "Tabela de Precos" },
   ]
 
@@ -358,6 +375,9 @@ export default function FinancialPage() {
       {activeTab === "expenses" && <ExpensesTab />}
       {activeTab === "cashflow" && <CashflowTab />}
       {activeTab === "nfse" && <NfseTab />}
+      {activeTab === "tiss" && <TissTab />}
+      {activeTab === "commissions" && <CommissionsTab />}
+      {activeTab === "inventory" && <InventoryTab />}
 
       {activeTab === "pricing" && (
         <Card className="rounded-2xl">

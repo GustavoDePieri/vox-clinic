@@ -30,8 +30,9 @@ export async function POST(req: Request) {
       phone: string | null
       email: string | null
       workspaceId: string
+      whatsappConsent: boolean
     }>>(
-      `SELECT p.id, p.name, p.phone, p.email, p."workspaceId"
+      `SELECT p.id, p.name, p.phone, p.email, p."workspaceId", p."whatsappConsent"
        FROM "Patient" p
        WHERE p."isActive" = true
          AND p."birthDate" IS NOT NULL
@@ -70,8 +71,8 @@ export async function POST(req: Request) {
       const waConfig = configByWorkspace.get(patient.workspaceId)
       const phone = patient.phone?.replace(/\D/g, "")
 
-      // Try WhatsApp first
-      if (waConfig && phone && phone.length >= 10) {
+      // Try WhatsApp first — only if patient has given consent (LGPD)
+      if (waConfig && phone && phone.length >= 10 && patient.whatsappConsent) {
         try {
           const client = new WhatsAppClient(decrypt(waConfig.accessToken), waConfig.phoneNumberId)
           await client.sendText(phone, message)

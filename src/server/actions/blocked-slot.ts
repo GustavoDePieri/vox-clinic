@@ -2,21 +2,17 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { getWorkspaceIdCached } from "@/lib/workspace-cache"
 import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_AGENDA_NOT_FOUND, ERR_BLOCKED_SLOT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
-  })
+  const cached = await getWorkspaceIdCached(userId)
+  if (!cached) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
-
-  return workspaceId
+  return cached
 }
 
 export interface BlockedSlotItem {
@@ -121,7 +117,7 @@ export const createBlockedSlot = safeAction(async (data: {
   const agenda = await db.agenda.findFirst({
     where: { id: data.agendaId, workspaceId },
   })
-  if (!agenda) throw new Error(ERR_AGENDA_NOT_FOUND)
+  if (!agenda) throw new ActionError(ERR_AGENDA_NOT_FOUND)
 
   const startDate = new Date(data.startDate)
   const endDate = new Date(data.endDate)
@@ -160,7 +156,7 @@ export const updateBlockedSlot = safeAction(async (
   const existing = await db.blockedSlot.findFirst({
     where: { id, workspaceId },
   })
-  if (!existing) throw new Error(ERR_BLOCKED_SLOT_NOT_FOUND)
+  if (!existing) throw new ActionError(ERR_BLOCKED_SLOT_NOT_FOUND)
 
   // Validate date range
   const effectiveStart = data.startDate ? new Date(data.startDate) : existing.startDate
@@ -198,7 +194,7 @@ export const deleteBlockedSlot = safeAction(async (id: string) => {
   const existing = await db.blockedSlot.findFirst({
     where: { id, workspaceId },
   })
-  if (!existing) throw new Error(ERR_BLOCKED_SLOT_NOT_FOUND)
+  if (!existing) throw new ActionError(ERR_BLOCKED_SLOT_NOT_FOUND)
 
   await db.blockedSlot.delete({ where: { id } })
 

@@ -149,6 +149,7 @@ export function CommandPalette() {
       {/* Trigger button in header */}
       <button
         onClick={() => setOpen(true)}
+        data-tour="command-palette"
         className="hidden sm:flex items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vox-primary/50"
       >
         <Search className="size-3.5" />
@@ -161,6 +162,7 @@ export function CommandPalette() {
       {/* Mobile trigger */}
       <button
         onClick={() => setOpen(true)}
+        data-tour="command-palette-mobile"
         className="flex sm:hidden items-center justify-center size-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vox-primary/50"
         aria-label="Buscar"
       >

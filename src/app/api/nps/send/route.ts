@@ -68,8 +68,8 @@ export async function POST(req: Request) {
 
       let delivered = false
 
-      // Try WhatsApp first
-      if (waConfig && phone && phone.length >= 10) {
+      // Try WhatsApp first — only if patient has given consent (LGPD)
+      if (waConfig && phone && phone.length >= 10 && apt.patient.whatsappConsent) {
         try {
           const client = new WhatsAppClient(decrypt(waConfig.accessToken), waConfig.phoneNumberId)
           await client.sendText(phone, message)

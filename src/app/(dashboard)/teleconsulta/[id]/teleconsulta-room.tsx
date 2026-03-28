@@ -117,11 +117,9 @@ export function TeleconsultaRoom({ appointment }: TeleconsultaRoomProps) {
           )}
 
           <AlertDialog>
-            <AlertDialogTrigger>
-              <Button variant="destructive" size="sm" className="gap-1.5">
-                <PhoneOff className="size-3.5" />
-                Encerrar
-              </Button>
+            <AlertDialogTrigger className="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 bg-destructive text-white hover:bg-destructive/90 h-8 px-3 gap-1.5">
+              <PhoneOff className="size-3.5" />
+              Encerrar
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

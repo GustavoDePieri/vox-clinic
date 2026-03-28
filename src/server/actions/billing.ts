@@ -47,12 +47,20 @@ export const createCheckoutSession = safeAction(async (planKey: "pro" | "enterpr
         clerkUserId: user.clerkId,
       },
     })
-    stripeCustomerId = customer.id
 
-    await db.workspace.update({
-      where: { id: workspace.id },
-      data: { stripeCustomerId },
+    // Atomic update: only set stripeCustomerId if no other request has set it yet
+    const result = await db.workspace.updateMany({
+      where: { id: workspace.id, stripeCustomerId: null },
+      data: { stripeCustomerId: customer.id },
     })
+
+    if (result.count === 0) {
+      // Another request already set it — re-read and use that one
+      const ws = await db.workspace.findUnique({ where: { id: workspace.id }, select: { stripeCustomerId: true } })
+      stripeCustomerId = ws!.stripeCustomerId!
+    } else {
+      stripeCustomerId = customer.id
+    }
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.voxclinic.com"

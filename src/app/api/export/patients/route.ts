@@ -21,9 +21,15 @@ export async function GET() {
 
     const workspaceId = user.workspace.id
 
+    const EXPORT_LIMIT = 10000
+
+    const totalCount = await db.patient.count({ where: { workspaceId, isActive: true } })
+    const truncated = totalCount > EXPORT_LIMIT
+
     const patients = await db.patient.findMany({
       where: { workspaceId, isActive: true },
       orderBy: { name: "asc" },
+      take: EXPORT_LIMIT,
       include: {
         appointments: {
           orderBy: { date: "desc" },
@@ -54,14 +60,18 @@ export async function GET() {
 
     const buffer = generateXlsx(rows, "Pacientes")
 
-    return new NextResponse(new Uint8Array(buffer), {
-      status: 200,
-      headers: {
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="pacientes_${new Date().toISOString().split("T")[0]}.xlsx"`,
-      },
-    })
+    const headers: Record<string, string> = {
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="pacientes_${new Date().toISOString().split("T")[0]}.xlsx"`,
+    }
+    if (truncated) {
+      headers["X-Export-Truncated"] = "true"
+      headers["X-Export-Total"] = String(totalCount)
+      headers["X-Export-Limit"] = String(EXPORT_LIMIT)
+    }
+
+    return new NextResponse(new Uint8Array(buffer), { status: 200, headers })
   } catch (err) {
     logger.error("Patient export failed", { action: "GET /api/export/patients" }, err)
     return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: { "Content-Type": "application/json" } })

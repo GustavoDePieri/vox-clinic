@@ -58,12 +58,12 @@ export const createCharge = safeAction(async (input: CreateChargeInput) => {
 
   // Validate patient belongs to this workspace
   const patient = await db.patient.findUnique({ where: { id: patientId } })
-  if (!patient || patient.workspaceId !== workspaceId) throw new Error(ERR_PATIENT_NOT_FOUND)
+  if (!patient || patient.workspaceId !== workspaceId) throw new ActionError(ERR_PATIENT_NOT_FOUND)
 
   // Validate appointment belongs to this workspace if provided
   if (appointmentId) {
     const appointment = await db.appointment.findUnique({ where: { id: appointmentId } })
-    if (!appointment || appointment.workspaceId !== workspaceId) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
+    if (!appointment || appointment.workspaceId !== workspaceId) throw new ActionError(ERR_APPOINTMENT_NOT_FOUND)
   }
 
   // Split into installments — first absorbs remainder
@@ -145,10 +145,10 @@ export const recordPayment = safeAction(async (paymentId: string, input: RecordP
       include: { charge: true },
     })
 
-    if (!payment) throw new Error(ERR_PAYMENT_NOT_FOUND)
-    if (payment.workspaceId !== workspaceId) throw new Error(ERR_UNAUTHORIZED)
-    if (payment.status === "paid") throw new Error(ERR_PAYMENT_ALREADY_REGISTERED)
-    if (payment.status === "cancelled") throw new Error(ERR_PAYMENT_CANCELLED)
+    if (!payment) throw new ActionError(ERR_PAYMENT_NOT_FOUND)
+    if (payment.workspaceId !== workspaceId) throw new ActionError(ERR_UNAUTHORIZED)
+    if (payment.status === "paid") throw new ActionError(ERR_PAYMENT_ALREADY_REGISTERED)
+    if (payment.status === "cancelled") throw new ActionError(ERR_PAYMENT_CANCELLED)
 
     await tx.payment.update({
       where: { id: paymentId },
@@ -395,7 +395,7 @@ export const cancelCharge = safeAction(async (chargeId: string) => {
     })
 
     if (!charge || charge.workspaceId !== workspaceId) {
-      throw new Error(ERR_RECEIVABLE_NOT_FOUND)
+      throw new ActionError(ERR_RECEIVABLE_NOT_FOUND)
     }
 
     if (charge.status === "cancelled") {

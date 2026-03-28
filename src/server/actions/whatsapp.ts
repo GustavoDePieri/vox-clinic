@@ -5,12 +5,13 @@ import { db } from "@/lib/db"
 import { encrypt, decrypt } from "@/lib/crypto"
 import { checkFeatureAccess } from "@/lib/plan-enforcement"
 import { createWhatsAppClient } from "@/lib/whatsapp/client"
+import { logAudit } from "@/lib/audit"
 
 // ============================================
 // Server Actions - WhatsApp
 // ============================================
 
-async function getWorkspaceId(): Promise<string> {
+async function getAuthContext(): Promise<{ workspaceId: string; userId: string }> {
   const { userId } = await auth()
   if (!userId) throw new Error("Nao autenticado")
 
@@ -22,6 +23,11 @@ async function getWorkspaceId(): Promise<string> {
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
   if (!workspaceId) throw new Error("Workspace nao encontrado")
 
+  return { workspaceId, userId: user!.id }
+}
+
+async function getWorkspaceId(): Promise<string> {
+  const { workspaceId } = await getAuthContext()
   return workspaceId
 }
 
@@ -155,8 +161,18 @@ export async function sendTextMessage(
   text: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const workspaceId = await getWorkspaceId()
+    const { workspaceId, userId } = await getAuthContext()
     const client = await createWhatsAppClient(workspaceId)
+
+    // Audit: WhatsApp credential accessed to send message
+    logAudit({
+      workspaceId,
+      userId,
+      action: "credential.accessed",
+      entityType: "WhatsAppConfig",
+      entityId: workspaceId,
+      details: { credentialType: "whatsapp_access_token", purpose: "sendTextMessage", to },
+    })
 
     const result = await client.sendText(to, text)
 
@@ -188,8 +204,18 @@ export async function sendTemplateMessage(
   params?: Array<{ type: "text"; text: string }>
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const workspaceId = await getWorkspaceId()
+    const { workspaceId, userId } = await getAuthContext()
     const client = await createWhatsAppClient(workspaceId)
+
+    // Audit: WhatsApp credential accessed to send template
+    logAudit({
+      workspaceId,
+      userId,
+      action: "credential.accessed",
+      entityType: "WhatsAppConfig",
+      entityId: workspaceId,
+      details: { credentialType: "whatsapp_access_token", purpose: "sendTemplateMessage", to, templateName },
+    })
 
     await client.sendTemplate(to, templateName, "pt_BR", params)
 

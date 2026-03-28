@@ -55,25 +55,45 @@ export async function getAdminDashboard() {
   }
 }
 
-export async function getAdminWorkspaces() {
+export async function getAdminWorkspaces(page: number = 1, search?: string) {
   await requireSuperAdmin()
 
-  const workspaces = await db.workspace.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: { select: { name: true, email: true } },
-      _count: {
-        select: {
-          patients: true,
-          appointments: true,
-          recordings: true,
-          members: true,
+  const PAGE_SIZE = 100
+  const skip = (page - 1) * PAGE_SIZE
+
+  // Build where clause for search (filter by user name, email, or professionType)
+  const where = search
+    ? {
+        OR: [
+          { user: { name: { contains: search, mode: "insensitive" as const } } },
+          { user: { email: { contains: search, mode: "insensitive" as const } } },
+          { professionType: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
+    : undefined
+
+  const [workspaces, total] = await Promise.all([
+    db.workspace.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE,
+      skip,
+      include: {
+        user: { select: { name: true, email: true } },
+        _count: {
+          select: {
+            patients: true,
+            appointments: true,
+            recordings: true,
+            members: true,
+          },
         },
       },
-    },
-  })
+    }),
+    db.workspace.count({ where }),
+  ])
 
-  return workspaces
+  return { workspaces, total, page, pageSize: PAGE_SIZE, totalPages: Math.ceil(total / PAGE_SIZE) }
 }
 
 export async function getAdminWorkspaceDetail(workspaceId: string) {
@@ -128,23 +148,31 @@ export async function toggleWorkspaceStatus(workspaceId: string) {
   return { success: true, newStatus }
 }
 
-export async function getAdminUsers() {
+export async function getAdminUsers(page: number = 1) {
   await requireSuperAdmin()
 
-  const users = await db.user.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      workspace: {
-        select: {
-          id: true,
-          professionType: true,
-          plan: true,
-          planStatus: true,
-          _count: { select: { patients: true, appointments: true } },
+  const PAGE_SIZE = 100
+  const skip = (page - 1) * PAGE_SIZE
+
+  const [users, total] = await Promise.all([
+    db.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE,
+      skip,
+      include: {
+        workspace: {
+          select: {
+            id: true,
+            professionType: true,
+            plan: true,
+            planStatus: true,
+            _count: { select: { patients: true, appointments: true } },
+          },
         },
       },
-    },
-  })
+    }),
+    db.user.count(),
+  ])
 
-  return users
+  return { users, total, page, pageSize: PAGE_SIZE, totalPages: Math.ceil(total / PAGE_SIZE) }
 }

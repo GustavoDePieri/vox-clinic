@@ -153,6 +153,18 @@ const GENERATE_CONSULTATION_SUMMARY_TOOL: Anthropic.Tool = {
         },
         description: 'Dados pessoais do paciente mencionados na consulta que devem atualizar o cadastro (endereco, telefone, convenio, alergias, medicacoes cronicas, doencas)',
       },
+      cidCodes: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            code: { type: 'string', description: 'Código CID-10 (ex: J06.9)' },
+            description: { type: 'string', description: 'Descrição do código CID-10 em português' },
+          },
+          required: ['code', 'description'],
+        },
+        description: 'Códigos CID-10 sugeridos com base no diagnóstico mencionado. Apenas inclua se houver diagnóstico ou hipótese diagnóstica clara na consulta.',
+      },
     },
     required: ['procedures'],
   },
@@ -306,7 +318,8 @@ Regras de extracao:
 3. Se houver diagnostico ou hipotese diagnostica, extraia no campo "diagnosis".
 4. Se houver medicamentos prescritos ou mencionados, extraia cada um com dosagem e frequencia quando disponiveis.
 5. Se o paciente mencionar dados pessoais (endereco, telefone, convenio, alergias, medicacoes de uso continuo, doencas cronicas), extraia em "patientInfoUpdates". NAO coloque esses dados em "observations".
-6. Seja conciso e objetivo. Use portugues brasileiro.`,
+6. Se houver diagnóstico ou hipótese diagnóstica, sugira os códigos CID-10 correspondentes no campo cidCodes. Use códigos válidos da CID-10. Se não houver certeza do diagnóstico, não inclua códigos CID.
+7. Seja conciso e objetivo. Use portugues brasileiro.`,
     messages: [{
       role: 'user',
       content: `Procedimentos disponiveis no workspace: ${JSON.stringify(workspaceProcedures)}

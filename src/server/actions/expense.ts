@@ -218,7 +218,7 @@ export const updateExpense = safeAction(async (
 
   const expense = await db.expense.findUnique({ where: { id } })
   if (!expense || expense.workspaceId !== workspaceId) {
-    throw new Error(ERR_EXPENSE_NOT_FOUND)
+    throw new ActionError(ERR_EXPENSE_NOT_FOUND)
   }
 
   return db.expense.update({
@@ -241,7 +241,7 @@ export const deleteExpense = safeAction(async (id: string, deleteRecurrence = fa
 
   const expense = await db.expense.findUnique({ where: { id } })
   if (!expense || expense.workspaceId !== workspaceId) {
-    throw new Error(ERR_EXPENSE_NOT_FOUND)
+    throw new ActionError(ERR_EXPENSE_NOT_FOUND)
   }
 
   if (deleteRecurrence) {
@@ -287,7 +287,7 @@ export const payExpense = safeAction(async (
 
   const expense = await db.expense.findUnique({ where: { id } })
   if (!expense || expense.workspaceId !== workspaceId) {
-    throw new Error(ERR_EXPENSE_NOT_FOUND)
+    throw new ActionError(ERR_EXPENSE_NOT_FOUND)
   }
 
   return db.expense.update({

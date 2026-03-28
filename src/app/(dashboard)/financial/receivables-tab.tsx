@@ -23,12 +23,17 @@ import {
   Search,
   CreditCard,
   XCircle,
+  Send,
+  Zap,
+  ExternalLink,
 } from "lucide-react"
 import { getCharges, getReceivablesSummary, cancelCharge } from "@/server/actions/receivable"
+import { getGatewayConfig } from "@/server/actions/gateway-config"
 import { toast } from "sonner"
 import { friendlyError } from "@/lib/error-messages"
 import { CreateChargeDialog } from "./create-charge-dialog"
 import { RegisterPaymentDialog } from "./register-payment-dialog"
+import { SendChargeDialog } from "./send-charge-dialog"
 
 const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -59,6 +64,23 @@ export function ReceivablesTab() {
   const [paymentDialogPayment, setPaymentDialogPayment] = useState<PaymentItem | null>(null)
   const [page, setPage] = useState(1)
   const [cancelling, setCancelling] = useState<string | null>(null)
+  const [gatewayActive, setGatewayActive] = useState(false)
+  const [sendChargePayment, setSendChargePayment] = useState<{
+    payment: PaymentItem
+    patientName: string
+    description: string
+  } | null>(null)
+
+  // Load gateway config (just check if active)
+  useEffect(() => {
+    getGatewayConfig()
+      .then((config) => {
+        setGatewayActive(config?.isActive ?? false)
+      })
+      .catch(() => {
+        // gateway not configured — that's fine
+      })
+  }, [])
 
   // Debounce search
   useEffect(() => {
@@ -310,19 +332,67 @@ export function ReceivablesTab() {
                               <span className="text-[10px] text-muted-foreground">{payment.paymentMethod}</span>
                             )}
                             <div className="flex-1" />
-                            {(payment.status === "pending" || payment.status === "overdue") && (
-                              <Button
+                            {/* Gateway status badge */}
+                            {payment.gatewayChargeId && (
+                              <Badge
                                 variant="outline"
-                                size="sm"
-                                className="h-7 text-xs gap-1"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setPaymentDialogPayment(payment)
-                                }}
+                                className={`text-[10px] px-1.5 py-0 gap-1 ${
+                                  payment.webhookReceivedAt
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                    : "border-violet-300 bg-violet-50 text-violet-700"
+                                }`}
                               >
-                                <CreditCard className="size-3" />
-                                Registrar
-                              </Button>
+                                <Zap className="size-2.5" />
+                                {payment.webhookReceivedAt
+                                  ? "Auto"
+                                  : "Gateway"}
+                              </Badge>
+                            )}
+                            {payment.paymentLink && payment.status !== "paid" && (
+                              <a
+                                href={payment.paymentLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-vox-primary hover:text-vox-primary/80"
+                                onClick={(e) => e.stopPropagation()}
+                                title="Abrir link de pagamento"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            )}
+                            {(payment.status === "pending" || payment.status === "overdue") && (
+                              <div className="flex gap-1">
+                                {gatewayActive && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-xs gap-1 border-vox-primary/30 text-vox-primary hover:bg-vox-primary/5"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setSendChargePayment({
+                                        payment,
+                                        patientName: charge.patient.name,
+                                        description: charge.description,
+                                      })
+                                    }}
+                                  >
+                                    <Send className="size-3" />
+                                    Cobrar
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setPaymentDialogPayment(payment)
+                                  }}
+                                >
+                                  <CreditCard className="size-3" />
+                                  Registrar
+                                </Button>
+                              </div>
                             )}
                           </div>
                         )
@@ -389,6 +459,17 @@ export function ReceivablesTab() {
           payment={paymentDialogPayment}
           open={!!paymentDialogPayment}
           onOpenChange={(open) => { if (!open) setPaymentDialogPayment(null) }}
+          onSuccess={loadData}
+        />
+      )}
+
+      {sendChargePayment && (
+        <SendChargeDialog
+          payment={sendChargePayment.payment}
+          patientName={sendChargePayment.patientName}
+          description={sendChargePayment.description}
+          open={!!sendChargePayment}
+          onOpenChange={(open) => { if (!open) setSendChargePayment(null) }}
           onSuccess={loadData}
         />
       )}

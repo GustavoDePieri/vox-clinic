@@ -49,10 +49,10 @@ export function FinalCTASection() {
       <footer className="relative z-10 border-t border-white/10 mt-16 pt-8 max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/50">
         <p>&copy; 2026 VoxClinic. Todos os direitos reservados.</p>
         <div className="flex gap-6">
-          <Link href="/sign-up" className="hover:text-white/80 transition-colors">
+          <Link href="/termos" className="hover:text-white/80 transition-colors">
             Termos de uso
           </Link>
-          <Link href="/sign-up" className="hover:text-white/80 transition-colors">
+          <Link href="/privacidade" className="hover:text-white/80 transition-colors">
             Privacidade
           </Link>
         </div>

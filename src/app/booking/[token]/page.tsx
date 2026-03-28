@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useParams } from "next/navigation"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useParams, useSearchParams } from "next/navigation"
 
 // ────────────────────── Types ──────────────────────
 
@@ -59,13 +59,25 @@ function generateDates(maxDays: number): Date[] {
   return dates
 }
 
+/** Send postMessage to parent window (for widget/iframe embedding) */
+function postToParent(data: Record<string, unknown>) {
+  if (typeof window !== "undefined" && window.parent !== window) {
+    window.parent.postMessage(data, "*")
+  }
+}
+
 // ────────────────────── Main Component ──────────────────────
 
 export default function BookingPage() {
   const { token } = useParams<{ token: string }>()
+  const searchParams = useSearchParams()
+  const isCompact = searchParams.get("mode") === "compact"
+  const colorParam = searchParams.get("color")
+
   const [step, setStep] = useState<Step>("loading")
   const [config, setConfig] = useState<BookingConfig | null>(null)
   const [errorMessage, setErrorMessage] = useState("")
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // Selections
   const [selectedProcedure, setSelectedProcedure] = useState<ProcedureOption | null>(null)
@@ -81,7 +93,29 @@ export default function BookingPage() {
   const [patientEmail, setPatientEmail] = useState("")
 
   // Result
-  const [bookingResult, setBookingResult] = useState<{ date: string; procedure: string | null } | null>(null)
+  const [bookingResult, setBookingResult] = useState<{ date: string; procedure: string | null; appointmentId?: string } | null>(null)
+
+  // Dynamic color override via CSS custom property
+  const primaryColor = colorParam || "#14B8A6"
+
+  // Send ready message on mount (compact mode)
+  useEffect(() => {
+    if (isCompact) {
+      postToParent({ type: "voxclinic:ready" })
+    }
+  }, [isCompact])
+
+  // Send resize message when step changes (compact mode)
+  useEffect(() => {
+    if (!isCompact) return
+    // Small delay to let DOM render
+    const timer = setTimeout(() => {
+      if (contentRef.current) {
+        postToParent({ type: "voxclinic:resize", height: contentRef.current.scrollHeight })
+      }
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [isCompact, step, slots, selectedDate, selectedTime, loadingSlots])
 
   // Load config
   useEffect(() => {
@@ -170,8 +204,21 @@ export default function BookingPage() {
       }
 
       const data = await res.json()
-      setBookingResult({ date: data.date, procedure: data.procedure })
+      setBookingResult({ date: data.date, procedure: data.procedure, appointmentId: data.appointmentId })
       setStep("done")
+
+      // Notify parent window of successful booking
+      if (isCompact) {
+        postToParent({
+          type: "voxclinic:booked",
+          data: {
+            appointmentId: data.appointmentId,
+            date: data.date,
+            procedure: selectedProcedure.name,
+            patientName: patientName.trim(),
+          },
+        })
+      }
     } catch {
       setErrorMessage("Erro de conexao. Tente novamente.")
       setStep("error")
@@ -186,16 +233,46 @@ export default function BookingPage() {
     else setPatientPhone(`(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`)
   }
 
+  function handleClose() {
+    postToParent({ type: "voxclinic:close" })
+  }
+
   const availableDates = config ? generateDates(config.maxDaysAhead) : []
   const stepNumber = step === "select-procedure" ? 1 : step === "select-datetime" ? 2 : step === "patient-info" ? 3 : 0
 
+  // Dynamic inline styles for color override
+  const accentStyle = {
+    "--booking-primary": primaryColor,
+    "--booking-primary-light": primaryColor + "1a",
+    "--booking-primary-medium": primaryColor + "33",
+  } as React.CSSProperties
+
+  // Utility: classes that use the dynamic color
+  const btnPrimary = { backgroundColor: primaryColor }
+  const btnPrimaryHover = { backgroundColor: primaryColor, filter: "brightness(0.9)" }
+  const accentText = { color: primaryColor }
+  const accentBg = { backgroundColor: primaryColor + "1a" }
+  const accentBorder = { borderColor: primaryColor + "66" }
+  const accentRing = { boxShadow: `0 0 0 3px ${primaryColor}33` }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div
+      ref={contentRef}
+      className={
+        isCompact
+          ? "bg-transparent p-2"
+          : "min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4"
+      }
+      style={accentStyle}
+    >
+      <div className={isCompact ? "w-full" : "w-full max-w-md"}>
         {/* ─── Loading ─── */}
         {step === "loading" && (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="size-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <div
+              className="size-8 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+              style={{ borderColor: primaryColor, borderTopColor: "transparent" }}
+            />
             <p className="text-sm text-slate-500 mt-3">Carregando...</p>
           </div>
         )}
@@ -203,7 +280,7 @@ export default function BookingPage() {
         {/* ─── Not Found ─── */}
         {step === "not-found" && (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="text-4xl mb-3">🔒</div>
+            <div className="text-4xl mb-3">&#128274;</div>
             <h1 className="text-lg font-semibold text-slate-800">Agendamento nao disponivel</h1>
             <p className="text-sm text-slate-500 mt-2">Este link de agendamento esta inativo ou nao existe.</p>
           </div>
@@ -211,20 +288,44 @@ export default function BookingPage() {
 
         {/* ─── Step Header ─── */}
         {config && stepNumber > 0 && (
-          <div className="mb-4">
-            <h1 className="text-lg font-semibold text-slate-800">{config.clinicName}</h1>
-            {config.welcomeMessage && (
-              <p className="text-sm text-slate-500 mt-0.5">{config.welcomeMessage}</p>
+          <div className={isCompact ? "mb-3" : "mb-4"}>
+            {/* In compact mode: smaller header, no welcome message */}
+            {!isCompact && (
+              <>
+                <h1 className="text-lg font-semibold text-slate-800">{config.clinicName}</h1>
+                {config.welcomeMessage && (
+                  <p className="text-sm text-slate-500 mt-0.5">{config.welcomeMessage}</p>
+                )}
+              </>
             )}
-            <div className="flex items-center gap-2 mt-3">
+            {isCompact && (
+              <div className="flex items-center justify-between">
+                <h1 className="text-sm font-semibold text-slate-800">{config.clinicName}</h1>
+                <button
+                  onClick={handleClose}
+                  className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
+            <div className={`flex items-center gap-2 ${isCompact ? "mt-2" : "mt-3"}`}>
               {[1, 2, 3].map((n) => (
                 <div key={n} className="flex items-center gap-2">
-                  <div className={`size-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                    n <= stepNumber ? "bg-teal-500 text-white" : "bg-slate-200 text-slate-400"
-                  }`}>
+                  <div
+                    className={`size-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                      n <= stepNumber ? "text-white" : "bg-slate-200 text-slate-400"
+                    }`}
+                    style={n <= stepNumber ? btnPrimary : undefined}
+                  >
                     {n}
                   </div>
-                  {n < 3 && <div className={`w-8 h-0.5 ${n < stepNumber ? "bg-teal-500" : "bg-slate-200"}`} />}
+                  {n < 3 && (
+                    <div
+                      className={`w-8 h-0.5 ${n < stepNumber ? "" : "bg-slate-200"}`}
+                      style={n < stepNumber ? { backgroundColor: primaryColor } : undefined}
+                    />
+                  )}
                 </div>
               ))}
               <span className="text-xs text-slate-400 ml-2">
@@ -236,7 +337,7 @@ export default function BookingPage() {
 
         {/* ─── Step 1: Select Procedure ─── */}
         {step === "select-procedure" && config && (
-          <div className="bg-white rounded-2xl shadow-lg p-5 space-y-3">
+          <div className={`bg-white rounded-2xl shadow-lg ${isCompact ? "p-4" : "p-5"} space-y-3`}>
             <h2 className="text-sm font-semibold text-slate-700">Escolha o procedimento</h2>
             <div className="space-y-2">
               {config.procedures.map((proc) => (
@@ -246,7 +347,15 @@ export default function BookingPage() {
                     setSelectedProcedure(proc)
                     setStep("select-datetime")
                   }}
-                  className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3 text-left hover:border-teal-300 hover:bg-teal-50/50 transition-all"
+                  className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50/80 transition-all"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = primaryColor + "66"
+                    e.currentTarget.style.backgroundColor = primaryColor + "0d"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = ""
+                    e.currentTarget.style.backgroundColor = ""
+                  }}
                 >
                   <div>
                     <div className="text-sm font-medium text-slate-800">{proc.name}</div>
@@ -258,7 +367,7 @@ export default function BookingPage() {
                     </div>
                   </div>
                   {proc.price != null && (
-                    <span className="text-sm font-medium text-teal-600">
+                    <span className="text-sm font-medium" style={accentText}>
                       R$ {proc.price.toFixed(2).replace(".", ",")}
                     </span>
                   )}
@@ -270,18 +379,25 @@ export default function BookingPage() {
 
         {/* ─── Step 2: Select Date & Time ─── */}
         {step === "select-datetime" && config && (
-          <div className="bg-white rounded-2xl shadow-lg p-5 space-y-4">
+          <div className={`bg-white rounded-2xl shadow-lg ${isCompact ? "p-4" : "p-5"} space-y-4`}>
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-700">Escolha a data e horario</h2>
-              <button onClick={() => { setStep("select-procedure"); setSelectedDate(null); setSelectedTime(null) }} className="text-xs text-teal-600 hover:underline">
+              <button
+                onClick={() => { setStep("select-procedure"); setSelectedDate(null); setSelectedTime(null) }}
+                className="text-xs hover:underline"
+                style={accentText}
+              >
                 Voltar
               </button>
             </div>
 
             {/* Selected procedure badge */}
-            <div className="flex items-center gap-2 bg-teal-50 rounded-lg px-3 py-2 text-xs">
-              <span className="font-medium text-teal-700">{selectedProcedure?.name}</span>
-              <span className="text-teal-500">{selectedProcedure?.duration} min</span>
+            <div
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
+              style={accentBg}
+            >
+              <span className="font-medium" style={accentText}>{selectedProcedure?.name}</span>
+              <span style={{ color: primaryColor + "cc" }}>{selectedProcedure?.duration} min</span>
             </div>
 
             {/* Agenda selector (if multiple) */}
@@ -295,9 +411,10 @@ export default function BookingPage() {
                       onClick={() => { setSelectedAgenda(ag); setSelectedDate(null); setSelectedTime(null) }}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                         selectedAgenda?.id === ag.id
-                          ? "border-teal-300 bg-teal-50 text-teal-700"
+                          ? ""
                           : "border-slate-200 text-slate-500 hover:border-slate-300"
                       }`}
+                      style={selectedAgenda?.id === ag.id ? { ...accentBorder, ...accentBg, ...accentText } : undefined}
                     >
                       <span className="size-2 rounded-full" style={{ backgroundColor: ag.color }} />
                       {ag.name}
@@ -321,14 +438,15 @@ export default function BookingPage() {
                         onClick={() => setSelectedDate(d)}
                         className={`flex flex-col items-center min-w-[48px] py-2 px-1.5 rounded-xl text-xs transition-all shrink-0 ${
                           isSelected
-                            ? "bg-teal-500 text-white shadow-sm"
+                            ? "text-white shadow-sm"
                             : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                         }`}
+                        style={isSelected ? btnPrimary : undefined}
                       >
                         <span className="text-[10px] font-medium uppercase">{WEEKDAY_NAMES[d.getDay()]}</span>
                         <span className="text-base font-semibold">{d.getDate()}</span>
                         <span className="text-[10px]">{MONTH_NAMES[d.getMonth()]}</span>
-                        {isToday && !isSelected && <span className="text-[9px] text-teal-500 font-medium">Hoje</span>}
+                        {isToday && !isSelected && <span className="text-[9px] font-medium" style={accentText}>Hoje</span>}
                       </button>
                     )
                   })}
@@ -344,7 +462,10 @@ export default function BookingPage() {
                 </label>
                 {loadingSlots ? (
                   <div className="flex items-center justify-center py-6">
-                    <div className="size-5 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                    <div
+                      className="size-5 border-2 border-t-transparent rounded-full animate-spin"
+                      style={{ borderColor: primaryColor, borderTopColor: "transparent" }}
+                    />
                   </div>
                 ) : slots.filter((s) => s.available).length === 0 ? (
                   <p className="text-xs text-slate-400 text-center py-4">Nenhum horario disponivel neste dia</p>
@@ -356,9 +477,20 @@ export default function BookingPage() {
                         onClick={() => setSelectedTime(slot.time)}
                         className={`py-2 rounded-lg text-xs font-medium transition-all ${
                           selectedTime === slot.time
-                            ? "bg-teal-500 text-white shadow-sm"
-                            : "bg-slate-50 text-slate-700 hover:bg-teal-50 hover:text-teal-700"
+                            ? "text-white shadow-sm"
+                            : "bg-slate-50 text-slate-700 hover:text-slate-900"
                         }`}
+                        style={selectedTime === slot.time ? btnPrimary : undefined}
+                        onMouseEnter={(e) => {
+                          if (selectedTime !== slot.time) {
+                            e.currentTarget.style.backgroundColor = primaryColor + "1a"
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedTime !== slot.time) {
+                            e.currentTarget.style.backgroundColor = ""
+                          }
+                        }}
                       >
                         {slot.time}
                       </button>
@@ -372,7 +504,10 @@ export default function BookingPage() {
             {selectedTime && (
               <button
                 onClick={() => setStep("patient-info")}
-                className="w-full bg-teal-500 hover:bg-teal-600 text-white rounded-xl py-2.5 text-sm font-medium transition-colors"
+                className="w-full text-white rounded-xl py-2.5 text-sm font-medium transition-all active:scale-[0.98]"
+                style={btnPrimary}
+                onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(0.9)" }}
+                onMouseLeave={(e) => { e.currentTarget.style.filter = "" }}
               >
                 Continuar
               </button>
@@ -382,10 +517,10 @@ export default function BookingPage() {
 
         {/* ─── Step 3: Patient Info ─── */}
         {step === "patient-info" && (
-          <div className="bg-white rounded-2xl shadow-lg p-5 space-y-4">
+          <div className={`bg-white rounded-2xl shadow-lg ${isCompact ? "p-4" : "p-5"} space-y-4`}>
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-700">Seus dados</h2>
-              <button onClick={() => setStep("select-datetime")} className="text-xs text-teal-600 hover:underline">
+              <button onClick={() => setStep("select-datetime")} className="text-xs hover:underline" style={accentText}>
                 Voltar
               </button>
             </div>
@@ -407,7 +542,16 @@ export default function BookingPage() {
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
                   placeholder="Seu nome"
-                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none"
+                  style={{ boxShadow: "none" }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = primaryColor + "99"
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${primaryColor}33`
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = ""
+                    e.currentTarget.style.boxShadow = "none"
+                  }}
                 />
               </div>
               <div className="space-y-1">
@@ -417,7 +561,16 @@ export default function BookingPage() {
                   value={patientPhone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="(11) 99999-9999"
-                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none"
+                  style={{ boxShadow: "none" }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = primaryColor + "99"
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${primaryColor}33`
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = ""
+                    e.currentTarget.style.boxShadow = "none"
+                  }}
                 />
               </div>
               <div className="space-y-1">
@@ -427,7 +580,16 @@ export default function BookingPage() {
                   value={patientEmail}
                   onChange={(e) => setPatientEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400"
+                  className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none"
+                  style={{ boxShadow: "none" }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = primaryColor + "99"
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${primaryColor}33`
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = ""
+                    e.currentTarget.style.boxShadow = "none"
+                  }}
                 />
               </div>
             </div>
@@ -435,7 +597,12 @@ export default function BookingPage() {
             <button
               onClick={handleSubmit}
               disabled={!patientName.trim() || patientPhone.replace(/\D/g, "").length < 10}
-              className="w-full bg-teal-500 hover:bg-teal-600 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl py-2.5 text-sm font-medium transition-colors"
+              className="w-full disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl py-2.5 text-sm font-medium transition-all active:scale-[0.98]"
+              style={!patientName.trim() || patientPhone.replace(/\D/g, "").length < 10 ? undefined : btnPrimary}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) e.currentTarget.style.filter = "brightness(0.9)"
+              }}
+              onMouseLeave={(e) => { e.currentTarget.style.filter = "" }}
             >
               Confirmar Agendamento
             </button>
@@ -445,7 +612,10 @@ export default function BookingPage() {
         {/* ─── Confirming ─── */}
         {step === "confirming" && (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <div className="size-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <div
+              className="size-8 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+              style={{ borderColor: primaryColor, borderTopColor: "transparent" }}
+            />
             <p className="text-sm text-slate-500 mt-3">Agendando...</p>
           </div>
         )}
@@ -453,8 +623,11 @@ export default function BookingPage() {
         {/* ─── Done ─── */}
         {step === "done" && bookingResult && (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center space-y-3">
-            <div className="size-14 bg-teal-100 rounded-full flex items-center justify-center mx-auto">
-              <svg className="size-7 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <div
+              className="size-14 rounded-full flex items-center justify-center mx-auto"
+              style={{ backgroundColor: primaryColor + "1a" }}
+            >
+              <svg className="size-7" style={accentText} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -471,19 +644,34 @@ export default function BookingPage() {
                 })}
               </div>
             </div>
-            <p className="text-xs text-slate-400">Voce pode fechar esta pagina.</p>
+            {isCompact ? (
+              <button
+                onClick={handleClose}
+                className="text-white rounded-xl px-6 py-2 text-sm font-medium transition-all active:scale-[0.98]"
+                style={btnPrimary}
+                onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(0.9)" }}
+                onMouseLeave={(e) => { e.currentTarget.style.filter = "" }}
+              >
+                Fechar
+              </button>
+            ) : (
+              <p className="text-xs text-slate-400">Voce pode fechar esta pagina.</p>
+            )}
           </div>
         )}
 
         {/* ─── Error ─── */}
         {step === "error" && (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center space-y-3">
-            <div className="text-3xl">⚠️</div>
+            <div className="text-3xl">&#9888;&#65039;</div>
             <h2 className="text-lg font-semibold text-slate-800">Erro ao agendar</h2>
             <p className="text-sm text-slate-500">{errorMessage}</p>
             <button
               onClick={() => setStep("select-datetime")}
-              className="bg-teal-500 hover:bg-teal-600 text-white rounded-xl px-6 py-2 text-sm font-medium transition-colors"
+              className="text-white rounded-xl px-6 py-2 text-sm font-medium transition-all active:scale-[0.98]"
+              style={btnPrimary}
+              onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(0.9)" }}
+              onMouseLeave={(e) => { e.currentTarget.style.filter = "" }}
             >
               Tentar novamente
             </button>
@@ -491,9 +679,11 @@ export default function BookingPage() {
         )}
 
         {/* Footer */}
-        <p className="text-center text-[10px] text-slate-300 mt-4">
-          Powered by VoxClinic
-        </p>
+        {!isCompact && (
+          <p className="text-center text-[10px] text-slate-300 mt-4">
+            Powered by VoxClinic
+          </p>
+        )}
       </div>
     </div>
   )

@@ -19,12 +19,13 @@ export default async function PrescriptionPage({
   const { id } = await params
   const prescription = await getPrescription(id)
 
-  const today = formatDateLong(new Date())
+  const createdDate = new Date(prescription.createdAt)
+  const today = formatDateLong(createdDate)
 
   return (
     <>
       {/* Top bar - hidden on print */}
-      <div className="print:hidden mb-8 flex items-center justify-between gap-4">
+      <div className="print:hidden mb-6 flex items-center justify-between gap-4">
         <Link
           href="/patients"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -35,121 +36,132 @@ export default async function PrescriptionPage({
         <PrintButton />
       </div>
 
-      {/* Prescription content */}
-      <div className="mx-auto max-w-2xl bg-white print:bg-white print:max-w-none print:mx-0">
-        <div className="rounded-xl border border-border print:border-0 print:shadow-none p-8 print:p-0 space-y-8">
+      {/* Prescription — A4 page simulation */}
+      <div className="mx-auto max-w-[210mm] print:max-w-none print:mx-0">
+        <div className="bg-white text-gray-900 shadow-lg print:shadow-none rounded-lg print:rounded-none border border-gray-200 print:border-0 min-h-[297mm] flex flex-col" style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>
 
-          {/* Header */}
-          <header className="border-b border-border pb-6 print:border-b-gray-300 text-center">
-            <h2 className="text-sm font-medium text-vox-primary uppercase tracking-wider">
-              VoxClinic
-            </h2>
-            <p className="text-lg font-semibold mt-1">{prescription.clinicName}</p>
-            <p className="text-sm text-muted-foreground">{prescription.profession}</p>
+          {/* ── Header with teal accent bar ── */}
+          <header className="relative px-10 pt-8 pb-6">
+            {/* Top accent bar */}
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-teal-500 to-teal-400 print:from-teal-600 print:to-teal-500 rounded-t-lg print:rounded-none" />
+
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                  {prescription.clinicName}
+                </h1>
+                <p className="text-sm text-gray-500 mt-0.5">{prescription.profession}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-medium uppercase tracking-widest text-teal-600">
+                  Prescricao Medica
+                </p>
+                <p className="text-xs text-gray-400 mt-1">{today}</p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="mt-5 border-b-2 border-gray-100 print:border-gray-200" />
           </header>
 
-          {/* Title */}
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold tracking-tight print:text-3xl">
-              PRESCRICAO MEDICA
-            </h1>
-          </div>
-
-          {/* Patient Info */}
-          <section>
-            <h2 className="text-base font-semibold mb-3 text-foreground">
-              Dados do Paciente
-            </h2>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          {/* ── Patient info strip ── */}
+          <section className="px-10 py-4 bg-gray-50 print:bg-gray-50 border-y border-gray-100 print:border-gray-200">
+            <div className="flex flex-wrap gap-x-10 gap-y-2 text-sm">
               <div>
-                <span className="text-muted-foreground">Nome</span>
-                <p className="font-medium">{prescription.patientName}</p>
+                <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Paciente</span>
+                <p className="font-semibold text-gray-900">{prescription.patientName}</p>
               </div>
               {prescription.patientDocument && (
                 <div>
-                  <span className="text-muted-foreground">CPF</span>
-                  <p className="font-medium">{prescription.patientDocument}</p>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">CPF</span>
+                  <p className="font-semibold text-gray-900">{prescription.patientDocument}</p>
                 </div>
               )}
-              <div>
-                <span className="text-muted-foreground">Data</span>
-                <p className="font-medium">{new Date(prescription.createdAt).toLocaleDateString("pt-BR")}</p>
+              <div className="ml-auto text-right">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">Data</span>
+                <p className="font-semibold text-gray-900">{createdDate.toLocaleDateString("pt-BR")}</p>
               </div>
             </div>
           </section>
 
-          {/* Medications Table */}
-          <section>
-            <h2 className="text-base font-semibold mb-3 text-foreground">
-              Medicamentos
-            </h2>
-            <div className="border border-border rounded-xl overflow-hidden print:border-gray-300 overflow-x-auto print:overflow-visible">
-              <table className="w-full text-sm min-w-[500px] print:min-w-0">
-                <thead>
-                  <tr className="bg-muted/50 print:bg-gray-100">
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Medicamento
-                    </th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Posologia
-                    </th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Frequencia
-                    </th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Duracao
-                    </th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Obs.
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prescription.medications.map((med, index) => (
-                    <tr
-                      key={index}
-                      className={
-                        index % 2 === 0
-                          ? "bg-white print:bg-white"
-                          : "bg-muted/30 print:bg-gray-50"
-                      }
-                    >
-                      <td className="px-4 py-3 font-medium">{med.name}</td>
-                      <td className="px-4 py-3">{med.dosage}</td>
-                      <td className="px-4 py-3">{med.frequency}</td>
-                      <td className="px-4 py-3">{med.duration}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{med.notes || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* ── Medications ── */}
+          <section className="flex-1 px-10 py-8">
+            <div className="space-y-0">
+              {prescription.medications.map((med, index) => (
+                <div
+                  key={index}
+                  className="flex gap-4 py-4 border-b border-dashed border-gray-200 last:border-b-0"
+                >
+                  {/* Number circle */}
+                  <div className="flex-shrink-0 mt-0.5">
+                    <span className="inline-flex items-center justify-center size-7 rounded-full bg-teal-50 text-teal-700 text-xs font-bold print:bg-teal-50 print:text-teal-700 border border-teal-200/60">
+                      {index + 1}
+                    </span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 text-[15px]">
+                      {med.name}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+                      <span>
+                        <span className="text-gray-400 text-xs uppercase tracking-wide mr-1">Dose:</span>
+                        {med.dosage}
+                      </span>
+                      <span className="text-gray-300">|</span>
+                      <span>
+                        <span className="text-gray-400 text-xs uppercase tracking-wide mr-1">Freq:</span>
+                        {med.frequency}
+                      </span>
+                      {med.duration && (
+                        <>
+                          <span className="text-gray-300">|</span>
+                          <span>
+                            <span className="text-gray-400 text-xs uppercase tracking-wide mr-1">Duracao:</span>
+                            {med.duration}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {med.notes && (
+                      <p className="mt-1.5 text-sm text-gray-500 italic">
+                        {med.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* General Notes */}
+            {prescription.notes && (
+              <div className="mt-8 rounded-lg bg-amber-50/60 border border-amber-200/60 px-5 py-4 print:bg-amber-50">
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-600 mb-1.5">Observacoes</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{prescription.notes}</p>
+              </div>
+            )}
+          </section>
+
+          {/* ── Signature ── */}
+          <section className="px-10 pb-4 pt-8">
+            <div className="mx-auto max-w-xs text-center">
+              <div className="border-b-2 border-gray-900 mb-2" />
+              <p className="text-sm font-semibold text-gray-900">{prescription.doctorName}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{prescription.profession}</p>
             </div>
           </section>
 
-          {/* General Notes */}
-          {prescription.notes && (
-            <section>
-              <h2 className="text-base font-semibold mb-3 text-foreground">
-                Observacoes Gerais
-              </h2>
-              <p className="text-sm whitespace-pre-wrap">{prescription.notes}</p>
-            </section>
-          )}
-
-          {/* Signature */}
-          <section className="pt-8 text-center">
-            <div className="inline-block">
-              <p className="text-sm mb-1">___________________________</p>
-              <p className="text-sm font-medium">{prescription.doctorName}</p>
-              <p className="text-xs text-muted-foreground">{prescription.profession}</p>
+          {/* ── Footer ── */}
+          <footer className="px-10 py-4 mt-auto">
+            <div className="border-t border-gray-100 print:border-gray-200 pt-4 flex items-center justify-between">
+              <p className="text-[10px] text-gray-400">
+                Documento gerado pelo VoxClinic em {today}
+              </p>
+              <p className="text-[10px] text-gray-400 font-medium tracking-wide">
+                VOXCLINIC
+              </p>
             </div>
-          </section>
-
-          {/* Footer */}
-          <footer className="border-t border-border pt-6 print:border-t-gray-300 mt-8">
-            <p className="text-xs text-muted-foreground text-center">
-              Documento gerado pelo VoxClinic em {today}
-            </p>
           </footer>
         </div>
       </div>

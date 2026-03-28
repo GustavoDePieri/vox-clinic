@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createHmac, timingSafeEqual } from "crypto"
 import { db } from "@/lib/db"
 import { env } from "@/lib/env"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 import type {
   WebhookPayload,
   IncomingMessage,
@@ -55,6 +56,11 @@ export async function GET(request: NextRequest) {
 // ============================================
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 120 POST requests per minute per IP (Meta sends bursts)
+  const ip = getClientIp(request)
+  const rl = rateLimit(`whatsapp:webhook:${ip}`, 60_000, 120)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   try {
     const rawBody = await request.text()
     const signature = request.headers.get("x-hub-signature-256")

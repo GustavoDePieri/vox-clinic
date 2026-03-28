@@ -2,11 +2,13 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { decrypt } from "@/lib/crypto"
 import { NfseClient } from "@/lib/nfse/client"
 import type { EmitNfseInput } from "@/lib/nfse/types"
 import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NFSE_NOT_CONFIGURED, ERR_NFSE_DISABLED, ERR_APPOINTMENT_NOT_FOUND, ERR_NFSE_NO_PRICE, ERR_NFSE_ALREADY_EXISTS, ERR_NFSE_NOT_FOUND, ERR_NFSE_ALREADY_CANCELLED, ERR_NFSE_CANCELLED_NO_UPDATE, ActionError, safeAction } from "@/lib/error-messages"
+import { logAudit } from "@/lib/audit"
 
-async function getWorkspaceId() {
+async function getAuthContext() {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
@@ -18,11 +20,16 @@ async function getWorkspaceId() {
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
   if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
+  return { workspaceId, userId: user!.id }
+}
+
+async function getWorkspaceId() {
+  const { workspaceId } = await getAuthContext()
   return workspaceId
 }
 
 export const emitNfse = safeAction(async (appointmentId: string) => {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId, userId } = await getAuthContext()
 
   // Load NFS-e config
   const config = await db.nfseConfig.findUnique({
@@ -159,7 +166,17 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
 
     // Call NFS-e API
     const isSandbox = process.env.NFSE_AMBIENTE !== 'producao'
-    const client = new NfseClient(config.certificateId ?? '', config.apiKey, isSandbox)
+    const client = new NfseClient(config.certificateId ?? '', decrypt(config.apiKey), isSandbox)
+
+    // Audit: credential accessed for NFS-e emission
+    logAudit({
+      workspaceId,
+      userId,
+      action: "credential.accessed",
+      entityType: "NfseConfig",
+      entityId: config.id,
+      details: { credentialType: "nfse_api_key", purpose: "emitNfse", appointmentId },
+    })
 
     // Ensure company is registered in NuvemFiscal before emitting
     try {
@@ -266,7 +283,7 @@ export async function getNfseList(filters?: {
   page?: number
   pageSize?: number
 }) {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId } = await getAuthContext()
 
   const page = filters?.page ?? 1
   const pageSize = filters?.pageSize ?? 20
@@ -315,7 +332,7 @@ export async function getNfseList(filters?: {
 }
 
 export async function searchAppointmentsForNfse(patientQuery: string) {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId } = await getAuthContext()
 
   if (!patientQuery.trim()) return []
 
@@ -356,7 +373,7 @@ export async function searchAppointmentsForNfse(patientQuery: string) {
 }
 
 export async function getNfseByAppointment(appointmentId: string) {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId } = await getAuthContext()
 
   return db.nfse.findFirst({
     where: { appointmentId, workspaceId },
@@ -368,92 +385,118 @@ export async function getNfseByAppointment(appointmentId: string) {
 }
 
 export const cancelNfse = safeAction(async (nfseId: string, motivo: string) => {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId } = await getAuthContext()
 
   if (!motivo.trim()) throw new ActionError("Motivo do cancelamento e obrigatorio")
 
-  const nfse = await db.nfse.findFirst({
-    where: { id: nfseId, workspaceId },
-  })
-  if (!nfse) throw new ActionError(ERR_NFSE_NOT_FOUND)
-  if (nfse.status === "cancelled") throw new ActionError(ERR_NFSE_ALREADY_CANCELLED)
-
-  // Load config to get API key
+  // Load config outside transaction (immutable config data)
   const config = await db.nfseConfig.findUnique({
     where: { workspaceId },
   })
   if (!config) throw new ActionError(ERR_NFSE_NOT_CONFIGURED)
 
-  // Call cancel on API if we have an external ID
-  if (nfse.externalId) {
-    const client = new NfseClient(config.certificateId ?? '', config.apiKey, process.env.NFSE_AMBIENTE !== 'producao')
-    try {
-      await client.cancel(nfse.externalId, motivo)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido"
-      throw new ActionError(`Falha ao cancelar NFS-e no provedor: ${message}`)
+  return await db.$transaction(async (tx) => {
+    // Lock the NFS-e row to prevent concurrent cancel/refresh
+    const rows = await tx.$queryRawUnsafe<Array<{
+      id: string
+      status: string
+      externalId: string | null
+    }>>(
+      `SELECT id, status, "externalId" FROM "Nfse" WHERE id = $1 AND "workspaceId" = $2 FOR UPDATE`,
+      nfseId,
+      workspaceId
+    )
+
+    const nfse = rows[0]
+    if (!nfse) throw new ActionError(ERR_NFSE_NOT_FOUND)
+    if (nfse.status === "cancelled") throw new ActionError(ERR_NFSE_ALREADY_CANCELLED)
+
+    // Call cancel on API if we have an external ID
+    if (nfse.externalId) {
+      const client = new NfseClient(config.certificateId ?? '', decrypt(config.apiKey), process.env.NFSE_AMBIENTE !== 'producao')
+      try {
+        await client.cancel(nfse.externalId, motivo)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Erro desconhecido"
+        throw new ActionError(`Falha ao cancelar NFS-e no provedor: ${message}`)
+      }
     }
-  }
 
-  // Update local record
-  const updated = await db.nfse.update({
-    where: { id: nfseId },
-    data: {
-      status: "cancelled",
-      cancelledAt: new Date(),
-    },
-    include: {
-      patient: { select: { id: true, name: true } },
-    },
+    // Update local record
+    const updated = await tx.nfse.update({
+      where: { id: nfseId },
+      data: {
+        status: "cancelled",
+        cancelledAt: new Date(),
+      },
+      include: {
+        patient: { select: { id: true, name: true } },
+      },
+    })
+
+    return updated
   })
-
-  return updated
 })
 
 export const refreshNfseStatus = safeAction(async (nfseId: string) => {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId } = await getAuthContext()
 
-  const nfse = await db.nfse.findFirst({
-    where: { id: nfseId, workspaceId },
-  })
-  if (!nfse) throw new ActionError(ERR_NFSE_NOT_FOUND)
-  if (!nfse.externalId) throw new ActionError("NFS-e sem referencia externa")
-  if (nfse.status === "cancelled") throw new ActionError(ERR_NFSE_CANCELLED_NO_UPDATE)
-
+  // Load config outside transaction (immutable config data)
   const config = await db.nfseConfig.findUnique({
     where: { workspaceId },
   })
   if (!config) throw new ActionError(ERR_NFSE_NOT_CONFIGURED)
 
-  const client = new NfseClient(config.certificateId ?? '', config.apiKey, process.env.NFSE_AMBIENTE !== 'producao')
-  const response = await client.getStatus(nfse.externalId)
+  return await db.$transaction(async (tx) => {
+    // Lock the NFS-e row to prevent concurrent cancel/refresh
+    const rows = await tx.$queryRawUnsafe<Array<{
+      id: string
+      status: string
+      externalId: string | null
+      numero: string | null
+      codigoVerificacao: string | null
+      errorMessage: string | null
+    }>>(
+      `SELECT id, status, "externalId", numero, "codigoVerificacao", "errorMessage" FROM "Nfse" WHERE id = $1 AND "workspaceId" = $2 FOR UPDATE`,
+      nfseId,
+      workspaceId
+    )
 
-  // Map API status to our status
-  let newStatus = nfse.status
-  if (response.status === "autorizada" || response.status === "authorized") {
-    newStatus = "authorized"
-  } else if (response.status === "rejeitada" || response.status === "rejected" || response.status === "erro") {
-    newStatus = "error"
-  } else if (response.status === "processando" || response.status === "processing") {
-    newStatus = "processing"
-  } else if (response.status === "cancelada" || response.status === "cancelled") {
-    newStatus = "cancelled"
-  }
+    const nfse = rows[0]
+    if (!nfse) throw new ActionError(ERR_NFSE_NOT_FOUND)
+    if (!nfse.externalId) throw new ActionError("NFS-e sem referencia externa")
+    if (nfse.status === "cancelled") throw new ActionError(ERR_NFSE_CANCELLED_NO_UPDATE)
 
-  const errorMsg = response.mensagens?.map((m) => `${m.codigo}: ${m.descricao}`).join("; ") || null
+    const client = new NfseClient(config.certificateId ?? '', decrypt(config.apiKey), process.env.NFSE_AMBIENTE !== 'producao')
+    const response = await client.getStatus(nfse.externalId)
 
-  const updated = await db.nfse.update({
-    where: { id: nfseId },
-    data: {
-      status: newStatus,
-      numero: response.numero ?? nfse.numero,
-      codigoVerificacao: response.codigoVerificacao ?? nfse.codigoVerificacao,
-      errorMessage: errorMsg ?? nfse.errorMessage,
-    },
-    include: {
-      patient: { select: { id: true, name: true } },
-    },
+    // Map API status to our status
+    let newStatus = nfse.status
+    if (response.status === "autorizada" || response.status === "authorized") {
+      newStatus = "authorized"
+    } else if (response.status === "rejeitada" || response.status === "rejected" || response.status === "erro") {
+      newStatus = "error"
+    } else if (response.status === "processando" || response.status === "processing") {
+      newStatus = "processing"
+    } else if (response.status === "cancelada" || response.status === "cancelled") {
+      newStatus = "cancelled"
+    }
+
+    const errorMsg = response.mensagens?.map((m) => `${m.codigo}: ${m.descricao}`).join("; ") || null
+
+    const updated = await tx.nfse.update({
+      where: { id: nfseId },
+      data: {
+        status: newStatus,
+        numero: response.numero ?? nfse.numero,
+        codigoVerificacao: response.codigoVerificacao ?? nfse.codigoVerificacao,
+        errorMessage: errorMsg ?? nfse.errorMessage,
+      },
+      include: {
+        patient: { select: { id: true, name: true } },
+      },
+    })
+
+    return updated
   })
-
-  return updated
 })

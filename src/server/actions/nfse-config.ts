@@ -2,9 +2,11 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { encrypt, decrypt } from "@/lib/crypto"
 import { NfseClient } from "@/lib/nfse/client"
 import { logger } from "@/lib/logger"
 import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ActionError, safeAction } from "@/lib/error-messages"
+import { logAudit } from "@/lib/audit"
 
 function validateCpf(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "")
@@ -84,7 +86,7 @@ export async function getNfseConfig() {
     regimeTributario: config.regimeTributario,
     provider: config.provider,
     clientId: config.certificateId ?? '',
-    clientSecret: config.apiKey ? `****${config.apiKey.slice(-4)}` : '',
+    clientSecret: config.apiKey ? `****${decrypt(config.apiKey).slice(-4)}` : '',
     clinicCity: config.clinicCity,
     clinicState: config.clinicState,
     clinicCep: config.clinicCep,
@@ -138,7 +140,8 @@ export async function saveNfseConfig(data: {
   }
 
   // Only update clientSecret if the user provided a new (non-masked) value
-  const secretToSave = isMaskedSecret ? undefined : data.clientSecret.trim()
+  // Encrypt the secret before saving to the database
+  const secretToSave = isMaskedSecret ? undefined : encrypt(data.clientSecret.trim())
 
   logger.info("saveNfseConfig: starting upsert", { action: "saveNfseConfig", workspaceId, entityType: "NfseConfig" })
 
@@ -179,7 +182,8 @@ export async function saveNfseConfig(data: {
   logger.info("saveNfseConfig: success", { action: "saveNfseConfig", workspaceId, entityId: config.id })
 
   // Register/update company in NuvemFiscal (required before emitting NFS-e)
-  const actualSecret = secretToSave ?? config.apiKey
+  // Decrypt the stored apiKey for API calls
+  const actualSecret = decrypt(secretToSave ?? config.apiKey)
   if (config.certificateId && actualSecret) {
     try {
       const isSandbox = process.env.NFSE_AMBIENTE !== "producao"
@@ -222,13 +226,13 @@ export async function saveNfseConfig(data: {
 
 export const uploadNfseCertificate = safeAction(async (formData: FormData) => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const config = await db.nfseConfig.findUnique({ where: { workspaceId } })
   if (!config) throw new ActionError("Salve a configuracao fiscal antes de enviar o certificado.")
@@ -244,7 +248,7 @@ export const uploadNfseCertificate = safeAction(async (formData: FormData) => {
   const base64 = Buffer.from(arrayBuffer).toString("base64")
 
   const isSandbox = process.env.NFSE_AMBIENTE !== "producao"
-  const client = new NfseClient(config.certificateId, config.apiKey, isSandbox)
+  const client = new NfseClient(config.certificateId, decrypt(config.apiKey), isSandbox)
 
   try {
     await client.uploadCertificate(config.cnpj, base64, password.trim())
@@ -260,13 +264,13 @@ export const uploadNfseCertificate = safeAction(async (formData: FormData) => {
 
 export const testNfseConnection = safeAction(async () => {
   const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
+  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const config = await db.nfseConfig.findUnique({
     where: { workspaceId },
@@ -276,7 +280,17 @@ export const testNfseConnection = safeAction(async () => {
   if (!config.certificateId || !config.apiKey) throw new ActionError("Client ID e Client Secret nao configurados")
 
   const isSandbox = process.env.NFSE_AMBIENTE !== "producao"
-  const client = new NfseClient(config.certificateId, config.apiKey, isSandbox)
+  const client = new NfseClient(config.certificateId, decrypt(config.apiKey), isSandbox)
+
+  // Audit: credential accessed for connection test
+  logAudit({
+    workspaceId,
+    userId: user!.id,
+    action: "credential.accessed",
+    entityType: "NfseConfig",
+    entityId: config.id,
+    details: { credentialType: "nfse_api_key", purpose: "testNfseConnection" },
+  })
 
   try {
     const ok = await client.testConnection()

@@ -10,6 +10,8 @@ import { createCertificate } from "@/server/actions/certificate"
 import { toast } from "sonner"
 import { friendlyError } from "@/lib/error-messages"
 import { useRouter } from "next/navigation"
+import { CidAutocomplete } from "@/components/cid-autocomplete"
+import type { CidCode } from "@/types"
 
 const typeOptions = [
   { value: "atestado", label: "Atestado Medico" },
@@ -57,6 +59,7 @@ function CreateCertificateModal({
   const [type, setType] = useState("atestado")
   const [days, setDays] = useState("1")
   const [cid, setCid] = useState("")
+  const [cidDescription, setCidDescription] = useState("")
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
   const [content, setContent] = useState("")
@@ -80,6 +83,7 @@ function CreateCertificateModal({
           type,
           days: type === "atestado" ? parseInt(days) : undefined,
           cid: cid.trim() || undefined,
+          cidDescription: cidDescription.trim() || undefined,
           startTime: type === "declaracao_comparecimento" ? startTime : undefined,
           endTime: type === "declaracao_comparecimento" ? endTime : undefined,
           content: type === "encaminhamento" || type === "laudo" ? content : undefined,
@@ -139,12 +143,19 @@ function CreateCertificateModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cert-cid">CID (opcional)</Label>
-              <Input
-                id="cert-cid"
-                placeholder="Ex: J06.9"
-                value={cid}
-                onChange={(e) => setCid(e.target.value)}
+              <Label>CID (opcional)</Label>
+              <CidAutocomplete
+                mode="single"
+                value={cid ? { code: cid, description: cidDescription } : null}
+                onChange={(selected: CidCode | null) => {
+                  if (selected) {
+                    setCid(selected.code)
+                    setCidDescription(selected.description)
+                  } else {
+                    setCid("")
+                    setCidDescription("")
+                  }
+                }}
               />
             </div>
           </div>

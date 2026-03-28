@@ -31,7 +31,8 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { getRecordingForReview, confirmConsultation } from "@/server/actions/consultation"
 import { friendlyError } from "@/lib/error-messages"
 import { Breadcrumb } from "@/components/breadcrumb"
-import type { AppointmentSummary, ConsultationMedication, PatientInfoUpdates } from "@/types"
+import { CidAutocomplete } from "@/components/cid-autocomplete"
+import type { AppointmentSummary, CidCode, ConsultationMedication, PatientInfoUpdates } from "@/types"
 
 export default function AppointmentReviewPage() {
   const router = useRouter()
@@ -56,6 +57,7 @@ export default function AppointmentReviewPage() {
   const [price, setPrice] = useState("")
   const [diagnosis, setDiagnosis] = useState("")
   const [medications, setMedications] = useState<ConsultationMedication[]>([])
+  const [cidCodes, setCidCodes] = useState<CidCode[]>([])
   const [patientInfoUpdates, setPatientInfoUpdates] = useState<PatientInfoUpdates>({})
   const [applyPatientUpdates, setApplyPatientUpdates] = useState(true)
 
@@ -83,6 +85,7 @@ export default function AppointmentReviewPage() {
           setNextAppointment(summary.nextAppointment ?? "")
           setDiagnosis(summary.diagnosis ?? "")
           setMedications(summary.medications ?? [])
+          setCidCodes(summary.cidCodes ?? [])
           setPatientInfoUpdates(summary.patientInfoUpdates ?? {})
         }
       })
@@ -103,6 +106,7 @@ export default function AppointmentReviewPage() {
         nextAppointment: nextAppointment || null,
         diagnosis: diagnosis || null,
         medications,
+        cidCodes,
         patientInfoUpdates: applyPatientUpdates ? patientInfoUpdates : {},
       }
       const parsedPrice = parseFloat(price)
@@ -113,6 +117,7 @@ export default function AppointmentReviewPage() {
         audioPath,
         transcript,
         price: !isNaN(parsedPrice) && parsedPrice > 0 ? parsedPrice : undefined,
+        cidCodes: cidCodes.length > 0 ? cidCodes : undefined,
       })
       if ('error' in result) { setError(result.error!); setSaving(false); return }
       router.push(`/patients/${result.patientId}`)
@@ -280,6 +285,49 @@ export default function AppointmentReviewPage() {
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
                     {diagnosis}
                   </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* CID-10 */}
+          {(cidCodes.length > 0 || editing) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <ClipboardList className="size-4 text-vox-primary" />
+                  CID-10
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {cidCodes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {cidCodes.map((cid, i) => (
+                      <Badge key={i} variant="secondary" className="gap-1 text-xs">
+                        <span className="font-semibold">{cid.code}</span>
+                        <span className="text-muted-foreground">- {cid.description}</span>
+                        {editing && (
+                          <button
+                            onClick={() => setCidCodes((prev) => prev.filter((_, j) => j !== i))}
+                            className="ml-0.5 rounded-full hover:bg-foreground/10 p-0.5"
+                            aria-label={`Remover ${cid.code}`}
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {editing && (
+                  <CidAutocomplete
+                    mode="multi"
+                    value={cidCodes}
+                    onChange={setCidCodes}
+                  />
+                )}
+                {cidCodes.length === 0 && !editing && (
+                  <p className="text-sm text-muted-foreground">Nenhum codigo CID identificado</p>
                 )}
               </CardContent>
             </Card>

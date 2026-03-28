@@ -6,18 +6,14 @@ import { checkPatientLimit } from "@/lib/plan-enforcement"
 import { getSignedAudioUrl } from "@/lib/storage"
 import { logAudit } from "@/lib/audit"
 import { unstable_cache, revalidateTag } from "next/cache"
+import { getWorkspaceIdCached } from "@/lib/workspace-cache"
 import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceContext() {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
-  })
-
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  const workspaceId = await getWorkspaceIdCached(userId)
   if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return { workspaceId, clerkId: userId }
@@ -149,7 +145,7 @@ export async function getPatients(
 }
 
 export async function getPatient(patientId: string) {
-  const workspaceId = await getWorkspaceId()
+  const { workspaceId, clerkId } = await getWorkspaceContext()
 
   const patient = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
@@ -183,6 +179,9 @@ export async function getPatient(patientId: string) {
 
   if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
+  // Fire-and-forget audit log — non-blocking (CFM 1.821/2007 read access tracking)
+  logAudit({ workspaceId, userId: clerkId, action: "patient.viewed", entityType: "Patient", entityId: patientId }).catch(() => {})
+
   return {
     id: patient.id,
     name: patient.name,
@@ -194,12 +193,15 @@ export async function getPatient(patientId: string) {
     gender: patient.gender,
     address: patient.address as Record<string, string> | null,
     insurance: patient.insurance,
+    insuranceData: patient.insuranceData as Record<string, unknown> | null,
     guardian: patient.guardian,
     source: patient.source,
     tags: patient.tags,
     medicalHistory: patient.medicalHistory as Record<string, unknown>,
     customData: patient.customData as Record<string, unknown>,
     alerts: patient.alerts as string[],
+    whatsappConsent: patient.whatsappConsent,
+    whatsappConsentAt: patient.whatsappConsentAt,
     createdAt: patient.createdAt,
     appointments: patient.appointments.map((a) => ({
       id: a.id,
@@ -212,6 +214,7 @@ export async function getPatient(patientId: string) {
       price: a.price,
       transcript: a.transcript,
       videoRecordingUrl: a.videoRecordingUrl,
+      cidCodes: (Array.isArray(a.cidCodes) ? a.cidCodes : []) as { code: string; description: string }[],
       recordings: a.recordings,
     })),
     recordings: patient.recordings,
@@ -230,6 +233,7 @@ export const updatePatient = safeAction(async (
     gender?: string | null
     address?: Record<string, string> | null
     insurance?: string | null
+    insuranceData?: Record<string, unknown> | null
     guardian?: string | null
     source?: string | null
     tags?: string[]
@@ -243,9 +247,9 @@ export const updatePatient = safeAction(async (
   const existing = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
   })
-  if (!existing) throw new Error(ERR_PATIENT_NOT_FOUND)
+  if (!existing) throw new ActionError(ERR_PATIENT_NOT_FOUND)
 
-  const { customData, alerts, medicalHistory, address, tags, ...rest } = data
+  const { customData, alerts, medicalHistory, address, tags, insuranceData, ...rest } = data
 
   const updated = await db.patient.update({
     where: { id: patientId },
@@ -255,6 +259,7 @@ export const updatePatient = safeAction(async (
       ...(alerts !== undefined ? { alerts: alerts as any } : {}),
       ...(medicalHistory !== undefined ? { medicalHistory: medicalHistory as any } : {}),
       ...(address !== undefined ? { address: address as any } : {}),
+      ...(insuranceData !== undefined ? { insuranceData: insuranceData as any } : {}),
       ...(tags !== undefined ? { tags } : {}),
     },
   })
@@ -274,13 +279,6 @@ export const updatePatient = safeAction(async (
 
 export const createPatient = safeAction(async (formData: FormData) => {
   const { workspaceId, clerkId } = await getWorkspaceContext()
-
-  // Plan enforcement: check patient limit
-  const workspace = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
-  if (workspace) {
-    const planCheck = await checkPatientLimit(workspaceId, workspace.plan)
-    if (!planCheck.allowed) throw new ActionError(planCheck.reason!)
-  }
 
   const name = formData.get("name") as string
   const document = formData.get("document") as string | null
@@ -332,23 +330,33 @@ export const createPatient = safeAction(async (formData: FormData) => {
     }
   }
 
-  const patient = await db.patient.create({
-    data: {
-      workspaceId,
-      name: name.trim(),
-      document: document?.trim() || null,
-      rg: rg?.trim() || null,
-      phone: phone?.trim() || null,
-      email: email?.trim() || null,
-      birthDate: birthDate ? new Date(birthDate) : null,
-      gender: gender || null,
-      address,
-      insurance: insurance?.trim() || null,
-      guardian: guardian?.trim() || null,
-      source: source?.trim() || null,
-      customData,
-      alerts: [],
-    },
+  // Transaction with plan limit check inside to prevent concurrent requests bypassing limits
+  const patient = await db.$transaction(async (tx) => {
+    // Plan enforcement inside transaction to serialize concurrent creates
+    const workspace = await tx.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+    if (workspace) {
+      const planCheck = await checkPatientLimit(workspaceId, workspace.plan, tx)
+      if (!planCheck.allowed) throw new ActionError(planCheck.reason!)
+    }
+
+    return tx.patient.create({
+      data: {
+        workspaceId,
+        name: name.trim(),
+        document: document?.trim() || null,
+        rg: rg?.trim() || null,
+        phone: phone?.trim() || null,
+        email: email?.trim() || null,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        gender: gender || null,
+        address,
+        insurance: insurance?.trim() || null,
+        guardian: guardian?.trim() || null,
+        source: source?.trim() || null,
+        customData,
+        alerts: [],
+      },
+    })
   })
 
   await logAudit({
@@ -371,7 +379,7 @@ export const deactivatePatient = safeAction(async (patientId: string) => {
   const existing = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
   })
-  if (!existing) throw new Error(ERR_PATIENT_NOT_FOUND)
+  if (!existing) throw new ActionError(ERR_PATIENT_NOT_FOUND)
 
   await db.patient.update({
     where: { id: patientId },
@@ -393,7 +401,7 @@ export const deactivatePatient = safeAction(async (patientId: string) => {
 })
 
 export async function getAudioPlaybackUrl(audioPath: string) {
-  const { workspaceId } = await getWorkspaceContext()
+  const { workspaceId, clerkId } = await getWorkspaceContext()
 
   // Validate the audio belongs to a recording in the user's workspace
   const recording = await db.recording.findFirst({
@@ -404,6 +412,9 @@ export async function getAudioPlaybackUrl(audioPath: string) {
   })
   if (!recording) throw new ActionError("Audio nao encontrado")
 
+  // Fire-and-forget audit log — non-blocking (CFM 1.821/2007 read access tracking)
+  logAudit({ workspaceId, userId: clerkId, action: "recording.accessed", entityType: "Recording", entityId: recording.id }).catch(() => {})
+
   return getSignedAudioUrl(audioPath)
 }
 
@@ -413,15 +424,18 @@ export const mergePatients = safeAction(async (keepId: string, mergeId: string) 
   if (keepId === mergeId) throw new ActionError("Nao pode mesclar paciente consigo mesmo")
 
   const mergeResult = await db.$transaction(async (tx) => {
-    // Lock both patients with FOR UPDATE to prevent concurrent modification
-    const keepRows = await tx.$queryRawUnsafe<any[]>(
+    // Lock both patients with FOR UPDATE in consistent order (by ID) to prevent deadlocks
+    const [firstId, secondId] = keepId < mergeId ? [keepId, mergeId] : [mergeId, keepId]
+    const firstRows = await tx.$queryRawUnsafe<any[]>(
       `SELECT * FROM "Patient" WHERE id = $1 AND "workspaceId" = $2 FOR UPDATE`,
-      keepId, workspaceId
+      firstId, workspaceId
     )
-    const mergeRows = await tx.$queryRawUnsafe<any[]>(
+    const secondRows = await tx.$queryRawUnsafe<any[]>(
       `SELECT * FROM "Patient" WHERE id = $1 AND "workspaceId" = $2 FOR UPDATE`,
-      mergeId, workspaceId
+      secondId, workspaceId
     )
+    const keepRows = keepId < mergeId ? firstRows : secondRows
+    const mergeRows = keepId < mergeId ? secondRows : firstRows
     const keep = keepRows[0]
     const mergePatient = mergeRows[0]
     if (!keep || !mergePatient) throw new ActionError("Pacientes nao encontrados")
@@ -432,7 +446,7 @@ export const mergePatients = safeAction(async (keepId: string, mergeId: string) 
     })
     // Move recordings
     await tx.recording.updateMany({
-      where: { patientId: mergeId },
+      where: { patientId: mergeId, workspaceId },
       data: { patientId: keepId },
     })
     // Move documents
@@ -511,11 +525,88 @@ export const mergePatients = safeAction(async (keepId: string, mergeId: string) 
   return { success: true }
 })
 
+export const grantWhatsAppConsent = safeAction(async (patientId: string) => {
+  const { workspaceId, clerkId } = await getWorkspaceContext()
+
+  const existing = await db.patient.findFirst({
+    where: { id: patientId, workspaceId },
+  })
+  if (!existing) throw new ActionError(ERR_PATIENT_NOT_FOUND)
+
+  await db.$transaction(async (tx) => {
+    await tx.patient.update({
+      where: { id: patientId },
+      data: {
+        whatsappConsent: true,
+        whatsappConsentAt: new Date(),
+      },
+    })
+
+    await tx.consentRecord.create({
+      data: {
+        workspaceId,
+        patientId,
+        consentType: "whatsapp_messaging",
+        givenBy: clerkId,
+        details: "Consentimento para receber mensagens via WhatsApp concedido pelo profissional.",
+      },
+    })
+  })
+
+  await logAudit({
+    workspaceId,
+    userId: clerkId,
+    action: "patient.whatsapp_consent_granted",
+    entityType: "Patient",
+    entityId: patientId,
+  })
+
+  return { success: true }
+})
+
+export const revokeWhatsAppConsent = safeAction(async (patientId: string) => {
+  const { workspaceId, clerkId } = await getWorkspaceContext()
+
+  const existing = await db.patient.findFirst({
+    where: { id: patientId, workspaceId },
+  })
+  if (!existing) throw new ActionError(ERR_PATIENT_NOT_FOUND)
+
+  await db.$transaction(async (tx) => {
+    await tx.patient.update({
+      where: { id: patientId },
+      data: {
+        whatsappConsent: false,
+        whatsappConsentAt: null,
+      },
+    })
+
+    await tx.consentRecord.create({
+      data: {
+        workspaceId,
+        patientId,
+        consentType: "whatsapp_messaging_revoked",
+        givenBy: clerkId,
+        details: "Consentimento para receber mensagens via WhatsApp revogado pelo profissional.",
+      },
+    })
+  })
+
+  await logAudit({
+    workspaceId,
+    userId: clerkId,
+    action: "patient.whatsapp_consent_revoked",
+    entityType: "Patient",
+    entityId: patientId,
+  })
+
+  return { success: true }
+})
+
 export async function getDistinctInsurances(): Promise<string[]> {
   const { userId } = await auth()
   if (!userId) return []
-  const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
+  const workspaceId = await getWorkspaceIdCached(userId)
   if (!workspaceId) return []
 
   const patients = await db.patient.findMany({

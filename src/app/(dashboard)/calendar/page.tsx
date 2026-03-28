@@ -11,6 +11,7 @@ import {
   Ban,
   Loader2,
   Calendar as CalendarIcon,
+  Clock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +42,8 @@ import {
   type BlockedSlotItem,
 } from "@/server/actions/blocked-slot"
 import { getAgendas } from "@/server/actions/agenda"
+import { getWaitlistCount } from "@/server/actions/waitlist"
+import { getWorkspace } from "@/server/actions/workspace"
 import type { AgendaItem, AppointmentItem, ViewMode } from "./types"
 import { MONTH_NAMES, MONTH_SHORT, DAY_FULL, getMonday, getWeekDays } from "./helpers"
 import { WeekView } from "./components/week-view"
@@ -50,6 +53,8 @@ import { ListView } from "./components/list-view"
 import { ScheduleForm } from "./components/schedule-form"
 import { BlockTimeForm } from "./components/block-time-form"
 import { ConflictDialog } from "./components/conflict-dialog"
+import { WaitlistPanel } from "./components/waitlist-panel"
+import { AddWaitlistDialog } from "./components/add-waitlist-dialog"
 
 // ────────────────────── Cache ──────────────────────
 
@@ -83,6 +88,12 @@ export default function CalendarPage() {
   const [selectedAgendaIds, setSelectedAgendaIds] = useState<string[]>([])
   const defaultAgendaId = agendas.find((a) => a.isDefault)?.id || agendas[0]?.id || ""
 
+  // Waitlist
+  const [showWaitlistPanel, setShowWaitlistPanel] = useState(false)
+  const [showAddWaitlist, setShowAddWaitlist] = useState(false)
+  const [waitlistCount, setWaitlistCount] = useState(0)
+  const [workspaceProcedures, setWorkspaceProcedures] = useState<{ id: string; name: string }[]>([])
+
   // Conflict dialog (replaces native confirm())
   const [conflictMessage, setConflictMessage] = useState("")
   const conflictResolveRef = useRef<(() => void) | null>(null)
@@ -112,6 +123,23 @@ export default function CalendarPage() {
       setAgendas(data)
     } catch {
       setAgendas([])
+    }
+  }, [])
+
+  const loadWaitlistCount = useCallback(async () => {
+    try {
+      setWaitlistCount(await getWaitlistCount())
+    } catch {
+      setWaitlistCount(0)
+    }
+  }, [])
+
+  const loadWorkspaceProcedures = useCallback(async () => {
+    try {
+      const ws = await getWorkspace()
+      setWorkspaceProcedures(ws.procedures.map((p) => ({ id: p.id, name: p.name })))
+    } catch {
+      setWorkspaceProcedures([])
     }
   }, [])
 
@@ -147,13 +175,14 @@ export default function CalendarPage() {
     }
   }, [getDateRange, selectedAgendaIds])
 
-  useEffect(() => { loadAgendas() }, [loadAgendas])
+  useEffect(() => { loadAgendas(); loadWaitlistCount(); loadWorkspaceProcedures() }, [loadAgendas, loadWaitlistCount, loadWorkspaceProcedures])
   useEffect(() => { loadData() }, [loadData])
 
   function reloadData() {
     dataCache.clear()
     loadAgendas()
     loadData(true)
+    loadWaitlistCount()
   }
 
   // ── Navigation ──
@@ -357,6 +386,20 @@ export default function CalendarPage() {
             ))}
           </div>
 
+          <Button
+            variant="outline"
+            onClick={() => setShowWaitlistPanel(true)}
+            className="rounded-xl text-xs gap-1.5 active:scale-[0.98] relative"
+          >
+            <Clock className="size-3.5" />
+            <span className="hidden sm:inline">Espera</span>
+            {waitlistCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-vox-primary text-white text-[9px] font-bold px-1">
+                {waitlistCount}
+              </span>
+            )}
+          </Button>
+
           <Button variant="outline" onClick={() => setShowBlockForm(true)} className="rounded-xl text-xs gap-1.5 active:scale-[0.98]">
             <Ban className="size-3.5" />
             <span className="hidden sm:inline">Bloquear</span>
@@ -521,6 +564,32 @@ export default function CalendarPage() {
           setConflictMessage("")
           conflictResolveRef.current = null
         }}
+      />
+
+      {/* ─── Waitlist Panel ─── */}
+      <WaitlistPanel
+        open={showWaitlistPanel}
+        onClose={() => setShowWaitlistPanel(false)}
+        onSchedulePatient={(_patientId, _patientName) => {
+          setShowWaitlistPanel(false)
+          setScheduleDefaultDate("")
+          setShowScheduleForm(true)
+        }}
+        onAddToWaitlist={() => {
+          setShowWaitlistPanel(false)
+          setShowAddWaitlist(true)
+        }}
+      />
+
+      {/* ─── Add to Waitlist Dialog ─── */}
+      <AddWaitlistDialog
+        open={showAddWaitlist}
+        onClose={() => setShowAddWaitlist(false)}
+        onAdded={() => {
+          loadWaitlistCount()
+        }}
+        agendas={agendas.filter((a) => a.isActive)}
+        procedures={workspaceProcedures}
       />
     </div>
   )

@@ -63,6 +63,12 @@ export const PatientInfoUpdatesSchema = z.object({
   chronicDiseases: z.array(z.string()).optional(),
 })
 
+// Schema para código CID-10
+export const CidCodeSchema = z.object({
+  code: z.string(),
+  description: z.string(),
+})
+
 // Schema para resumo de consulta
 export const AppointmentSummarySchema = z.object({
   procedures: z.array(z.string()).default([]),
@@ -72,6 +78,7 @@ export const AppointmentSummarySchema = z.object({
   diagnosis: z.string().nullable().optional().default(null),
   medications: z.array(ConsultationMedicationSchema).optional().default([]),
   patientInfoUpdates: PatientInfoUpdatesSchema.optional().default({}),
+  cidCodes: z.array(CidCodeSchema).optional().default([]),
 })
 
 export type AppointmentSummaryParsed = z.infer<typeof AppointmentSummarySchema>

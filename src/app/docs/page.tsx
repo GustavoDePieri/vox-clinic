@@ -25,7 +25,7 @@ export const metadata: Metadata = {
  * ============================================================================
  */
 
-const lastUpdated = "2026-03-27"
+const lastUpdated = "2026-03-28"
 
 type FeatureStatus = "done" | "partial" | "planned"
 
@@ -73,7 +73,7 @@ function CategorySection({ icon, title, description, count, children }: { icon: 
 }
 
 const FEATURES_SUMMARY = {
-  total: 95,
+  total: 118,
   categories: 11,
 }
 
@@ -145,7 +145,7 @@ export default function DocsPage() {
         </nav>
 
         {/* ── 1. GESTAO DE PACIENTES ── */}
-        <CategorySection icon="👤" title="Gestao de Pacientes" description="Cadastro completo, busca avancada, tags e organizacao de pacientes." count={11}>
+        <CategorySection icon="👤" title="Gestao de Pacientes" description="Cadastro completo, busca avancada, tags e organizacao de pacientes." count={12}>
           <FeatureCard title="Cadastro Completo" description="Nome, CPF, RG, telefone, email, data de nascimento, sexo, endereco completo, convenio, responsavel (menores), origem/fonte do paciente." />
           <FeatureCard title="Campos Personalizaveis" description="Campos extras configuraveis por especialidade: texto, numero, booleano, data, selecao. Gerados automaticamente pela IA no onboarding." />
           <FeatureCard title="Historico Medico" description="Secao dedicada com alergias, doencas cronicas, medicacoes em uso, tipo sanguineo e observacoes medicas. Tudo editavel inline." />
@@ -157,10 +157,11 @@ export default function DocsPage() {
           <FeatureCard title="Origem do Paciente" description="Campo de rastreamento de fonte: Instagram, Google, Facebook, Indicacao, Convenio, Site, Outro. Para medir ROI de marketing." />
           <FeatureCard title="Desativacao Segura" description="Soft delete de pacientes (nunca perde historico). Atende exigencia CFM de 20 anos de guarda de prontuario." />
           <FeatureCard title="Relatorio Imprimivel" description="Pagina de relatorio completo do paciente com todos os dados, historico e tratamentos. Ctrl+P gera PDF." />
+          <FeatureCard title="Imagens Clinicas" description="Galeria de fotos clinicas por paciente. Upload com camera ou galeria, compressao automatica (2048px JPEG 85%), categorias (antes/depois/progresso/geral/intraoral), regioes corporais, pareamento antes/depois com comparacao lado a lado, lightbox com navegacao, filtros por regiao e categoria, views grid e timeline." />
         </CategorySection>
 
         {/* ── 2. AGENDAMENTO ── */}
-        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendario completo com multiplas visoes, bloqueio de horarios, agendamentos recorrentes, multiplas agendas e agendamento online." count={12}>
+        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendario completo com multiplas visoes, bloqueio de horarios, agendamentos recorrentes, multiplas agendas, agendamento online e lista de espera." count={14}>
           <FeatureCard title="Agendamento Online (Paciente)" description="Link publico para pacientes agendarem sozinhos. Multi-step: procedimento, data/hora com slots disponiveis, dados do paciente. Sem login. Configura em Settings > Online. Advisory lock anti-double-booking." />
           <FeatureCard title="Multiplas Agendas" description="Suporte a varias agendas por workspace (por profissional ou sala). Pills coloridos para filtrar. Conflitos e bloqueios por agenda. CRUD completo em Configuracoes > Agendas." />
           <FeatureCard title="Calendario Multi-visao" description="Visualizacao diaria, semanal, mensal e em lista. Arquitetura modular com 12 sub-componentes otimizados (React.memo). Cache client-side com TTL de 60s para navegacao rapida. Busca O(1) via indexes Map." />
@@ -173,10 +174,12 @@ export default function DocsPage() {
           <FeatureCard title="Cancelamento com Confirmacao" description="Cancele agendamentos com confirmacao. Status atualiza para 'cancelado' com registro no historico." />
           <FeatureCard title="Valor no Agendamento" description="Campo opcional de preco (R$) ao agendar consulta pelo calendario. Valor salvo no atendimento para uso no financeiro." />
           <FeatureCard title="Botao de Lembrete Manual" description="Botao no card de consulta agendada para enviar lembrete por email ao paciente sob demanda." />
+          <FeatureCard title="Lista de Espera" description="Fila de pacientes com preferencias (dias, horarios, agenda, procedimento). Matching automatico ao cancelar consulta. Panel no calendario com badge, prioridade (normal/alta/urgente)." />
+          <FeatureCard title="Widget de Agendamento Embeddable" description="Script leve (widget.js) para incorporar agendamento no site da clinica. Botao flutuante ou modo inline. Popup com iframe em modo compacto. Comunicacao via postMessage (resize, booked, close). Gerador de codigo embed nas Configuracoes. Cor e posicao customizaveis. Mobile: overlay full-screen." />
         </CategorySection>
 
         {/* ── 3. PRONTUARIO E IA ── */}
-        <CategorySection icon="🎙️" title="Prontuario e IA" description="Gravacao de voz, transcricao automatica e extracao de dados por inteligencia artificial." count={11}>
+        <CategorySection icon="🎙️" title="Prontuario e IA" description="Gravacao de voz, transcricao automatica, extracao de dados por inteligencia artificial e formularios customizaveis." count={15}>
           <FeatureCard title="Gravacao de Audio" description="Gravacao via MediaRecorder (webm/opus). Consentimento LGPD obrigatorio. Audio nunca salvo localmente. Limite de 25MB." />
           <FeatureCard title="Transcricao por IA (Whisper)" description="Transcricao automatica em portugues via OpenAI Whisper. Vocabulario medico como hints. Timeout de 60 segundos." />
           <FeatureCard title="Extracao de Dados (Claude)" description="Claude Sonnet extrai nome, CPF, telefone, procedimentos, observacoes via tool_use. Validacao Zod. Temperatura 0 para precisao." />
@@ -187,12 +190,18 @@ export default function DocsPage() {
           <FeatureCard title="Planos de Tratamento" description="Crie planos com multiplas sessoes (ex: clareamento 6 sessoes). Rastreie progresso, marque sessoes concluidas, pause ou cancele." />
           <FeatureCard title="Anamnese Customizada" description="Template de perguntas por profissao (texto, booleano, selecao). Preenchido na aba Anamnese do paciente. Gerado pela IA no onboarding." />
           <FeatureCard title="Extracao Estruturada (7 campos)" description="IA separa: procedimentos, diagnostico, observacoes, medicamentos, recomendacoes, proxima consulta e atualizacoes de dados pessoais do paciente." />
+          <FeatureCard title="CID-10 com Sugestao por IA" description="Busca de codigos CID-10 (1022 codigos PT-BR) com autocomplete. IA sugere CIDs a partir da transcricao. Codigos vinculados a consultas e atestados. Busca accent-insensitive por codigo ou descricao." />
+          <FeatureCard title="Formularios Customizaveis" description="Editor visual de formularios com 11 tipos de campo (texto, numero, selecao, escala, etc). Templates por especialidade. Respostas vinculadas a pacientes e consultas." />
+          <FeatureCard title="Biblioteca de Templates" description="5 templates pre-construidos (Anamnese Geral, Odontologica, Nutricional, SOAP, Retorno). Importar, clonar e customizar para o workspace." />
+          <FeatureCard title="Historico de Formularios" description="Aba Formularios no perfil do paciente com historico cronologico de respostas. Draft e completed status. Visualizacao inline read-only. Compatibilidade com anamnese legada." />
           <FeatureCard title="Preenchimento Automatico de Endereco (CEP)" description="Ao digitar o CEP, o sistema busca automaticamente rua, bairro, cidade e estado via ViaCEP. Funciona no cadastro e edicao de pacientes." />
         </CategorySection>
 
         {/* ── 4. PRESCRICOES E DOCUMENTOS ── */}
-        <CategorySection icon="💊" title="Prescricoes e Documentos" description="Prescricao eletronica, atestados, declaracoes e laudos com impressao em PDF." count={4}>
+        <CategorySection icon="💊" title="Prescricoes e Documentos" description="Prescricao eletronica, atestados, declaracoes e laudos com impressao em PDF. Integracao Memed." count={6}>
           <FeatureCard title="Prescricao Eletronica" description="Crie prescricoes com lista de medicamentos (nome, posologia, frequencia, duracao, observacoes). Imprima como PDF (Ctrl+P). Acessivel pelo perfil do paciente." />
+          <FeatureCard title="Integracao Memed" description="Prescricao digital via Memed (60k+ medicamentos, alertas de interacao, assinatura ICP-Brasil). Gratuito para parceiros. Chooser automatico: Memed ou manual." />
+          <FeatureCard title="Prescricao Memed — Assinatura Digital" description="Prescricoes Memed sao assinadas digitalmente com certificado ICP-Brasil. PDF assinado armazenado, link digital para o paciente, badge de assinatura na listagem." />
           <FeatureCard title="Atestados Medicos" description="Geracao automatica de texto com nome, CPF, data e dias de afastamento. Campo opcional para codigo CID. Impressao em PDF." />
           <FeatureCard title="Declaracao de Comparecimento" description="Texto auto-gerado com horario de entrada e saida. Impressao em PDF com assinatura e dados da clinica." />
           <FeatureCard title="Encaminhamento e Laudo" description="Documentos com texto livre para encaminhamentos medicos e laudos tecnicos. Impressao em PDF padronizada." />
@@ -211,7 +220,7 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 6. FINANCEIRO ── */}
-        <CategorySection icon="💰" title="Financeiro" description="Controle completo de receitas, despesas, pagamentos, NFS-e e fluxo de caixa." count={12}>
+        <CategorySection icon="💰" title="Financeiro" description="Controle completo de receitas, despesas, pagamentos, NFS-e, TISS e fluxo de caixa." count={19}>
           <FeatureCard title="Preco por Consulta" description="Cada consulta pode ter valor em BRL. Editavel na revisao e no historico. Procedimentos com preco configuravel." />
           <FeatureCard title="Recibos de Atendimento" description="Geracao automatica com dados do paciente, procedimentos e valor. Impressao em PDF (Ctrl+P). Assinatura manual." />
           <FeatureCard title="Dashboard Financeiro" description="Receita total, ticket medio, faturamento mensal, breakdown por procedimento. Exportacao para Excel." />
@@ -224,6 +233,13 @@ export default function DocsPage() {
           <FeatureCard title="Projecao de Fluxo de Caixa" description="Grafico de projecao de receitas e despesas para os proximos 6 meses. Baseado em cobrancas e despesas recorrentes." />
           <FeatureCard title="Saldo do Paciente" description="Badge no detalhe do paciente mostrando saldo devedor total e valores vencidos, com destaque visual em vermelho." />
           <FeatureCard title="Certificado Digital NFS-e" description="Upload de certificado digital A1 (.pfx) para emissao de NFS-e. Cadastro automatico da empresa na NuvemFiscal e configuracao fiscal integrada." />
+          <FeatureCard title="TISS — Guia de Consulta" description="Geracao de Guia de Consulta TISS (ANS 4.01.00) com XML valido, codigo TUSS, dados do beneficiario e profissional. Integrado com agenda e paciente." />
+          <FeatureCard title="TISS — Guia SP/SADT" description="Geracao de Guia SP/SADT para procedimentos e exames. Lista de procedimentos com codigo TUSS, quantidade e valores." />
+          <FeatureCard title="TISS — Gestao de Operadoras" description="Cadastro de convenios (operadoras) com registro ANS, CNPJ. Dados estruturados de convenio no perfil do paciente (carteira, plano, validade)." />
+          <FeatureCard title="TISS — Lote XML e Ciclo de Vida" description="Exportacao em lote de guias TISS como XML batch. Ciclo de vida: rascunho, enviada, paga, glosada, cancelada. Hash SHA-256 para integridade." />
+          <FeatureCard title="Comissoes / Repasse" description="Regras de comissao por profissional e/ou procedimento (percentual ou valor fixo). Calculo automatico ao concluir consulta. Relatorio por profissional com receita bruta, comissao e retencao clinica. Pagamento em lote com data." />
+          <FeatureCard title="Controle de Estoque" description="Cadastro de itens (insumos, materiais, medicamentos) com categorias, unidade de medida, custo unitario e fornecedor. Movimentacoes atomicas (entrada/saida/ajuste) com historico. Alerta de estoque minimo com banner visual. Cards de resumo: total de itens, itens abaixo do minimo, valor total em estoque." />
+          <FeatureCard title="Gateway de Pagamento (Asaas)" description="Cobranca online via PIX (QR code instantaneo), boleto e cartao de credito. Integracao com Asaas, webhook para confirmacao automatica de pagamento, link de pagamento para envio ao paciente. Configuracao em Configuracoes > Pagamento com modo sandbox para testes." />
         </CategorySection>
 
         {/* ── 7. RELATORIOS ── */}
@@ -240,17 +256,18 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 8. CONFIGURACOES ── */}
-        <CategorySection icon="⚙️" title="Configuracoes" description="Personalize o workspace, equipe e integracoes." count={6}>
+        <CategorySection icon="⚙️" title="Configuracoes" description="Personalize o workspace, equipe, permissoes e integracoes." count={7}>
           <FeatureCard title="Procedimentos com Duracao" description="Cadastre procedimentos com nome, categoria, preco e duracao em minutos. Gerados por IA no onboarding." />
           <FeatureCard title="Campos Personalizados" description="Crie campos extras por especialidade: texto, numero, booleano, data, selecao com opcoes. Aparecem no cadastro e perfil do paciente." />
           <FeatureCard title="Anamnese Configuravel" description="Template de perguntas de anamnese por profissao. Texto, booleano ou selecao. Gerado pela IA." />
-          <FeatureCard title="Gestao de Equipe" description="Convite por email com roles: proprietario, admin, membro. Controle de acesso basico. Convites com expiracao de 7 dias." />
+          <FeatureCard title="Gestao de Equipe" description="Convite por email com roles: proprietario, admin, profissional, secretaria, visualizador. Convites com expiracao de 7 dias." />
+          <FeatureCard title="Controle de Acesso (RBAC)" description="5 papeis com permissoes granulares. Navegacao e paginas filtradas por role. Secretaria sem acesso clinico, visualizador somente leitura, profissional sem financeiro/configuracoes." />
           <FeatureCard title="Configuracao WhatsApp" description="Wizard de 5 etapas para conectar WhatsApp Business via Facebook Embedded Signup. Tokens criptografados." />
           <FeatureCard title="Tema Claro/Escuro" description="Alterne entre modo claro, escuro ou preferencia do sistema. Salvo localmente." />
         </CategorySection>
 
         {/* ── 9. SEGURANCA ── */}
-        <CategorySection icon="🔐" title="Seguranca e LGPD" description="Conformidade com LGPD e boas praticas de seguranca." count={8}>
+        <CategorySection icon="🔐" title="Seguranca e LGPD" description="Conformidade com LGPD e boas praticas de seguranca." count={10}>
           <FeatureCard title="Consentimento LGPD" description="Modal obrigatorio antes de gravacao de audio. ConsentRecord armazenado no banco com timestamp e responsavel." />
           <FeatureCard title="Isolamento Multi-tenant" description="Todas as queries filtradas por workspaceId. Gravacoes, pacientes e consultas completamente isolados entre clinicas." />
           <FeatureCard title="Auditoria Completa" description="Log de todas as operacoes: criacao, edicao, exclusao, merge, exportacao. Registra usuario, acao, entidade e timestamp." />
@@ -259,15 +276,19 @@ export default function DocsPage() {
           <FeatureCard title="Autenticacao Clerk" description="Login seguro via Clerk com suporte a Google, social login e 2FA. Sessoes gerenciadas automaticamente." />
           <FeatureCard title="Log de Auditoria" description="Pagina em Configuracoes > Auditoria com historico paginado de todas as acoes: criacao, edicao, exclusao de pacientes e consultas." />
           <FeatureCard title="Dashboard de Uso do Plano" description="Barras de progresso em Configuracoes > Plano mostrando consumo de pacientes, consultas e gravacoes vs limites do plano." />
+          <FeatureCard title="Canal do DPO (Encarregado)" description="Pagina publica /dpo para exercicio de direitos de titular (Art. 18 LGPD): acesso, correcao, exclusao, portabilidade. Formulario com prazo de 15 dias." />
+          <FeatureCard title="Plano de Resposta a Incidentes" description="Documento interno seguindo Resolucao CD/ANPD 15/2024: classificacao de severidade, fases de resposta, modelos de notificacao a ANPD e titulares." />
         </CategorySection>
 
         {/* ── 10. INFRAESTRUTURA ── */}
-        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiencia do usuario." count={12}>
+        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiencia do usuario." count={14}>
           <FeatureCard title="Design Responsivo" description="Mobile-first com sidebar no desktop e bottom nav no mobile. Funciona em celular, tablet e desktop." />
           <FeatureCard title="PWA Ready" description="Manifest.json e service worker para instalacao como app. Icones configurados para iOS e Android." />
           <FeatureCard title="Performance" description="Next.js 16 com Turbopack. Server components, cache com unstable_cache. Carregamento rapido com skeletons." />
           <FeatureCard title="Busca Global (Ctrl+K)" description="Paleta de comandos acessivel de qualquer pagina. Busca pacientes, paginas e acoes rapidas. Navegacao por teclado." />
           <FeatureCard title="Onboarding com IA" description="Wizard de 4 etapas: escolha da profissao (8 opcoes), perguntas contextuais, dados da clinica, preview editavel gerado por Claude. Workspace pronto em segundos." />
+          <FeatureCard title="Tour Guiado Pos-Onboarding" description="10 steps interativos com spotlight overlay: dashboard, agenda, pacientes, financeiro, gravacao de voz. Progress tracking, skip/restart, adaptacao desktop/mobile." />
+          <FeatureCard title="Verificacao de Documento Digital" description="Pagina publica /verificar/[token] para validacao de prescricoes e atestados assinados digitalmente. Nome mascarado (LGPD), dados do profissional e certificado." />
           <FeatureCard title="Impressao em PDF" description="Paginas de recibo, prescricao e atestado otimizadas para impressao (Ctrl+P). Estilos @media print dedicados." />
           <FeatureCard title="Health Check" description="Endpoint /api/health para monitoramento de disponibilidade e integracao com ferramentas de uptime." />
           <FeatureCard title="Validacao de Ambiente" description="Todas as variaveis de ambiente validadas via Zod no startup. App falha rapido se configuracao incorreta." />

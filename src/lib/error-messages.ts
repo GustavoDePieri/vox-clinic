@@ -62,6 +62,10 @@ export function safeAction<Args extends unknown[], Return extends Record<string,
       if (err instanceof ActionError) {
         return { error: err.message }
       }
+      // Capture unexpected errors in Sentry (if configured)
+      if (typeof window === "undefined") {
+        import("@sentry/nextjs").then(Sentry => Sentry.captureException(err)).catch(() => {})
+      }
       // Re-throw unexpected errors (Prisma, network, etc.)
       throw err
     }
@@ -106,6 +110,7 @@ export const ERR_SCHEDULE_CONFLICT = "Ja existe um agendamento neste horario."
 // ============================================================
 export const ERR_DOCUMENT_NOT_FOUND = "Documento nao encontrado."
 export const ERR_PRESCRIPTION_NOT_FOUND = "Prescricao nao encontrada."
+export const ERR_MEDICATION_NOT_FOUND = "Medicamento nao encontrado na base ANVISA."
 export const ERR_CERTIFICATE_NOT_FOUND = "Documento medico nao encontrado."
 export const ERR_FILE_TOO_LARGE = "Arquivo muito grande. O tamanho maximo permitido e 10MB."
 export const ERR_FILE_TYPE_NOT_ALLOWED = "Tipo de arquivo nao permitido. Use imagens, PDF ou documentos Word."
@@ -126,6 +131,22 @@ export const ERR_NFSE_ALREADY_EXISTS = "Ja existe uma nota fiscal emitida para e
 export const ERR_NFSE_ALREADY_CANCELLED = "Esta nota fiscal ja foi cancelada."
 export const ERR_NFSE_CANCELLED_NO_UPDATE = "Notas fiscais canceladas nao podem ser atualizadas."
 export const ERR_NFSE_NO_PRICE = "Consulta sem valor definido. Defina o preco antes de emitir a NFS-e."
+
+// ============================================================
+// TISS — Faturamento Convenios
+// ============================================================
+export const ERR_TISS_NOT_CONFIGURED = "Configuracao TISS nao encontrada. Acesse Configuracoes > TISS para configurar."
+export const ERR_TISS_GUIDE_NOT_FOUND = "Guia TISS nao encontrada."
+export const ERR_TISS_MISSING_PROFESSIONAL = "Dados do profissional incompletos na configuracao TISS (conselho, numero, UF, CBOS)."
+export const ERR_TISS_INVALID_STATUS_TRANSITION = "Transicao de status invalida para esta guia TISS."
+export const ERR_OPERADORA_NOT_FOUND = "Operadora nao encontrada."
+export const ERR_OPERADORA_DUPLICATE_ANS = "Ja existe uma operadora com este registro ANS neste workspace."
+
+// ============================================================
+// COMISSOES
+// ============================================================
+export const ERR_COMMISSION_RULE_NOT_FOUND = "Regra de comissao nao encontrada."
+export const ERR_COMMISSION_ENTRY_NOT_FOUND = "Registro de comissao nao encontrado."
 
 // ============================================================
 // FINANCEIRO
@@ -154,6 +175,7 @@ export const ERR_ALREADY_IN_WORKSPACE = "Voce ja faz parte deste espaco de traba
 // WHATSAPP & MENSAGENS
 // ============================================================
 export const ERR_WHATSAPP_NOT_CONFIGURED = "WhatsApp nao configurado. Acesse Configuracoes > WhatsApp para configurar."
+export const ERR_PATIENT_NO_WHATSAPP_CONSENT = "Este paciente nao autorizou o recebimento de mensagens via WhatsApp. Ative a autorizacao na ficha do paciente."
 export const ERR_PATIENT_NO_EMAIL = "Este paciente nao tem email cadastrado."
 export const ERR_PATIENT_NO_PHONE = "Este paciente nao tem telefone cadastrado."
 export const ERR_INVALID_CHANNEL = "Canal de mensagem invalido."
@@ -168,9 +190,50 @@ export const ERR_TELECONSULTA_EXPIRED = "O horario desta teleconsulta ja expirou
 export const ERR_TELECONSULTA_ROOM_NOT_CONFIGURED = "A sala de video nao esta configurada para esta consulta."
 
 // ============================================================
+// MEMED — Prescricao Digital
+// ============================================================
+export const ERR_MEMED_NOT_CONFIGURED = "Memed nao configurado. Defina MEMED_API_KEY e MEMED_SECRET_KEY nas variaveis de ambiente."
+export const ERR_MEMED_REGISTRATION_FAILED = "Erro ao registrar prescritor no Memed. Verifique os dados e tente novamente."
+export const ERR_MEMED_PRESCRIBER_NOT_FOUND = "Prescritor Memed nao encontrado. Registre-se primeiro nas configuracoes."
+
+// ============================================================
+// LISTA DE ESPERA
+// ============================================================
+export const ERR_WAITLIST_ENTRY_NOT_FOUND = "Entrada na lista de espera nao encontrada."
+export const ERR_WAITLIST_PATIENT_ALREADY_WAITING = "Este paciente ja esta na lista de espera para esta agenda/procedimento."
+
+// ============================================================
+// FORMULARIOS
+// ============================================================
+export const ERR_FORM_TEMPLATE_NOT_FOUND = "Modelo de formulario nao encontrado."
+export const ERR_FORM_RESPONSE_NOT_FOUND = "Resposta de formulario nao encontrada."
+export const ERR_FORM_ALREADY_COMPLETED = "Este formulario ja foi preenchido e nao pode ser alterado."
+
+// ============================================================
 // BILLING
 // ============================================================
 export const ERR_NO_SUBSCRIPTION = "Nenhuma assinatura encontrada. Assine um plano primeiro."
+
+// ============================================================
+// ESTOQUE (Inventory)
+// ============================================================
+export const ERR_INVENTORY_ITEM_NOT_FOUND = "Item de estoque nao encontrado."
+export const ERR_INVENTORY_INSUFFICIENT_STOCK = "Estoque insuficiente para esta operacao."
+export const ERR_INVENTORY_CATEGORY_NOT_FOUND = "Categoria de estoque nao encontrada."
+
+// ============================================================
+// IMAGENS CLINICAS
+// ============================================================
+export const ERR_IMAGE_NOT_FOUND = "Imagem clinica nao encontrada."
+export const ERR_IMAGE_TOO_LARGE = "A imagem excede o limite de 10MB. Reduza o tamanho ou comprima antes de enviar."
+export const ERR_IMAGE_INVALID_TYPE = "Tipo de imagem nao permitido. Use JPEG, PNG ou WebP."
+
+// ============================================================
+// GATEWAY DE PAGAMENTO
+// ============================================================
+export const ERR_GATEWAY_NOT_CONFIGURED = "Gateway de pagamento nao configurado. Acesse Configuracoes > Pagamento para configurar."
+export const ERR_GATEWAY_CHARGE_FAILED = "Erro ao criar cobranca no gateway. Tente novamente."
+export const ERR_GATEWAY_PAYMENT_NOT_FOUND = "Cobranca nao encontrada no gateway."
 
 // ============================================================
 // VALIDACAO GENERICA

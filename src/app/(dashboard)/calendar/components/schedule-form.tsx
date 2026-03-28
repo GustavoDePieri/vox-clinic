@@ -62,14 +62,14 @@ function ScheduleFormInner({
   function handleSubmit() {
     if (!selectedPatient || !scheduleDate || !scheduleTime) return
     const dateTime = `${scheduleDate}T${scheduleTime}:00`
-    const priceCentavos = price ? Math.round(parseFloat(price.replace(",", ".")) * 100) : undefined
+    const priceReais = price ? parseFloat(price.replace(",", ".")) : undefined
     onSchedule({
       patientId: selectedPatient.id,
       date: new Date(dateTime).toISOString(),
       agendaId: scheduleAgendaId,
       notes: scheduleNotes || undefined,
       type: appointmentType,
-      price: priceCentavos,
+      price: priceReais,
       recurringEnabled,
       recurrence,
       occurrences,

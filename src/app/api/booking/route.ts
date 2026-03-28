@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getAvailableSlots } from "@/lib/booking-availability"
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit"
 
 // GET /api/booking?token=abc123 — Validate token + return workspace booking config
 export async function GET(request: NextRequest) {
@@ -69,6 +70,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/booking — Submit booking (create patient + appointment)
 export async function POST(request: NextRequest) {
+  // Rate limit: 20 POST requests per minute per IP
+  const ip = getClientIp(request)
+  const rl = rateLimit(`booking:post:${ip}`, 60_000, 20)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   try {
     const body = await request.json()
     const { token, procedureId, agendaId, date, patient } = body
@@ -220,15 +226,50 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      const patientRecord = existingPatient || await tx.patient.create({
-        data: {
-          workspaceId,
-          name: patient.name.trim(),
-          phone,
-          email: patient.email || null,
-          source: "online",
-        },
-      })
+      let patientRecord = existingPatient
+      if (!patientRecord) {
+        patientRecord = await tx.patient.create({
+          data: {
+            workspaceId,
+            name: patient.name.trim(),
+            phone,
+            email: patient.email || null,
+            source: "online",
+            whatsappConsent: true,
+            whatsappConsentAt: new Date(),
+          },
+        })
+
+        // Record consent for LGPD compliance
+        await tx.consentRecord.create({
+          data: {
+            workspaceId,
+            patientId: patientRecord.id,
+            consentType: "whatsapp_messaging",
+            givenBy: "online_booking",
+            details: "Consentimento automatico via agendamento online — paciente forneceu telefone voluntariamente.",
+          },
+        })
+      } else if (!patientRecord.whatsappConsent && phone) {
+        // Existing patient booking online with phone — grant consent
+        await tx.patient.update({
+          where: { id: patientRecord.id },
+          data: {
+            whatsappConsent: true,
+            whatsappConsentAt: new Date(),
+          },
+        })
+
+        await tx.consentRecord.create({
+          data: {
+            workspaceId,
+            patientId: patientRecord.id,
+            consentType: "whatsapp_messaging",
+            givenBy: "online_booking",
+            details: "Consentimento automatico via agendamento online — paciente forneceu telefone voluntariamente.",
+          },
+        })
+      }
 
       // Create appointment
       const appointment = await tx.appointment.create({
