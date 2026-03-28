@@ -45,3 +45,12 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+.vercel
+
+# claude code local config
+.claude/
+
+# temporary/local files
+checklist_crm_clinica.xlsx
+dbsetup.js
