@@ -158,7 +158,23 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
     }
 
     // Call NFS-e API
-    const client = new NfseClient(config.certificateId ?? '', config.apiKey, process.env.NFSE_AMBIENTE !== 'producao')
+    const isSandbox = process.env.NFSE_AMBIENTE !== 'producao'
+    const client = new NfseClient(config.certificateId ?? '', config.apiKey, isSandbox)
+
+    // Ensure company is registered in NuvemFiscal before emitting
+    try {
+      await client.registerCompany({
+        cpf_cnpj: config.cnpj,
+        inscricao_municipal: config.inscricaoMunicipal,
+        nome_razao_social: config.cnpj.length === 11 ? "Profissional" : "Empresa",
+      })
+      await client.configureNfse(config.cnpj, {
+        ambiente: isSandbox ? "homologacao" : "producao",
+      })
+    } catch (regErr) {
+      // Log but continue — might already be registered
+      console.error("[NFS-e] Company registration check:", regErr instanceof Error ? regErr.message : regErr)
+    }
 
     let externalId: string | null = null
     let numero: string | null = null
