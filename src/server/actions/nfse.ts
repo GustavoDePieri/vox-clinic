@@ -77,31 +77,45 @@ export async function emitNfse(appointmentId: string) {
       cep?: string
     } | null
 
-    const payload: EmitNfseInput = {
-      ambiente: process.env.NFSE_AMBIENTE === 'producao' ? 'producao' : 'homologacao',
-      prestador: {
-        cpfCnpj: config.cnpj,
-        inscricaoMunicipal: config.inscricaoMunicipal,
-      },
-      tomador: {
-        cpfCnpj: appointment.patient.document?.replace(/\D/g, "") || undefined,
-        razaoSocial: appointment.patient.name,
-        endereco: address
-          ? {
-              logradouro: address.logradouro,
-              numero: address.numero,
-              bairro: address.bairro,
-              codigoMunicipio: address.codigoMunicipio,
-              uf: address.uf,
-              cep: address.cep,
-            }
-          : undefined,
-      },
-      servico: {
-        descricao: config.descricaoServico,
-        codigoServico: config.codigoServico,
-        valorServicos: valorBRL,
-        aliquotaIss: aliquotaDecimal,
+    // Build NFS-e Nacional DPS payload (Nuvem Fiscal format)
+    const ambiente = process.env.NFSE_AMBIENTE === 'producao' ? 1 : 2 // 1=producao, 2=homologacao
+    const patientCpf = appointment.patient.document?.replace(/\D/g, "") || undefined
+
+    const payload = {
+      ambiente,
+      referencia: `vox-${appointment.id}`,
+      DPS: {
+        infDPS: {
+          dhEmi: new Date().toISOString(),
+          prest: {
+            CNPJ: config.cnpj.length === 14 ? config.cnpj : undefined,
+            CPF: config.cnpj.length === 11 ? config.cnpj : undefined,
+            IM: config.inscricaoMunicipal,
+          },
+          toma: {
+            CPF: patientCpf && patientCpf.length === 11 ? patientCpf : undefined,
+            CNPJ: patientCpf && patientCpf.length === 14 ? patientCpf : undefined,
+            xNome: appointment.patient.name,
+            ...(address ? {
+              end: {
+                xLgr: address.logradouro,
+                nro: address.numero || "S/N",
+                xBairro: address.bairro,
+                UF: address.uf,
+                CEP: address.cep?.replace(/\D/g, ""),
+              },
+            } : {}),
+          },
+          serv: {
+            cServ: {
+              cTribNac: config.codigoServico,
+              xDescServ: config.descricaoServico,
+            },
+            vServ: valorBRL,
+            vISS: Math.round(valorBRL * aliquotaDecimal * 100) / 100,
+            vLiq: valorBRL,
+          },
+        },
       },
     }
 

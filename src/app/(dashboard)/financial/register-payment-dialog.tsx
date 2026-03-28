@@ -26,9 +26,12 @@ const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 function parseBRL(value: string): number {
-  // Handle Brazilian format: "1.234,56" or "1234,56" or "1234.56"
-  const cleaned = value.replace(/\./g, '').replace(',', '.')
-  return parseFloat(cleaned) || 0
+  // If has comma, treat as Brazilian format: "1.234,56" → 1234.56
+  if (value.includes(',')) {
+    return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0
+  }
+  // Otherwise standard format: "300.00" → 300.00
+  return parseFloat(value) || 0
 }
 
 const formatDateBR = (date: Date | string) =>

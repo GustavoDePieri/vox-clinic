@@ -79,8 +79,8 @@ export class NfseClient {
     }
   }
 
-  async emit(data: EmitNfseInput): Promise<EmitNfseResponse> {
-    return this.request<EmitNfseResponse>("/nfse", {
+  async emit(data: unknown): Promise<EmitNfseResponse> {
+    return this.request<EmitNfseResponse>("/nfse/dps", {
       method: "POST",
       body: JSON.stringify(data),
     })
