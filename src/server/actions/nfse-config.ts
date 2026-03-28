@@ -114,30 +114,32 @@ export async function saveNfseConfig(data: {
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
   if (!workspaceId) throw new Error("Workspace not configured")
 
-  // Clean and validate CPF/CNPJ
+  // Validate all fields upfront and collect errors
+  const errors: string[] = []
   const cnpjDigits = data.cnpj.replace(/\D/g, "")
-  if (!validateCpfCnpj(cnpjDigits)) {
-    throw new Error(cnpjDigits.length === 11 ? "CPF invalido" : "CNPJ invalido")
-  }
-
-  // Validate required fields
-  if (!data.inscricaoMunicipal.trim()) throw new Error("Inscricao Municipal e obrigatoria")
-  if (!data.codigoServico.trim()) throw new Error("Codigo de Servico e obrigatorio")
-  if (!data.descricaoServico.trim()) throw new Error("Descricao do Servico e obrigatoria")
-  if (data.aliquotaISS < 0 || data.aliquotaISS > 100) throw new Error("Aliquota ISS invalida")
-  // Validate credentials
-  if (!data.clientId.trim()) throw new Error("Client ID e obrigatorio")
+  if (!cnpjDigits) errors.push("CPF/CNPJ e obrigatorio")
+  else if (!validateCpfCnpj(cnpjDigits)) errors.push(cnpjDigits.length === 11 ? "CPF invalido (digito verificador incorreto)" : "CNPJ invalido (digito verificador incorreto)")
+  if (!data.inscricaoMunicipal.trim()) errors.push("Inscricao Municipal e obrigatoria")
+  if (!data.codigoServico.trim()) errors.push("Codigo de Servico e obrigatorio")
+  if (!data.descricaoServico.trim()) errors.push("Descricao do Servico e obrigatoria")
+  if (data.aliquotaISS < 0 || data.aliquotaISS > 100) errors.push("Aliquota ISS invalida (0-100%)")
+  if (!data.clientId.trim()) errors.push("Client ID e obrigatorio")
   const isMaskedSecret = data.clientSecret.startsWith('****')
-  if (!isMaskedSecret && !data.clientSecret.trim()) throw new Error("Client Secret e obrigatorio")
-  if (!data.clinicCity.trim()) throw new Error("Cidade e obrigatoria")
-  if (!data.clinicState.trim()) throw new Error("Estado e obrigatorio")
-  if (!data.clinicCep.replace(/\D/g, "").trim()) throw new Error("CEP e obrigatorio")
+  if (!isMaskedSecret && !data.clientSecret.trim()) errors.push("Client Secret e obrigatorio")
+  if (!data.clinicCity.trim()) errors.push("Cidade e obrigatoria")
+  if (!data.clinicState.trim()) errors.push("Estado e obrigatorio")
+  if (!data.clinicCep.replace(/\D/g, "").trim()) errors.push("CEP e obrigatorio")
+
+  if (errors.length > 0) {
+    return { error: errors.join(". ") }
+  }
 
   // Only update clientSecret if the user provided a new (non-masked) value
   const secretToSave = isMaskedSecret ? undefined : data.clientSecret.trim()
 
   logger.info("saveNfseConfig: starting upsert", { action: "saveNfseConfig", workspaceId, entityType: "NfseConfig" })
 
+  try {
   const config = await db.nfseConfig.upsert({
     where: { workspaceId },
     create: {
@@ -173,6 +175,10 @@ export async function saveNfseConfig(data: {
 
   logger.info("saveNfseConfig: success", { action: "saveNfseConfig", workspaceId, entityId: config.id })
   return { id: config.id }
+  } catch (err) {
+    logger.error("saveNfseConfig: upsert failed", { action: "saveNfseConfig", workspaceId }, err)
+    return { error: "Erro ao salvar configuracao no banco de dados" }
+  }
 }
 
 export async function testNfseConnection() {

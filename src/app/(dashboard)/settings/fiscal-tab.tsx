@@ -144,7 +144,7 @@ export function FiscalTab() {
         return
       }
 
-      await saveNfseConfig({
+      const result = await saveNfseConfig({
         cnpj: form.cnpj,
         inscricaoMunicipal: form.inscricaoMunicipal,
         codigoServico: form.codigoServico,
@@ -158,6 +158,11 @@ export function FiscalTab() {
         clinicState: form.clinicState,
         clinicCep: form.clinicCep,
       })
+
+      if ('error' in result && result.error) {
+        toast.error(result.error)
+        return
+      }
 
       setIsConfigured(true)
       toast.success("Configuracao fiscal salva com sucesso!")

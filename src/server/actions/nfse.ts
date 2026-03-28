@@ -225,11 +225,11 @@ export async function searchAppointmentsForNfse(patientQuery: string) {
   const sixMonthsAgo = new Date()
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
+  // Search appointments with or without price — show all completed appointments
   const appointments = await db.appointment.findMany({
     where: {
       workspaceId,
-      status: "completed",
-      price: { not: null, gt: 0 },
+      status: { in: ["completed", "scheduled"] },
       date: { gte: sixMonthsAgo },
       patient: {
         name: { contains: patientQuery, mode: "insensitive" },
