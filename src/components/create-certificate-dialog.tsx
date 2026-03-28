@@ -14,10 +14,10 @@ import { CidAutocomplete } from "@/components/cid-autocomplete"
 import type { CidCode } from "@/types"
 
 const typeOptions = [
-  { value: "atestado", label: "Atestado Medico" },
+  { value: "atestado", label: "Atestado Médico" },
   { value: "declaracao_comparecimento", label: "Declaracao de Comparecimento" },
   { value: "encaminhamento", label: "Encaminhamento" },
-  { value: "laudo", label: "Laudo Medico" },
+  { value: "laudo", label: "Laudo Médico" },
 ]
 
 export function CreateCertificateButton({
@@ -165,7 +165,7 @@ function CreateCertificateModal({
         {type === "declaracao_comparecimento" && (
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="cert-start">Horario de entrada</Label>
+              <Label htmlFor="cert-start">Horário de entrada</Label>
               <Input
                 id="cert-start"
                 type="time"
@@ -174,7 +174,7 @@ function CreateCertificateModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cert-end">Horario de saida</Label>
+              <Label htmlFor="cert-end">Horário de saída</Label>
               <Input
                 id="cert-end"
                 type="time"
@@ -194,7 +194,7 @@ function CreateCertificateModal({
               placeholder={
                 type === "encaminhamento"
                   ? "Descreva o encaminhamento..."
-                  : "Descreva o laudo medico..."
+                  : "Descreva o laudo médico..."
               }
               value={content}
               onChange={(e) => setContent(e.target.value)}

@@ -110,7 +110,7 @@ describe("treatment actions", () => {
         procedures: [],
         totalSessions: 0,
       })
-      expect('error' in result && result.error).toBe("Total de sessoes deve ser pelo menos 1")
+      expect('error' in result && result.error).toBe("Total de sessões deve ser pelo menos 1")
     })
 
     it("throws when patient not in workspace", async () => {
@@ -177,7 +177,7 @@ describe("treatment actions", () => {
 
       const result = await addSessionToTreatment("tp1")
       expect('error' in result).toBe(true)
-      if ('error' in result) expect(result.error).toBe("Plano nao esta ativo")
+      if ('error' in result) expect(result.error).toBe("Plano não está ativo")
     })
 
     it("rejects when all sessions already completed", async () => {
@@ -187,7 +187,7 @@ describe("treatment actions", () => {
 
       const result = await addSessionToTreatment("tp1")
       expect('error' in result).toBe(true)
-      if ('error' in result) expect(result.error).toBe("Todas as sessoes ja foram concluidas")
+      if ('error' in result) expect(result.error).toBe("Todas as sessões já foram concluídas")
     })
 
     it("throws when plan not found", async () => {
@@ -229,7 +229,7 @@ describe("treatment actions", () => {
     it("rejects invalid status", async () => {
       const result = await updateTreatmentPlanStatus("tp1", "invalid")
       expect('error' in result).toBe(true)
-      if ('error' in result) expect(result.error).toBe("Status invalido")
+      if ('error' in result) expect(result.error).toBe("Status inválido")
     })
 
     it("sets completedAt when status is completed", async () => {

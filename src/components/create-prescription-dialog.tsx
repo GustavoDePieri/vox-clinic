@@ -76,7 +76,7 @@ export function CreatePrescriptionButton({
     return (
       <Button variant="outline" size="sm" className="gap-1.5" onClick={handleOpen}>
         <Pill className="size-3.5" />
-        Prescricao
+        Prescrição
       </Button>
     )
   }
@@ -225,7 +225,7 @@ function CreatePrescriptionModal({
           notes: notes.trim() || undefined,
         })
         if ('error' in result) { toast.error(result.error); return }
-        toast.success("Prescricao criada com sucesso")
+        toast.success("Prescrição criada com sucesso")
         onClose()
         window.open(`/prescriptions/${result.id}`, "_blank")
         router.refresh()
@@ -242,7 +242,7 @@ function CreatePrescriptionModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div>
-          <h3 className="text-base font-semibold">Nova Prescricao</h3>
+          <h3 className="text-base font-semibold">Nova Prescrição</h3>
           <p className="text-xs text-muted-foreground mt-1">
             Paciente: <strong>{patientName}</strong>
           </p>
@@ -286,7 +286,7 @@ function CreatePrescriptionModal({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Frequencia</Label>
+                  <Label className="text-xs">Frequência</Label>
                   <Input
                     placeholder="Ex: 8 em 8 horas"
                     value={med.frequency}

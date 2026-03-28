@@ -538,7 +538,7 @@ function QuestionField({
       <div>
         <Label className="mb-3 block text-sm font-medium">{question.label}</Label>
         <div className="flex gap-3">
-          {["Sim", "Nao"].map((opt) => (
+          {["Sim", "Não"].map((opt) => (
             <button
               key={opt}
               type="button"

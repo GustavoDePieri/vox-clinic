@@ -3,8 +3,8 @@
 import { useState } from "react"
 
 /*
- * INSTRUCOES PARA AGENTES:
- * Esta pagina é o roadmap interativo do VoxClinic.
+ * INSTRUÇÕES PARA AGENTES:
+ * Esta página é o roadmap interativo do VoxClinic.
  * Atualize os items quando features forem implementadas.
  * Mude status de "planned" para "in_progress" ou "done".
  * Adicione novos items conforme demanda.
@@ -25,7 +25,7 @@ interface RoadmapItem {
 }
 
 const STATUS_CONFIG: Record<ItemStatus, { label: string; color: string; bg: string }> = {
-  done: { label: "Concluido", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+  done: { label: "Concluído", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
   in_progress: { label: "Em andamento", color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
   planned: { label: "Planejado", color: "text-slate-500", bg: "bg-slate-50 border-slate-200" },
 }
@@ -38,25 +38,25 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }> = {
 
 const EFFORT_CONFIG: Record<Effort, { label: string; dots: number }> = {
   low: { label: "Baixo", dots: 1 },
-  medium: { label: "Medio", dots: 2 },
+  medium: { label: "Médio", dots: 2 },
   high: { label: "Alto", dots: 3 },
 }
 
 const CATEGORIES = [
-  "Gestao de Pacientes",
+  "Gestão de Pacientes",
   "Agendamento",
-  "Prontuario e IA",
-  "Prescricoes e Documentos",
-  "Comunicacao",
+  "Prontuário e IA",
+  "Prescrições e Documentos",
+  "Comunicação",
   "Financeiro",
-  "Relatorios",
-  "Configuracoes",
-  "Seguranca e LGPD",
+  "Relatórios",
+  "Configurações",
+  "Segurança e LGPD",
   "Admin",
   "Infraestrutura",
   "Marketing",
   "Telemedicina",
-  "Integracoes",
+  "Integrações",
   "Portal do Paciente",
   "Estoque",
 ]
@@ -65,125 +65,125 @@ const CATEGORIES = [
 // ROADMAP DATA — Atualizar quando features forem implementadas
 // ============================================================================
 const ROADMAP_ITEMS: RoadmapItem[] = [
-  // ── GESTAO DE PACIENTES ──
-  { id: "p01", name: "Cadastro completo", description: "Nome, CPF, RG, sexo, endereco, telefone, email, convenio, responsavel, origem", status: "done", priority: "essential", effort: "medium", category: "Gestao de Pacientes" },
-  { id: "p02", name: "Campos personalizaveis", description: "Campos extras configuraveis por especialidade (5 tipos)", status: "done", priority: "important", effort: "medium", category: "Gestao de Pacientes" },
-  { id: "p03", name: "Historico medico", description: "Alergias, doencas cronicas, medicacoes, tipo sanguineo", status: "done", priority: "essential", effort: "medium", category: "Gestao de Pacientes" },
-  { id: "p04", name: "Upload de documentos", description: "Imagens, PDFs, Word — 10MB limite, URLs assinadas", status: "done", priority: "important", effort: "medium", category: "Gestao de Pacientes" },
-  { id: "p05", name: "Busca avancada", description: "Por nome, CPF, telefone, email, convenio. Filtro por tags", status: "done", priority: "essential", effort: "low", category: "Gestao de Pacientes" },
-  { id: "p06", name: "Tags e segmentacao", description: "Tags customizaveis com filtro na lista de pacientes", status: "done", priority: "important", effort: "low", category: "Gestao de Pacientes" },
-  { id: "p07", name: "Import/export dados", description: "CSV import com mapeamento, Excel export em massa, CSV individual", status: "done", priority: "important", effort: "medium", category: "Gestao de Pacientes" },
-  { id: "p08", name: "Merge de duplicatas", description: "Deteccao por CPF/nome, merge atomico com transferencia de registros", status: "done", priority: "differential", effort: "high", category: "Gestao de Pacientes" },
-  { id: "p09", name: "Portal do paciente", description: "Area de autoatendimento para pacientes acessarem seus dados", status: "planned", priority: "differential", effort: "high", category: "Portal do Paciente" },
+  // ── GESTÃO DE PACIENTES ──
+  { id: "p01", name: "Cadastro completo", description: "Nome, CPF, RG, sexo, endereço, telefone, email, convênio, responsável, origem", status: "done", priority: "essential", effort: "medium", category: "Gestão de Pacientes" },
+  { id: "p02", name: "Campos personalizáveis", description: "Campos extras configuráveis por especialidade (5 tipos)", status: "done", priority: "important", effort: "medium", category: "Gestão de Pacientes" },
+  { id: "p03", name: "Histórico médico", description: "Alergias, doenças crônicas, medicações, tipo sanguíneo", status: "done", priority: "essential", effort: "medium", category: "Gestão de Pacientes" },
+  { id: "p04", name: "Upload de documentos", description: "Imagens, PDFs, Word — 10MB limite, URLs assinadas", status: "done", priority: "important", effort: "medium", category: "Gestão de Pacientes" },
+  { id: "p05", name: "Busca avançada", description: "Por nome, CPF, telefone, email, convênio. Filtro por tags", status: "done", priority: "essential", effort: "low", category: "Gestão de Pacientes" },
+  { id: "p06", name: "Tags e segmentação", description: "Tags customizáveis com filtro na lista de pacientes", status: "done", priority: "important", effort: "low", category: "Gestão de Pacientes" },
+  { id: "p07", name: "Import/export dados", description: "CSV import com mapeamento, Excel export em massa, CSV individual", status: "done", priority: "important", effort: "medium", category: "Gestão de Pacientes" },
+  { id: "p08", name: "Merge de duplicatas", description: "Detecção por CPF/nome, merge atômico com transferência de registros", status: "done", priority: "differential", effort: "high", category: "Gestão de Pacientes" },
+  { id: "p09", name: "Portal do paciente", description: "Área de autoatendimento para pacientes acessarem seus dados", status: "planned", priority: "differential", effort: "high", category: "Portal do Paciente" },
 
   // ── AGENDAMENTO ──
-  { id: "a01", name: "Calendario multi-visao", description: "Dia, semana, mes e lista com navegacao por data", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
-  { id: "a02", name: "Drag and drop", description: "Arrastar consultas na visao semanal para reagendar", status: "done", priority: "essential", effort: "medium", category: "Agendamento" },
-  { id: "a03", name: "Deteccao de conflitos", description: "Verifica +/-30min, alerta visual, opcao de forcar", status: "done", priority: "essential", effort: "medium", category: "Agendamento" },
-  { id: "a04", name: "Bloqueio de horarios", description: "Almoco, ferias, feriados — unicos e recorrentes semanais", status: "done", priority: "essential", effort: "medium", category: "Agendamento" },
-  { id: "a05", name: "Agenda recorrente", description: "Semanal/quinzenal, 2-52 ocorrencias, criacao atomica", status: "done", priority: "important", effort: "medium", category: "Agendamento" },
-  { id: "a06", name: "Duracao por procedimento", description: "Campo de duracao em minutos por procedimento", status: "done", priority: "important", effort: "low", category: "Agendamento" },
-  { id: "a07", name: "Agendamento online (paciente)", description: "Link publico para paciente agendar sozinho", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
-  { id: "a08", name: "Multiplas agendas", description: "Suporte a varias agendas por profissional", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
-  { id: "a09", name: "Lista de espera", description: "Waitlist com preferencias (dias/horarios/agenda), matching automatico em cancelamento, panel no calendario, notificacao de matches, prioridade (normal/alta/urgente)", status: "done", priority: "important", effort: "medium", category: "Agendamento" },
-  { id: "a10", name: "Google Calendar sync", description: "Sincronizacao bidirecional com calendario pessoal", status: "planned", priority: "differential", effort: "high", category: "Integracoes" },
+  { id: "a01", name: "Calendário multi-visão", description: "Dia, semana, mês e lista com navegação por data", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
+  { id: "a02", name: "Drag and drop", description: "Arrastar consultas na visão semanal para reagendar", status: "done", priority: "essential", effort: "medium", category: "Agendamento" },
+  { id: "a03", name: "Detecção de conflitos", description: "Verifica +/-30min, alerta visual, opção de forçar", status: "done", priority: "essential", effort: "medium", category: "Agendamento" },
+  { id: "a04", name: "Bloqueio de horários", description: "Almoço, férias, feriados — únicos e recorrentes semanais", status: "done", priority: "essential", effort: "medium", category: "Agendamento" },
+  { id: "a05", name: "Agenda recorrente", description: "Semanal/quinzenal, 2-52 ocorrências, criação atômica", status: "done", priority: "important", effort: "medium", category: "Agendamento" },
+  { id: "a06", name: "Duração por procedimento", description: "Campo de duração em minutos por procedimento", status: "done", priority: "important", effort: "low", category: "Agendamento" },
+  { id: "a07", name: "Agendamento online (paciente)", description: "Link público para paciente agendar sozinho", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
+  { id: "a08", name: "Múltiplas agendas", description: "Suporte a várias agendas por profissional", status: "done", priority: "essential", effort: "high", category: "Agendamento" },
+  { id: "a09", name: "Lista de espera", description: "Waitlist com preferências (dias/horários/agenda), matching automático em cancelamento, panel no calendário, notificação de matches, prioridade (normal/alta/urgente)", status: "done", priority: "important", effort: "medium", category: "Agendamento" },
+  { id: "a10", name: "Google Calendar sync", description: "Sincronização bidirecional com calendário pessoal", status: "planned", priority: "differential", effort: "high", category: "Integrações" },
   { id: "a11", name: "Controle de salas", description: "Vincular agendamento a sala ou equipamento", status: "planned", priority: "important", effort: "medium", category: "Agendamento" },
 
-  // ── PRONTUARIO E IA ──
-  { id: "c01", name: "Gravacao de audio", description: "MediaRecorder com consentimento LGPD, webm/opus", status: "done", priority: "essential", effort: "high", category: "Prontuario e IA" },
-  { id: "c02", name: "Transcricao Whisper", description: "OpenAI Whisper em pt-BR com vocabulario medico", status: "done", priority: "essential", effort: "high", category: "Prontuario e IA" },
-  { id: "c03", name: "Extracao IA (Claude)", description: "7 campos estruturados via tool_use com validacao Zod", status: "done", priority: "essential", effort: "high", category: "Prontuario e IA" },
-  { id: "c04", name: "Revisao antes de salvar", description: "Profissional revisa e edita antes de confirmar", status: "done", priority: "essential", effort: "medium", category: "Prontuario e IA" },
-  { id: "c05", name: "Templates por especialidade", description: "IA gera templates no onboarding por profissao", status: "done", priority: "essential", effort: "medium", category: "Prontuario e IA" },
-  { id: "c06", name: "Planos de tratamento", description: "Multiplas sessoes, progresso, status", status: "done", priority: "important", effort: "medium", category: "Prontuario e IA" },
-  { id: "c07", name: "Formularios customizaveis", description: "Editor visual de formularios (11 tipos de campo), biblioteca de 5 templates por especialidade, historico de respostas por paciente/consulta, compatibilidade com anamnese legada", status: "done", priority: "important", effort: "high", category: "Prontuario e IA" },
-  { id: "c08", name: "CID-10/CID-11", description: "1022 codigos PT-BR, autocomplete accent-insensitive, sugestao por IA via Claude, vinculado a consultas e atestados", status: "done", priority: "important", effort: "medium", category: "Prontuario e IA" },
-  { id: "c09", name: "Assinatura digital ICP-Brasil", description: "Schema preparado (SignatureConfig, campos assinatura em Prescricao/Certificado, verificationToken). Pagina publica /verificar/[token]. Implementacao de signing em fase futura.", status: "in_progress", priority: "important", effort: "high", category: "Prontuario e IA" },
-  { id: "c10", name: "SOAP estruturado", description: "Formato Subjetivo/Objetivo/Avaliacao/Plano", status: "planned", priority: "differential", effort: "medium", category: "Prontuario e IA" },
+  // ── PRONTUÁRIO E IA ──
+  { id: "c01", name: "Gravação de áudio", description: "MediaRecorder com consentimento LGPD, webm/opus", status: "done", priority: "essential", effort: "high", category: "Prontuário e IA" },
+  { id: "c02", name: "Transcrição Whisper", description: "OpenAI Whisper em pt-BR com vocabulário médico", status: "done", priority: "essential", effort: "high", category: "Prontuário e IA" },
+  { id: "c03", name: "Extração IA (Claude)", description: "7 campos estruturados via tool_use com validação Zod", status: "done", priority: "essential", effort: "high", category: "Prontuário e IA" },
+  { id: "c04", name: "Revisão antes de salvar", description: "Profissional revisa e edita antes de confirmar", status: "done", priority: "essential", effort: "medium", category: "Prontuário e IA" },
+  { id: "c05", name: "Templates por especialidade", description: "IA gera templates no onboarding por profissão", status: "done", priority: "essential", effort: "medium", category: "Prontuário e IA" },
+  { id: "c06", name: "Planos de tratamento", description: "Múltiplas sessões, progresso, status", status: "done", priority: "important", effort: "medium", category: "Prontuário e IA" },
+  { id: "c07", name: "Formulários customizáveis", description: "Editor visual de formulários (11 tipos de campo), biblioteca de 5 templates por especialidade, histórico de respostas por paciente/consulta, compatibilidade com anamnese legada", status: "done", priority: "important", effort: "high", category: "Prontuário e IA" },
+  { id: "c08", name: "CID-10/CID-11", description: "1022 códigos PT-BR, autocomplete accent-insensitive, sugestão por IA via Claude, vinculado a consultas e atestados", status: "done", priority: "important", effort: "medium", category: "Prontuário e IA" },
+  { id: "c09", name: "Assinatura digital ICP-Brasil", description: "Schema preparado (SignatureConfig, campos assinatura em Prescrição/Certificado, verificationToken). Página pública /verificar/[token]. Implementação de signing em fase futura.", status: "in_progress", priority: "important", effort: "high", category: "Prontuário e IA" },
+  { id: "c10", name: "SOAP estruturado", description: "Formato Subjetivo/Objetivo/Avaliação/Plano", status: "planned", priority: "differential", effort: "medium", category: "Prontuário e IA" },
 
-  // ── PRESCRICOES E DOCUMENTOS ──
-  { id: "d01", name: "Prescricao eletronica", description: "Medicamentos com posologia, impressao PDF", status: "done", priority: "essential", effort: "medium", category: "Prescricoes e Documentos" },
-  { id: "d02", name: "Atestados medicos", description: "Texto auto-gerado, CID opcional, impressao PDF", status: "done", priority: "essential", effort: "medium", category: "Prescricoes e Documentos" },
-  { id: "d03", name: "Declaracao de comparecimento", description: "Horario entrada/saida, impressao PDF", status: "done", priority: "essential", effort: "low", category: "Prescricoes e Documentos" },
-  { id: "d04", name: "Encaminhamento e laudo", description: "Texto livre, impressao PDF padronizada", status: "done", priority: "essential", effort: "low", category: "Prescricoes e Documentos" },
-  { id: "d05", name: "Integracao Memed", description: "Prescricao digital via Memed (60k+ medicamentos, interacoes, assinatura ICP-Brasil). Gratuito. Hook useMemed, panel embed, settings, sync prescricaoImpressa", status: "done", priority: "important", effort: "medium", category: "Prescricoes e Documentos" },
+  // ── PRESCRIÇÕES E DOCUMENTOS ──
+  { id: "d01", name: "Prescrição eletrônica", description: "Medicamentos com posologia, impressão PDF", status: "done", priority: "essential", effort: "medium", category: "Prescrições e Documentos" },
+  { id: "d02", name: "Atestados médicos", description: "Texto auto-gerado, CID opcional, impressão PDF", status: "done", priority: "essential", effort: "medium", category: "Prescrições e Documentos" },
+  { id: "d03", name: "Declaração de comparecimento", description: "Horário entrada/saída, impressão PDF", status: "done", priority: "essential", effort: "low", category: "Prescrições e Documentos" },
+  { id: "d04", name: "Encaminhamento e laudo", description: "Texto livre, impressão PDF padronizada", status: "done", priority: "essential", effort: "low", category: "Prescrições e Documentos" },
+  { id: "d05", name: "Integração Memed", description: "Prescrição digital via Memed (60k+ medicamentos, interações, assinatura ICP-Brasil). Gratuito. Hook useMemed, panel embed, settings, sync prescriçãoImpressa", status: "done", priority: "important", effort: "medium", category: "Prescrições e Documentos" },
 
-  // ── COMUNICACAO ──
-  { id: "m01", name: "WhatsApp Business API", description: "Meta Cloud API, setup wizard, envio e recebimento", status: "done", priority: "essential", effort: "high", category: "Comunicacao" },
-  { id: "m02", name: "Lembretes automaticos", description: "24h antes, WhatsApp com botoes + email fallback", status: "done", priority: "essential", effort: "medium", category: "Comunicacao" },
-  { id: "m03", name: "Confirmacao automatizada", description: "Botao/texto WhatsApp atualiza status consulta", status: "done", priority: "essential", effort: "medium", category: "Comunicacao" },
-  { id: "m04", name: "Mensagens de aniversario", description: "Cron diario, WhatsApp ou email", status: "done", priority: "differential", effort: "low", category: "Comunicacao" },
-  { id: "m05", name: "Pesquisa NPS", description: "Pos-consulta, pagina publica 0-10, score no relatorio", status: "done", priority: "important", effort: "medium", category: "Comunicacao" },
-  { id: "m06", name: "Notificacoes in-app", description: "Sino com tipos: consulta, falta, tratamento, sistema", status: "done", priority: "important", effort: "medium", category: "Comunicacao" },
-  { id: "m07", name: "Inbox unificada", description: "Painel de conversas WhatsApp centralizado", status: "planned", priority: "important", effort: "high", category: "Comunicacao" },
-  { id: "m08", name: "Chatbot de atendimento", description: "IA para triagem, agendamento, FAQ via WhatsApp", status: "planned", priority: "important", effort: "high", category: "Comunicacao" },
-  { id: "m09", name: "Email marketing", description: "Campanhas, newsletters, segmentacao", status: "planned", priority: "differential", effort: "high", category: "Marketing" },
+  // ── COMUNICAÇÃO ──
+  { id: "m01", name: "WhatsApp Business API", description: "Meta Cloud API, setup wizard, envio e recebimento", status: "done", priority: "essential", effort: "high", category: "Comunicação" },
+  { id: "m02", name: "Lembretes automáticos", description: "24h antes, WhatsApp com botões + email fallback", status: "done", priority: "essential", effort: "medium", category: "Comunicação" },
+  { id: "m03", name: "Confirmação automatizada", description: "Botão/texto WhatsApp atualiza status consulta", status: "done", priority: "essential", effort: "medium", category: "Comunicação" },
+  { id: "m04", name: "Mensagens de aniversário", description: "Cron diário, WhatsApp ou email", status: "done", priority: "differential", effort: "low", category: "Comunicação" },
+  { id: "m05", name: "Pesquisa NPS", description: "Pós-consulta, página pública 0-10, score no relatório", status: "done", priority: "important", effort: "medium", category: "Comunicação" },
+  { id: "m06", name: "Notificações in-app", description: "Sino com tipos: consulta, falta, tratamento, sistema", status: "done", priority: "important", effort: "medium", category: "Comunicação" },
+  { id: "m07", name: "Inbox unificada", description: "Painel de conversas WhatsApp centralizado", status: "planned", priority: "important", effort: "high", category: "Comunicação" },
+  { id: "m08", name: "Chatbot de atendimento", description: "IA para triagem, agendamento, FAQ via WhatsApp", status: "planned", priority: "important", effort: "high", category: "Comunicação" },
+  { id: "m09", name: "Email marketing", description: "Campanhas, newsletters, segmentação", status: "planned", priority: "differential", effort: "high", category: "Marketing" },
 
   // ── FINANCEIRO ──
-  { id: "f01", name: "Preco por consulta", description: "Valor em BRL por consulta, editavel", status: "done", priority: "essential", effort: "low", category: "Financeiro" },
-  { id: "f02", name: "Recibos", description: "Impressao PDF com dados paciente e procedimentos", status: "done", priority: "essential", effort: "medium", category: "Financeiro" },
-  { id: "f03", name: "Dashboard financeiro", description: "Receita total, ticket medio, por procedimento", status: "done", priority: "essential", effort: "medium", category: "Financeiro" },
-  { id: "f04", name: "Contas a receber", description: "Registro de pagamentos, parcelas, pendencias", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
-  { id: "f05", name: "Fluxo de caixa", description: "Visao diaria/mensal de entradas e saidas", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
-  { id: "f06", name: "NFS-e", description: "Geracao de nota fiscal de servico", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
+  { id: "f01", name: "Preço por consulta", description: "Valor em BRL por consulta, editável", status: "done", priority: "essential", effort: "low", category: "Financeiro" },
+  { id: "f02", name: "Recibos", description: "Impressão PDF com dados paciente e procedimentos", status: "done", priority: "essential", effort: "medium", category: "Financeiro" },
+  { id: "f03", name: "Dashboard financeiro", description: "Receita total, ticket médio, por procedimento", status: "done", priority: "essential", effort: "medium", category: "Financeiro" },
+  { id: "f04", name: "Contas a receber", description: "Registro de pagamentos, parcelas, pendências", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
+  { id: "f05", name: "Fluxo de caixa", description: "Visão diária/mensal de entradas e saídas", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
+  { id: "f06", name: "NFS-e", description: "Geração de nota fiscal de serviço", status: "done", priority: "essential", effort: "high", category: "Financeiro" },
   { id: "f07", name: "Gateway de pagamento", description: "Stripe, PagSeguro ou Mercado Pago", status: "planned", priority: "important", effort: "high", category: "Financeiro" },
-  { id: "f08", name: "Gestao de convenios e TISS", description: "Operadoras, Guia de Consulta, Guia SP/SADT, XML ANS 4.01.00, lote batch, dados de convenio no paciente, ciclo de vida de guias", status: "done", priority: "important", effort: "high", category: "Financeiro" },
-  { id: "f09", name: "Comissao / repasse profissionais", description: "Regras de comissao (% ou fixo) por profissional/procedimento, calculo automatico na conclusao de consulta, tab financeiro com relatorio e bulk payment", status: "done", priority: "important", effort: "medium", category: "Financeiro" },
+  { id: "f08", name: "Gestão de convênios e TISS", description: "Operadoras, Guia de Consulta, Guia SP/SADT, XML ANS 4.01.00, lote batch, dados de convênio no paciente, ciclo de vida de guias", status: "done", priority: "important", effort: "high", category: "Financeiro" },
+  { id: "f09", name: "Comissão / repasse profissionais", description: "Regras de comissão (% ou fixo) por profissional/procedimento, cálculo automático na conclusão de consulta, tab financeiro com relatório e bulk payment", status: "done", priority: "important", effort: "medium", category: "Financeiro" },
 
-  // ── RELATORIOS ──
-  { id: "r01", name: "Dashboard KPIs", description: "Pacientes, consultas, receita, retorno, no-show, NPS", status: "done", priority: "essential", effort: "medium", category: "Relatorios" },
-  { id: "r02", name: "Graficos mensais", description: "Receita, novos pacientes, status, horarios", status: "done", priority: "essential", effort: "medium", category: "Relatorios" },
-  { id: "r03", name: "Ranking de pacientes", description: "Top 10 por frequencia e por receita", status: "done", priority: "important", effort: "low", category: "Relatorios" },
-  { id: "r04", name: "Ranking procedimentos", description: "Top 10 mais realizados com contagem", status: "done", priority: "important", effort: "low", category: "Relatorios" },
-  { id: "r05", name: "Exportacao Excel", description: "Pacientes e relatorios multi-sheet .xlsx", status: "done", priority: "essential", effort: "medium", category: "Relatorios" },
-  { id: "r06", name: "Relatorios customizaveis", description: "Builder onde usuario escolhe metricas e filtros", status: "planned", priority: "differential", effort: "high", category: "Relatorios" },
+  // ── RELATÓRIOS ──
+  { id: "r01", name: "Dashboard KPIs", description: "Pacientes, consultas, receita, retorno, no-show, NPS", status: "done", priority: "essential", effort: "medium", category: "Relatórios" },
+  { id: "r02", name: "Gráficos mensais", description: "Receita, novos pacientes, status, horários", status: "done", priority: "essential", effort: "medium", category: "Relatórios" },
+  { id: "r03", name: "Ranking de pacientes", description: "Top 10 por frequência e por receita", status: "done", priority: "important", effort: "low", category: "Relatórios" },
+  { id: "r04", name: "Ranking procedimentos", description: "Top 10 mais realizados com contagem", status: "done", priority: "important", effort: "low", category: "Relatórios" },
+  { id: "r05", name: "Exportação Excel", description: "Pacientes e relatórios multi-sheet .xlsx", status: "done", priority: "essential", effort: "medium", category: "Relatórios" },
+  { id: "r06", name: "Relatórios customizáveis", description: "Builder onde usuário escolhe métricas e filtros", status: "planned", priority: "differential", effort: "high", category: "Relatórios" },
 
-  // ── CONFIGURACOES ──
-  { id: "s01", name: "Procedimentos com duracao", description: "Nome, categoria, preco, duracao em minutos", status: "done", priority: "essential", effort: "low", category: "Configuracoes" },
-  { id: "s02", name: "Campos personalizados", description: "5 tipos de campo, obrigatoriedade configuravel", status: "done", priority: "important", effort: "medium", category: "Configuracoes" },
-  { id: "s03", name: "Gestao de equipe", description: "Convites por email, roles owner/admin/member", status: "done", priority: "essential", effort: "medium", category: "Configuracoes" },
-  { id: "s04", name: "Config WhatsApp", description: "Wizard 5 etapas, Facebook Embedded Signup", status: "done", priority: "essential", effort: "high", category: "Configuracoes" },
-  { id: "s05", name: "Tema claro/escuro", description: "Toggle light/dark/system", status: "done", priority: "differential", effort: "low", category: "Configuracoes" },
+  // ── CONFIGURAÇÕES ──
+  { id: "s01", name: "Procedimentos com duração", description: "Nome, categoria, preço, duração em minutos", status: "done", priority: "essential", effort: "low", category: "Configurações" },
+  { id: "s02", name: "Campos personalizados", description: "5 tipos de campo, obrigatoriedade configurável", status: "done", priority: "important", effort: "medium", category: "Configurações" },
+  { id: "s03", name: "Gestão de equipe", description: "Convites por email, roles owner/admin/member", status: "done", priority: "essential", effort: "medium", category: "Configurações" },
+  { id: "s04", name: "Config WhatsApp", description: "Wizard 5 etapas, Facebook Embedded Signup", status: "done", priority: "essential", effort: "high", category: "Configurações" },
+  { id: "s05", name: "Tema claro/escuro", description: "Toggle light/dark/system", status: "done", priority: "differential", effort: "low", category: "Configurações" },
 
-  // ── SEGURANCA E LGPD ──
-  { id: "g01", name: "Consentimento LGPD", description: "Modal obrigatorio, ConsentRecord no banco", status: "done", priority: "essential", effort: "medium", category: "Seguranca e LGPD" },
-  { id: "g02", name: "Multi-tenant isolation", description: "Todas queries filtradas por workspaceId", status: "done", priority: "essential", effort: "high", category: "Seguranca e LGPD" },
-  { id: "g03", name: "Auditoria completa", description: "Log de todas operacoes com usuario e timestamp", status: "done", priority: "essential", effort: "medium", category: "Seguranca e LGPD" },
-  { id: "g04", name: "Soft delete (20 anos)", description: "Pacientes desativados, nunca deletados (CFM)", status: "done", priority: "essential", effort: "low", category: "Seguranca e LGPD" },
-  { id: "g05", name: "Criptografia tokens", description: "WhatsApp tokens AES, audio URLs assinadas", status: "done", priority: "essential", effort: "medium", category: "Seguranca e LGPD" },
-  { id: "g06", name: "RBAC granular", description: "5 roles (owner/admin/doctor/secretary/viewer), 20 permissoes, nav filtrada por role, settings guard, team invite com roles expandidos", status: "done", priority: "important", effort: "high", category: "Seguranca e LGPD" },
+  // ── SEGURANÇA E LGPD ──
+  { id: "g01", name: "Consentimento LGPD", description: "Modal obrigatório, ConsentRecord no banco", status: "done", priority: "essential", effort: "medium", category: "Segurança e LGPD" },
+  { id: "g02", name: "Multi-tenant isolation", description: "Todas queries filtradas por workspaceId", status: "done", priority: "essential", effort: "high", category: "Segurança e LGPD" },
+  { id: "g03", name: "Auditoria completa", description: "Log de todas operações com usuário e timestamp", status: "done", priority: "essential", effort: "medium", category: "Segurança e LGPD" },
+  { id: "g04", name: "Soft delete (20 anos)", description: "Pacientes desativados, nunca deletados (CFM)", status: "done", priority: "essential", effort: "low", category: "Segurança e LGPD" },
+  { id: "g05", name: "Criptografia tokens", description: "WhatsApp tokens AES, áudio URLs assinadas", status: "done", priority: "essential", effort: "medium", category: "Segurança e LGPD" },
+  { id: "g06", name: "RBAC granular", description: "5 roles (owner/admin/doctor/secretary/viewer), 20 permissões, nav filtrada por role, settings guard, team invite com roles expandidos", status: "done", priority: "important", effort: "high", category: "Segurança e LGPD" },
 
   // ── ADMIN ──
   { id: "x01", name: "Painel superadmin", description: "Dashboard executivo com KPIs cross-workspace", status: "done", priority: "essential", effort: "high", category: "Admin" },
-  { id: "x02", name: "Gestao de workspaces", description: "Lista, busca, drill-down, ativar/suspender", status: "done", priority: "essential", effort: "medium", category: "Admin" },
-  { id: "x03", name: "Lista de usuarios", description: "Todos usuarios com role, plano, status", status: "done", priority: "essential", effort: "low", category: "Admin" },
+  { id: "x02", name: "Gestão de workspaces", description: "Lista, busca, drill-down, ativar/suspender", status: "done", priority: "essential", effort: "medium", category: "Admin" },
+  { id: "x03", name: "Lista de usuários", description: "Todos usuários com role, plano, status", status: "done", priority: "essential", effort: "low", category: "Admin" },
   { id: "x04", name: "Billing/planos", description: "Stripe integration, upgrade/downgrade, MRR", status: "done", priority: "essential", effort: "high", category: "Admin" },
 
   // ── INFRAESTRUTURA ──
   { id: "i01", name: "Design responsivo", description: "Mobile-first, sidebar + bottom nav", status: "done", priority: "essential", effort: "medium", category: "Infraestrutura" },
-  { id: "i02", name: "PWA", description: "Manifest + service worker, instalavel", status: "done", priority: "important", effort: "low", category: "Infraestrutura" },
-  { id: "i03", name: "Busca global Cmd+K", description: "Command palette com pacientes, paginas, acoes", status: "done", priority: "important", effort: "medium", category: "Infraestrutura" },
+  { id: "i02", name: "PWA", description: "Manifest + service worker, instalável", status: "done", priority: "important", effort: "low", category: "Infraestrutura" },
+  { id: "i03", name: "Busca global Cmd+K", description: "Command palette com pacientes, páginas, ações", status: "done", priority: "important", effort: "medium", category: "Infraestrutura" },
   { id: "i04", name: "Onboarding com IA", description: "Wizard 4 etapas, workspace gerado por Claude", status: "done", priority: "essential", effort: "high", category: "Infraestrutura" },
-  { id: "i04b", name: "Tour guiado pos-onboarding", description: "10 steps com TourProvider, data-tour attributes, progress tracking, skip/restart, desktop/mobile adaptacao", status: "done", priority: "important", effort: "medium", category: "Infraestrutura" },
-  { id: "i05", name: "Multi-idioma", description: "Suporte a portugues, ingles, espanhol", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
-  { id: "i06", name: "Modo offline", description: "Funcionalidades basicas sem internet", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
-  { id: "i07", name: "White-label", description: "Logo, cores e dominio customizaveis por clinica", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
+  { id: "i04b", name: "Tour guiado pós-onboarding", description: "10 steps com TourProvider, data-tour attributes, progress tracking, skip/restart, desktop/mobile adaptação", status: "done", priority: "important", effort: "medium", category: "Infraestrutura" },
+  { id: "i05", name: "Multi-idioma", description: "Suporte a português, inglês, espanhol", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
+  { id: "i06", name: "Modo offline", description: "Funcionalidades básicas sem internet", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
+  { id: "i07", name: "White-label", description: "Logo, cores e domínio customizáveis por clínica", status: "planned", priority: "differential", effort: "high", category: "Infraestrutura" },
 
   // ── TELEMEDICINA ──
-  { id: "t01", name: "Teleconsulta por video", description: "Videochamada integrada (WebRTC/Daily.co)", status: "done", priority: "essential", effort: "high", category: "Telemedicina" },
-  { id: "t02", name: "Sala de espera virtual", description: "Paciente aguarda ate medico iniciar", status: "planned", priority: "important", effort: "medium", category: "Telemedicina" },
+  { id: "t01", name: "Teleconsulta por vídeo", description: "Videochamada integrada (WebRTC/Daily.co)", status: "done", priority: "essential", effort: "high", category: "Telemedicina" },
+  { id: "t02", name: "Sala de espera virtual", description: "Paciente aguarda até médico iniciar", status: "planned", priority: "important", effort: "medium", category: "Telemedicina" },
 
   // ── MARKETING ──
-  { id: "k01", name: "Origem do paciente", description: "Campo source: Instagram, Google, Indicacao, etc", status: "done", priority: "essential", effort: "low", category: "Marketing" },
+  { id: "k01", name: "Origem do paciente", description: "Campo source: Instagram, Google, Indicação, etc", status: "done", priority: "essential", effort: "low", category: "Marketing" },
   { id: "k02", name: "Funil de leads", description: "Pipeline: lead > contato > agendou > compareceu", status: "planned", priority: "important", effort: "high", category: "Marketing" },
-  { id: "k03", name: "Reativacao de inativos", description: "Identificar e contatar pacientes sem retorno", status: "planned", priority: "important", effort: "medium", category: "Marketing" },
+  { id: "k03", name: "Reativação de inativos", description: "Identificar e contatar pacientes sem retorno", status: "planned", priority: "important", effort: "medium", category: "Marketing" },
 
-  // ── INTEGRACOES ──
-  { id: "n01", name: "API REST documentada", description: "API publica com documentacao Swagger/OpenAPI", status: "planned", priority: "important", effort: "high", category: "Integracoes" },
-  { id: "n02", name: "Zapier / Make", description: "Conectar a centenas de apps via no-code", status: "planned", priority: "differential", effort: "medium", category: "Integracoes" },
+  // ── INTEGRAÇÕES ──
+  { id: "n01", name: "API REST documentada", description: "API pública com documentação Swagger/OpenAPI", status: "planned", priority: "important", effort: "high", category: "Integrações" },
+  { id: "n02", name: "Zapier / Make", description: "Conectar a centenas de apps via no-code", status: "planned", priority: "differential", effort: "medium", category: "Integrações" },
 
   // ── ESTOQUE ──
-  { id: "e01", name: "Controle de estoque", description: "Categorias, itens com SKU/unidade/custo/minimo, movimentacoes atomicas (entrada/saida/ajuste), alerta de estoque baixo, tab financeiro", status: "done", priority: "important", effort: "high", category: "Estoque" },
+  { id: "e01", name: "Controle de estoque", description: "Categorias, itens com SKU/unidade/custo/mínimo, movimentações atômicas (entrada/saída/ajuste), alerta de estoque baixo, tab financeiro", status: "done", priority: "important", effort: "high", category: "Estoque" },
 ]
 
 export default function RoadmapPage() {
@@ -214,7 +214,7 @@ export default function RoadmapPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Roadmap</h1>
-        <p className="text-sm text-slate-500 mt-1">Visao geral do desenvolvimento da plataforma</p>
+        <p className="text-sm text-slate-500 mt-1">Visão geral do desenvolvimento da plataforma</p>
       </div>
 
       {/* Progress bar */}
@@ -222,12 +222,12 @@ export default function RoadmapPage() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4">
             <span className="text-3xl font-extrabold text-slate-900 tabular-nums">{progressPct}%</span>
-            <span className="text-sm text-slate-500">concluido</span>
+            <span className="text-sm text-slate-500">concluído</span>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <span className="flex items-center gap-1.5">
               <span className="size-2.5 rounded-full bg-emerald-400" />
-              <span className="text-slate-600">{stats.done} concluidos</span>
+              <span className="text-slate-600">{stats.done} concluídos</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="size-2.5 rounded-full bg-amber-400" />
@@ -260,7 +260,7 @@ export default function RoadmapPage() {
           className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-slate-400"
         >
           <option value="all">Todos os status</option>
-          <option value="done">Concluidos</option>
+          <option value="done">Concluídos</option>
           <option value="in_progress">Em andamento</option>
           <option value="planned">Planejados</option>
         </select>
@@ -286,7 +286,7 @@ export default function RoadmapPage() {
               <th className="text-left px-4 py-3 font-semibold text-slate-600">Funcionalidade</th>
               <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden lg:table-cell">Categoria</th>
               <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Prioridade</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Esforco</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Esforço</th>
             </tr>
           </thead>
           <tbody>

@@ -30,7 +30,7 @@ export function ExportButton({
       if (data.patient.phone) rows.push(["Telefone", data.patient.phone])
       if (data.patient.email) rows.push(["Email", data.patient.email])
       if (data.patient.birthDate) rows.push(["Data Nascimento", new Date(data.patient.birthDate).toLocaleDateString("pt-BR")])
-      rows.push(["Ativo", data.patient.isActive ? "Sim" : "Nao"])
+      rows.push(["Ativo", data.patient.isActive ? "Sim" : "Não"])
       rows.push(["Cadastrado em", new Date(data.patient.createdAt).toLocaleDateString("pt-BR")])
       rows.push([])
 

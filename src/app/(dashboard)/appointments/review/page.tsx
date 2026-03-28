@@ -109,14 +109,15 @@ export default function AppointmentReviewPage() {
         cidCodes,
         patientInfoUpdates: applyPatientUpdates ? patientInfoUpdates : {},
       }
-      const parsedPrice = parseFloat(price)
+      const parsedPrice = parseFloat(price.replace(",", "."))
+      const priceCentavos = !isNaN(parsedPrice) && parsedPrice > 0 ? Math.round(parsedPrice * 100) : undefined
       const result = await confirmConsultation({
         recordingId,
         patientId,
         summary,
         audioPath,
         transcript,
-        price: !isNaN(parsedPrice) && parsedPrice > 0 ? parsedPrice : undefined,
+        price: priceCentavos,
         cidCodes: cidCodes.length > 0 ? cidCodes : undefined,
       })
       if ('error' in result) { setError(result.error!); setSaving(false); return }
@@ -179,12 +180,12 @@ export default function AppointmentReviewPage() {
   }
 
   const patientUpdateLabels: Record<string, string> = {
-    address: "Endereco",
+    address: "Endereço",
     phone: "Telefone",
-    insurance: "Convenio",
+    insurance: "Convênio",
     allergies: "Alergias",
-    medications: "Medicacoes de uso continuo",
-    chronicDiseases: "Doencas cronicas",
+    medications: "Medicações de uso contínuo",
+    chronicDiseases: "Doenças crônicas",
   }
 
   return (
@@ -271,7 +272,7 @@ export default function AppointmentReviewPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <ClipboardList className="size-4 text-vox-primary" />
-                  Diagnostico
+                  Diagnóstico
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -279,7 +280,7 @@ export default function AppointmentReviewPage() {
                   <Input
                     value={diagnosis}
                     onChange={(e) => setDiagnosis(e.target.value)}
-                    placeholder="Diagnostico ou hipotese diagnostica..."
+                    placeholder="Diagnóstico ou hipótese diagnóstica..."
                   />
                 ) : (
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
@@ -338,7 +339,7 @@ export default function AppointmentReviewPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <FileText className="size-4 text-vox-primary" />
-                Observacoes Clinicas
+                Observações Clínicas
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -347,11 +348,11 @@ export default function AppointmentReviewPage() {
                   value={observations}
                   onChange={(e) => setObservations(e.target.value)}
                   rows={4}
-                  placeholder="Observacoes da consulta..."
+                  placeholder="Observações da consulta..."
                 />
               ) : (
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {observations || <span className="text-muted-foreground">Sem observacoes</span>}
+                  {observations || <span className="text-muted-foreground">Sem observações</span>}
                 </p>
               )}
             </CardContent>
@@ -376,7 +377,7 @@ export default function AppointmentReviewPage() {
                         <tr className="border-b text-left">
                           <th className="pb-2 pr-4 font-medium text-muted-foreground">Medicamento</th>
                           <th className="pb-2 pr-4 font-medium text-muted-foreground">Dosagem</th>
-                          <th className="pb-2 pr-4 font-medium text-muted-foreground">Frequencia</th>
+                          <th className="pb-2 pr-4 font-medium text-muted-foreground">Frequência</th>
                           <th className="pb-2 font-medium text-muted-foreground">Obs.</th>
                           {editing && <th className="pb-2 w-8" />}
                         </tr>
@@ -414,7 +415,7 @@ export default function AppointmentReviewPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <MessageSquare className="size-4 text-vox-primary" />
-                Recomendacoes
+                Recomendações
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -423,11 +424,11 @@ export default function AppointmentReviewPage() {
                   value={recommendations}
                   onChange={(e) => setRecommendations(e.target.value)}
                   rows={3}
-                  placeholder="Recomendacoes ao paciente..."
+                  placeholder="Recomendações ao paciente..."
                 />
               ) : (
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {recommendations || <span className="text-muted-foreground">Sem recomendacoes</span>}
+                  {recommendations || <span className="text-muted-foreground">Sem recomendações</span>}
                 </p>
               )}
             </CardContent>
@@ -473,7 +474,7 @@ export default function AppointmentReviewPage() {
                   className={applyPatientUpdates ? "bg-vox-primary hover:bg-vox-primary/90 text-white" : ""}
                   onClick={() => setApplyPatientUpdates(!applyPatientUpdates)}
                 >
-                  {applyPatientUpdates ? "Atualizar Cadastro" : "Nao Atualizar"}
+                  {applyPatientUpdates ? "Atualizar Cadastro" : "Não Atualizar"}
                 </Button>
               </CardContent>
             </Card>
@@ -512,7 +513,7 @@ export default function AppointmentReviewPage() {
                 />
               ) : (
                 <p className="text-sm">
-                  {nextAppointment || <span className="text-muted-foreground">Nao especificada</span>}
+                  {nextAppointment || <span className="text-muted-foreground">Não especificada</span>}
                 </p>
               )}
             </CardContent>

@@ -12,42 +12,42 @@ const faqs = [
   {
     question: "O VoxClinic funciona com minha especialidade?",
     answer:
-      "Sim! O VoxClinic se adapta automaticamente a sua profissao durante o onboarding. Ja atendemos dentistas, medicos, nutricionistas, esteticistas e advogados, com vocabulario e campos especificos para cada area.",
+      "Sim! O VoxClinic se adapta automaticamente a sua profissão durante o onboarding. Já atendemos dentistas, médicos, nutricionistas, esteticistas e advogados, com vocabulário e campos específicos para cada área.",
   },
   {
     question: "Preciso de internet para gravar?",
     answer:
-      "Sim, a gravacao e o processamento ocorrem online para garantir a melhor qualidade de transcricao. O audio e enviado diretamente para processamento, sem armazenamento local.",
+      "Sim, a gravação e o processamento ocorrem online para garantir a melhor qualidade de transcrição. O áudio é enviado diretamente para processamento, sem armazenamento local.",
   },
   {
     question: "Meus dados ficam seguros?",
     answer:
-      "Absolutamente. Todos os dados sao armazenados em infraestrutura brasileira (sa-east-1), com consentimento LGPD obrigatorio, auditoria completa e URLs de audio com expiracao de 5 minutos.",
+      "Absolutamente. Todos os dados são armazenados em infraestrutura brasileira (sa-east-1), com consentimento LGPD obrigatório, auditoria completa e URLs de áudio com expiração de 5 minutos.",
   },
   {
     question: "Posso experimentar antes de pagar?",
     answer:
-      "Sim! O plano Gratis permite ate 50 consultas por mes sem necessidade de cartao de credito. Voce pode usar o tempo que precisar antes de decidir fazer upgrade.",
+      "Sim! O plano Grátis permite até 50 consultas por mês sem necessidade de cartão de crédito. Você pode usar o tempo que precisar antes de decidir fazer upgrade.",
   },
   {
-    question: "Como funciona a transcricao por voz?",
+    question: "Como funciona a transcrição por voz?",
     answer:
-      "Utilizamos a API Whisper da OpenAI com vocabulario medico em portugues. O audio e transcrito automaticamente, e a IA extrai dados estruturados como nome do paciente, procedimentos e observacoes.",
+      "Utilizamos a API Whisper da OpenAI com vocabulário médico em português. O áudio é transcrito automaticamente, e a IA extrai dados estruturados como nome do paciente, procedimentos e observações.",
   },
   {
     question: "Posso importar meus pacientes existentes?",
     answer:
-      "Sim! O VoxClinic suporta importacao via CSV com mapeamento automatico de colunas. Voce pode migrar sua base de pacientes em poucos minutos.",
+      "Sim! O VoxClinic suporta importação via CSV com mapeamento automático de colunas. Você pode migrar sua base de pacientes em poucos minutos.",
   },
   {
-    question: "O VoxClinic substitui meu prontuario eletronico?",
+    question: "O VoxClinic substitui meu prontuário eletrônico?",
     answer:
-      "O VoxClinic e um CRM inteligente com funcionalidades de prontuario. Para clinicas que ja possuem um sistema de prontuario eletronico, ele funciona como complemento focado em produtividade.",
+      "O VoxClinic é um CRM inteligente com funcionalidades de prontuário. Para clínicas que já possuem um sistema de prontuário eletrônico, ele funciona como complemento focado em produtividade.",
   },
   {
     question: "Como funciona o suporte?",
     answer:
-      "Oferecemos suporte via email para todos os planos. Planos Profissional e Clinica contam com suporte prioritario e tempo de resposta reduzido.",
+      "Oferecemos suporte via email para todos os planos. Planos Profissional e Clínica contam com suporte prioritário e tempo de resposta reduzido.",
   },
 ]
 

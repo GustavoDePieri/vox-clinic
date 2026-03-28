@@ -230,7 +230,7 @@ export const scheduleAppointment = safeAction(async (data: {
   const agenda = await db.agenda.findFirst({
     where: { id: data.agendaId, workspaceId },
   })
-  if (!agenda) throw new ActionError("Agenda nao encontrada")
+  if (!agenda) throw new ActionError("Agenda não encontrada")
 
   // Verify patient belongs to workspace
   const patient = await db.patient.findFirst({
@@ -273,7 +273,7 @@ export const scheduleAppointment = safeAction(async (data: {
       if (conflicts.length > 0) {
         const names = conflicts.map((c) => c.patient.name).join(", ")
         throw new ActionError(
-          `CONFLICT:Ja existe consulta proxima a este horario (${names}). Deseja agendar mesmo assim?`
+          `CONFLICT:Já existe consulta próxima a este horário (${names}). Deseja agendar mesmo assim?`
         )
       }
     }
@@ -337,7 +337,7 @@ export const updateAppointmentStatus = safeAction(async (appointmentId: string, 
 
   const validStatuses = ["scheduled", "completed", "cancelled", "no_show"]
   if (!validStatuses.includes(status)) {
-    throw new ActionError("Status invalido")
+    throw new ActionError("Status inválido")
   }
 
   const existing = await db.appointment.findFirst({
@@ -442,7 +442,7 @@ export const rescheduleAppointment = safeAction(async (appointmentId: string, ne
 
       if (conflicts.length > 0) {
         const names = conflicts.map((c) => c.patient.name).join(", ")
-        throw new ActionError(`CONFLICT:Ja existe consulta proxima a este horario (${names}). Deseja reagendar mesmo assim?`)
+        throw new ActionError(`CONFLICT:Já existe consulta próxima a este horário (${names}). Deseja reagendar mesmo assim?`)
       }
     }
 
@@ -504,7 +504,7 @@ export const scheduleRecurringAppointments = safeAction(async (data: {
   const workspaceId = await getWorkspaceId()
 
   if (data.occurrences < 2 || data.occurrences > 52) {
-    throw new ActionError("Numero de ocorrencias deve ser entre 2 e 52")
+    throw new ActionError("Número de ocorrências deve ser entre 2 e 52")
   }
 
   // Verify patient belongs to workspace
@@ -542,7 +542,7 @@ export const scheduleRecurringAppointments = safeAction(async (data: {
         },
       })
       if (conflicts.length > 0) {
-        throw new ActionError(`CONFLICT:Conflito no horario ${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`)
+        throw new ActionError(`CONFLICT:Conflito no horário ${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`)
       }
 
       results.push(await tx.appointment.create({

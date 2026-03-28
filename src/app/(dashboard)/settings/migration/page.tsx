@@ -84,10 +84,10 @@ const FIELD_GROUPS: FieldGroup[] = [
     ],
   },
   {
-    label: "Endereco",
+    label: "Endereço",
     fields: [
       { value: "address.street", label: "Rua" },
-      { value: "address.number", label: "Numero" },
+      { value: "address.number", label: "Número" },
       { value: "address.complement", label: "Complemento" },
       { value: "address.neighborhood", label: "Bairro" },
       { value: "address.city", label: "Cidade" },
@@ -105,20 +105,20 @@ const FIELD_GROUPS: FieldGroup[] = [
       { value: "appt.date", label: "Data da Consulta" },
       { value: "appt.endDate", label: "Data/Hora Fim" },
       { value: "appt.procedures", label: "Procedimento" },
-      { value: "appt.notes", label: "Observacoes da Consulta" },
+      { value: "appt.notes", label: "Observações da Consulta" },
       { value: "appt.status", label: "Status da Consulta" },
       { value: "appt.price", label: "Valor" },
-      { value: "appt.cancelled", label: "Cancelado (Sim/Nao)" },
+      { value: "appt.cancelled", label: "Cancelado (Sim/Não)" },
       { value: "appt.cancelReason", label: "Motivo Cancelamento" },
       { value: "appt.provider", label: "Profissional" },
-      { value: "appt.duration", label: "Duracao (minutos)" },
+      { value: "appt.duration", label: "Duração (minutos)" },
     ],
   },
   {
     label: "Outros",
     fields: [
-      { value: "insurance", label: "Convenio" },
-      { value: "guardian", label: "Responsavel" },
+      { value: "insurance", label: "Convênio" },
+      { value: "guardian", label: "Responsável" },
       { value: "source", label: "Origem" },
       { value: "tags", label: "Tags" },
     ],
@@ -590,7 +590,7 @@ export default function MigrationPage() {
     <div className="space-y-6 pb-20">
       <Breadcrumb
         items={[
-          { label: "Configuracoes", href: "/settings" },
+          { label: "Configurações", href: "/settings" },
           { label: "Migrar Dados" },
         ]}
       />
@@ -672,9 +672,9 @@ export default function MigrationPage() {
                 <Sparkles className="size-8 text-muted-foreground group-hover:text-vox-primary transition-colors" />
               </div>
               <div className="text-center">
-                <h3 className="font-semibold">Comecar do zero</h3>
+                <h3 className="font-semibold">Começar do zero</h3>
                 <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                  Para clinicas novas sem dados para migrar
+                  Para clínicas novas sem dados para migrar
                 </p>
               </div>
             </Link>
@@ -709,7 +709,7 @@ export default function MigrationPage() {
                 <div className="flex gap-3 items-start">
                   <div className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-vox-primary/10 text-vox-primary text-xs font-bold">2</div>
                   <p className="text-sm text-muted-foreground">
-                    Exporte cada tipo de dado separadamente (pacientes, agendamentos, etc.) — <strong>voce pode importar cada arquivo individualmente</strong>
+                    Exporte cada tipo de dado separadamente (pacientes, agendamentos, etc.) — <strong>você pode importar cada arquivo individualmente</strong>
                   </p>
                 </div>
                 <div className="flex gap-3 items-start">
@@ -721,10 +721,10 @@ export default function MigrationPage() {
                 <div className="rounded-xl bg-muted/30 p-3 space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">Guia por sistema:</p>
                   <ul className="text-xs text-muted-foreground space-y-1.5">
-                    <li><strong>Clinicorp:</strong> Exporte cada secao (Pacientes - Cadastro, Agendamentos) como arquivo separado e importe um por vez</li>
-                    <li><strong>iClinic:</strong> Va em Configuracoes &gt; Exportar Dados, selecione Pacientes ou Consultas</li>
-                    <li><strong>Feegow:</strong> Va em Relatorios &gt; Exportar, escolha o tipo de dado</li>
-                    <li><strong>Excel/Planilha:</strong> Qualquer planilha com cabecalho na primeira linha funciona</li>
+                    <li><strong>Clinicorp:</strong> Exporte cada seção (Pacientes - Cadastro, Agendamentos) como arquivo separado e importe um por vez</li>
+                    <li><strong>iClinic:</strong> Vá em Configurações &gt; Exportar Dados, selecione Pacientes ou Consultas</li>
+                    <li><strong>Feegow:</strong> Vá em Relatórios &gt; Exportar, escolha o tipo de dado</li>
+                    <li><strong>Excel/Planilha:</strong> Qualquer planilha com cabeçalho na primeira linha funciona</li>
                   </ul>
                 </div>
               </CardContent>
@@ -760,8 +760,8 @@ export default function MigrationPage() {
           </div>
 
           <TutorialTip>
-            Formatos aceitos: CSV, Excel (.xlsx). O arquivo deve ter uma linha de cabecalho
-            com os nomes das colunas. Tamanho maximo: 10MB.
+            Formatos aceitos: CSV, Excel (.xlsx). O arquivo deve ter uma linha de cabeçalho
+            com os nomes das colunas. Tamanho máximo: 10MB.
           </TutorialTip>
 
           {/* Drop Zone */}
@@ -832,7 +832,7 @@ export default function MigrationPage() {
                     Arraste o arquivo aqui ou clique para selecionar
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    CSV, Excel (.xlsx, .xls) ou TXT — ate 10MB
+                    CSV, Excel (.xlsx, .xls) ou TXT — até 10MB
                   </p>
                 </div>
               </>
@@ -934,7 +934,7 @@ export default function MigrationPage() {
 
           <TutorialTip>
             Campos com <CheckCircle2 className="inline size-3.5 text-vox-success" /> verde foram
-            detectados automaticamente. Ajuste os demais conforme necessario. Apenas o <strong>Nome</strong> e obrigatorio.
+            detectados automaticamente. Ajuste os demais conforme necessário. Apenas o <strong>Nome</strong> é obrigatório.
           </TutorialTip>
 
           {/* Auto-map status */}
@@ -1032,7 +1032,7 @@ export default function MigrationPage() {
                                   value={field.value}
                                   disabled={alreadyUsed}
                                 >
-                                  {field.label}{alreadyUsed ? " (ja mapeado)" : ""}
+                                  {field.label}{alreadyUsed ? " (já mapeado)" : ""}
                                 </option>
                               )
                             })}
@@ -1344,12 +1344,12 @@ export default function MigrationPage() {
               Resolver Duplicatas
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Encontramos pacientes que ja existem no sistema
+              Encontramos pacientes que já existem no sistema
             </p>
           </div>
 
           <TutorialTip>
-            Quando um CPF ja existe no sistema, voce pode escolher o que fazer com cada registro.
+            Quando um CPF já existe no sistema, você pode escolher o que fazer com cada registro.
             <strong> Manter existente</strong> ignora o novo dado,
             <strong> Sobrescrever</strong> substitui os campos, e
             <strong> Mesclar</strong> preenche apenas campos vazios.
@@ -1670,7 +1670,7 @@ export default function MigrationPage() {
                         Importando pacientes...
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Isso pode levar alguns segundos. Nao feche esta pagina.
+                        Isso pode levar alguns segundos. Não feche esta página.
                       </p>
                     </div>
                   </CardContent>
@@ -1691,7 +1691,7 @@ export default function MigrationPage() {
                     <PartyPopper className="size-12 text-vox-success" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">Importacao Concluida!</h2>
+                    <h2 className="text-2xl font-bold">Importação Concluída!</h2>
                     <p className="mt-2 text-muted-foreground">
                       Seus dados foram importados com sucesso para o VoxClinic
                     </p>
@@ -1721,7 +1721,7 @@ export default function MigrationPage() {
                       <p className="text-xl font-bold text-vox-primary">
                         {(migrationResult.duration / 1000).toFixed(1)}s
                       </p>
-                      <p className="text-[10px] text-vox-primary/80 font-medium">Duracao</p>
+                      <p className="text-[10px] text-vox-primary/80 font-medium">Duração</p>
                     </div>
                   </div>
 
@@ -1764,7 +1764,7 @@ export default function MigrationPage() {
                       onClick={resetWizard}
                     >
                       <RefreshCw className="mr-2 size-4" />
-                      Fazer outra importacao
+                      Fazer outra importação
                     </Button>
                   </div>
                 </CardContent>

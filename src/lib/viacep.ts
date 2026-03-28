@@ -16,7 +16,7 @@ interface ViaCepResult {
 
 /**
  * Busca endereco pelo CEP via API publica do ViaCEP.
- * Retorna null se CEP invalido ou nao encontrado.
+ * Retorna null se CEP inválido ou nao encontrado.
  */
 export async function fetchAddressByCep(cep: string): Promise<ViaCepResult | null> {
   try {

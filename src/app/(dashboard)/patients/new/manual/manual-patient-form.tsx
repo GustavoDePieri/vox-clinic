@@ -113,7 +113,7 @@ export function ManualPatientForm({
     setCPF(formatted)
     const cleaned = value.replace(/\D/g, "")
     if (cleaned.length === 11) {
-      setCPFError(validarCPF(cleaned) ? "" : "CPF invalido")
+      setCPFError(validarCPF(cleaned) ? "" : "CPF inválido")
     } else {
       setCPFError("")
     }
@@ -170,6 +170,11 @@ export function ManualPatientForm({
     const [dd, mm, yyyy] = parts
     return `${yyyy}-${mm}-${dd}`
   })()
+
+  const BUILTIN_NAMES = ["nome", "cpf", "telefone", "email", "nascimento", "sexo", "rg", "convenio", "convênio", "responsavel", "responsável", "origem"]
+  const filteredCustomFields = customFields.filter(
+    (f) => !BUILTIN_NAMES.some((n) => f.name.toLowerCase().includes(n))
+  )
 
   const handleCustomFieldChange = (fieldId: string, value: unknown) => {
     setCustomData((prev) => ({ ...prev, [fieldId]: value }))
@@ -258,9 +263,9 @@ export function ManualPatientForm({
               <select
                 id="gender"
                 name="gender"
-                className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="h-10 w-full rounded-xl border border-input bg-background px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <option value="">Nao informado</option>
+                <option value="">Não informado</option>
                 <option value="masculino">Masculino</option>
                 <option value="feminino">Feminino</option>
                 <option value="outro">Outro</option>
@@ -273,13 +278,13 @@ export function ManualPatientForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="insurance">Convenio</Label>
+              <Label htmlFor="insurance">Convênio</Label>
               <Input id="insurance" name="insurance" placeholder="Ex: Unimed, Amil..." />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="guardian">Responsavel</Label>
-              <Input id="guardian" name="guardian" placeholder="Nome do responsavel (menores)" />
+              <Label htmlFor="guardian">Responsável</Label>
+              <Input id="guardian" name="guardian" placeholder="Nome do responsável (menores)" />
             </div>
 
             <div className="space-y-1.5">
@@ -287,14 +292,14 @@ export function ManualPatientForm({
               <select
                 id="source"
                 name="source"
-                className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="h-10 w-full rounded-xl border border-input bg-background px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <option value="">Nao informado</option>
+                <option value="">Não informado</option>
                 <option value="instagram">Instagram</option>
                 <option value="google">Google</option>
                 <option value="facebook">Facebook</option>
-                <option value="indicacao">Indicacao</option>
-                <option value="convenio">Convenio</option>
+                <option value="indicacao">Indicação</option>
+                <option value="convenio">Convênio</option>
                 <option value="site">Site</option>
                 <option value="outro">Outro</option>
               </select>
@@ -305,7 +310,7 @@ export function ManualPatientForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Endereco</CardTitle>
+          <CardTitle>Endereço</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -321,7 +326,7 @@ export function ManualPatientForm({
               <Input id="street" value={address.street} onChange={(e) => setAddress(a => ({ ...a, street: e.target.value }))} placeholder="Rua, Av, Travessa..." />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="number">Numero</Label>
+              <Label htmlFor="number">Número</Label>
               <Input id="number" value={address.number} onChange={(e) => setAddress(a => ({ ...a, number: e.target.value }))} placeholder="123" />
             </div>
             <div className="space-y-1.5">
@@ -342,7 +347,7 @@ export function ManualPatientForm({
                 id="state"
                 value={address.state}
                 onChange={(e) => setAddress(a => ({ ...a, state: e.target.value }))}
-                className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="h-10 w-full rounded-xl border border-input bg-background px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">Selecione...</option>
                 {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map(uf => (
@@ -355,14 +360,14 @@ export function ManualPatientForm({
         </CardContent>
       </Card>
 
-      {customFields.length > 0 && (
+      {filteredCustomFields.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Campos Adicionais</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              {customFields.map((field) => (
+              {filteredCustomFields.map((field) => (
                 <div key={field.id} className="space-y-1.5">
                   <Label htmlFor={`custom-${field.id}`}>
                     {field.name}
@@ -409,14 +414,14 @@ export function ManualPatientForm({
                         }
                       />
                       <span className="text-sm text-muted-foreground">
-                        {customData[field.id] ? "Sim" : "Nao"}
+                        {customData[field.id] ? "Sim" : "Não"}
                       </span>
                     </div>
                   )}
                   {field.type === "select" && field.options && (
                     <select
                       id={`custom-${field.id}`}
-                      className="h-10 w-full rounded-xl border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      className="h-10 w-full rounded-xl border border-input bg-background px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       value={(customData[field.id] as string) ?? ""}
                       onChange={(e) =>
                         handleCustomFieldChange(field.id, e.target.value)

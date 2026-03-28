@@ -53,7 +53,7 @@ export default function NpsSurveyPage() {
         {status === "already" && (
           <div className="text-center py-8">
             <div className="text-3xl mb-2">✅</div>
-            <p className="text-sm text-gray-600">Obrigado! Voce ja respondeu esta pesquisa.</p>
+            <p className="text-sm text-gray-600">Obrigado! Você já respondeu esta pesquisa.</p>
           </div>
         )}
 

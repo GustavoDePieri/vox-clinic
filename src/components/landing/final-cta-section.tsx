@@ -29,7 +29,7 @@ export function FinalCTASection() {
 
         <BlurFade inView delay={0.1}>
           <p className="text-lg text-white/70 mb-8">
-            Crie sua conta em 30 segundos. Sem cartao de credito.
+            Crie sua conta em 30 segundos. Sem cartão de crédito.
           </p>
         </BlurFade>
 
@@ -38,10 +38,10 @@ export function FinalCTASection() {
             href="/sign-up"
             className="inline-flex items-center justify-center h-12 px-10 text-base font-medium rounded-xl bg-vox-primary text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
           >
-            Comecar Gratis &rarr;
+            Começar Grátis &rarr;
           </Link>
           <p className="text-sm text-white/50 mt-4">
-            Plano gratuito disponivel. Cancele quando quiser.
+            Plano gratuito disponível. Cancele quando quiser.
           </p>
         </BlurFade>
       </div>

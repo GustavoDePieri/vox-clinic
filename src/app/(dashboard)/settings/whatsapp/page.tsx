@@ -293,7 +293,7 @@ function StepVerify({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Numero de Telefone</Label>
+            <Label className="text-xs">Número de Telefone</Label>
             <Input
               value={data.displayPhoneNumber || ""}
               onChange={(e) => onUpdate({ displayPhoneNumber: e.target.value })}
@@ -307,7 +307,7 @@ function StepVerify({
             <Input
               value={data.businessName || ""}
               onChange={(e) => onUpdate({ businessName: e.target.value })}
-              placeholder="Ex: Clinica Exemplo"
+              placeholder="Ex: Clínica Exemplo"
               className="rounded-xl"
             />
           </div>
@@ -401,7 +401,7 @@ function StepTemplates({
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Voce pode criar templates a qualquer momento em Configuracoes &rarr;
+          Você pode criar templates a qualquer momento em Configurações &rarr;
           WhatsApp &rarr; Templates, ou diretamente na{" "}
           <a
             href="https://business.facebook.com"

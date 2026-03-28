@@ -293,7 +293,7 @@ export const createPatient = safeAction(async (formData: FormData) => {
   const customDataRaw = formData.get("customData") as string | null
   const addressRaw = formData.get("address") as string | null
 
-  if (!name?.trim()) throw new ActionError("Nome e obrigatorio")
+  if (!name?.trim()) throw new ActionError("Nome é obrigatório")
 
   let customData = {}
   if (customDataRaw) {
@@ -311,21 +311,21 @@ export const createPatient = safeAction(async (formData: FormData) => {
     if (docDigits.length === 11) {
       // CPF digit validation
       if (/^(\d)\1{10}$/.test(docDigits)) {
-        throw new ActionError("CPF invalido.")
+        throw new ActionError("CPF inválido.")
       }
       let sum = 0
       for (let i = 0; i < 9; i++) sum += parseInt(docDigits[i]) * (10 - i)
       let remainder = (sum * 10) % 11
       if (remainder === 10) remainder = 0
       if (remainder !== parseInt(docDigits[9])) {
-        throw new ActionError("CPF invalido (digito verificador incorreto).")
+        throw new ActionError("CPF inválido (dígito verificador incorreto).")
       }
       sum = 0
       for (let i = 0; i < 10; i++) sum += parseInt(docDigits[i]) * (11 - i)
       remainder = (sum * 10) % 11
       if (remainder === 10) remainder = 0
       if (remainder !== parseInt(docDigits[10])) {
-        throw new ActionError("CPF invalido (digito verificador incorreto).")
+        throw new ActionError("CPF inválido (dígito verificador incorreto).")
       }
     }
   }
@@ -410,7 +410,7 @@ export async function getAudioPlaybackUrl(audioPath: string) {
       OR: [{ workspaceId }, { patient: { workspaceId } }],
     },
   })
-  if (!recording) throw new ActionError("Audio nao encontrado")
+  if (!recording) throw new ActionError("Áudio não encontrado")
 
   // Fire-and-forget audit log — non-blocking (CFM 1.821/2007 read access tracking)
   logAudit({ workspaceId, userId: clerkId, action: "recording.accessed", entityType: "Recording", entityId: recording.id }).catch(() => {})
@@ -421,7 +421,7 @@ export async function getAudioPlaybackUrl(audioPath: string) {
 export const mergePatients = safeAction(async (keepId: string, mergeId: string) => {
   const { workspaceId, clerkId } = await getWorkspaceContext()
 
-  if (keepId === mergeId) throw new ActionError("Nao pode mesclar paciente consigo mesmo")
+  if (keepId === mergeId) throw new ActionError("Não pode mesclar paciente consigo mesmo")
 
   const mergeResult = await db.$transaction(async (tx) => {
     // Lock both patients with FOR UPDATE in consistent order (by ID) to prevent deadlocks
@@ -438,7 +438,7 @@ export const mergePatients = safeAction(async (keepId: string, mergeId: string) 
     const mergeRows = keepId < mergeId ? secondRows : firstRows
     const keep = keepRows[0]
     const mergePatient = mergeRows[0]
-    if (!keep || !mergePatient) throw new ActionError("Pacientes nao encontrados")
+    if (!keep || !mergePatient) throw new ActionError("Pacientes não encontrados")
     // Move appointments from merge → keep
     await tx.appointment.updateMany({
       where: { patientId: mergeId, workspaceId },

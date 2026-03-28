@@ -7,17 +7,17 @@ import { ShineBorder } from "@/components/ui/shine-border"
 
 const plans = [
   {
-    name: "Gratis",
+    name: "Grátis",
     price: "R$ 0",
     badge: null,
     features: [
-      "Ate 50 consultas/mes",
+      "Até 50 consultas/mês",
       "1 profissional",
-      "Transcricao por voz",
-      "Prontuario basico",
-      "Agenda com calendario",
+      "Transcrição por voz",
+      "Prontuário básico",
+      "Agenda com calendário",
     ],
-    cta: "Comecar Gratis",
+    cta: "Começar Grátis",
     ctaVariant: "outline" as const,
     highlighted: false,
   },
@@ -26,28 +26,28 @@ const plans = [
     price: "R$ 97",
     badge: "Mais popular",
     features: [
-      "Tudo do plano Gratis",
+      "Tudo do plano Grátis",
       "Consultas ilimitadas",
-      "IA avancada (Claude)",
+      "IA avançada (Claude)",
       "WhatsApp Business",
-      "Relatorios e analytics",
-      "Suporte prioritario",
+      "Relatórios e analytics",
+      "Suporte prioritário",
     ],
     cta: "Assinar Profissional",
     ctaVariant: "filled" as const,
     highlighted: true,
   },
   {
-    name: "Clinica",
+    name: "Clínica",
     price: "R$ 197",
     badge: null,
     features: [
       "Tudo do Profissional",
       "Equipe ilimitada",
       "Multi-agenda",
-      "Importacao CSV",
+      "Importação CSV",
       "Onboarding dedicado",
-      "API de integracao",
+      "API de integração",
     ],
     cta: "Falar com vendas",
     ctaVariant: "outline" as const,
@@ -64,7 +64,7 @@ export function PricingSection() {
             Planos simples e transparentes
           </h2>
           <p className="text-lg text-muted-foreground">
-            Comece gratis, escale quando precisar
+            Comece grátis, escale quando precisar
           </p>
         </div>
       </BlurFade>
@@ -95,7 +95,7 @@ export function PricingSection() {
 
               <div className="mb-6">
                 <span className="text-4xl font-bold">{plan.price}</span>
-                <span className="text-muted-foreground">/mes</span>
+                <span className="text-muted-foreground">/mês</span>
               </div>
 
               <ul className="space-y-3 mb-8 flex-1">

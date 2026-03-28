@@ -34,7 +34,7 @@ export default function AcceptInvitePage() {
           <div>
             <h1 className="text-lg font-semibold text-gray-900">Convite para Equipe</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Voce foi convidado para participar de um workspace no VoxClinic.
+              Você foi convidado para participar de um workspace no VoxClinic.
             </p>
           </div>
         </div>

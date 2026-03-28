@@ -166,7 +166,7 @@ function ScheduleFormInner({
           <Input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="rounded-xl text-sm" />
         </div>
         <div className="space-y-2">
-          <Label className="text-xs">Horario</Label>
+          <Label className="text-xs">Horário</Label>
           <div className="grid grid-cols-5 gap-1 max-h-[120px] overflow-y-auto rounded-xl border border-input p-2">
             {Array.from({ length: 27 }, (_, i) => {
               const h = Math.floor(i / 2) + 7

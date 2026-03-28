@@ -48,7 +48,7 @@ function BlockTimeFormInner({ agendas, defaultAgendaId, onSave, onCancel }: {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <Ban className="size-4 text-muted-foreground" />
-          Bloquear Horario
+          Bloquear Horário
         </h2>
         <button onClick={onCancel} className="p-1 rounded-lg hover:bg-muted/60 text-muted-foreground">
           <X className="size-4" />
@@ -85,7 +85,7 @@ function BlockTimeFormInner({ agendas, defaultAgendaId, onSave, onCancel }: {
         </div>
         {!allDay && (
           <div className="space-y-2">
-            <Label className="text-xs">Horario inicio</Label>
+            <Label className="text-xs">Horário início</Label>
             <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="rounded-xl text-sm" />
           </div>
         )}
@@ -95,7 +95,7 @@ function BlockTimeFormInner({ agendas, defaultAgendaId, onSave, onCancel }: {
         </div>
         {!allDay && (
           <div className="space-y-2">
-            <Label className="text-xs">Horario fim</Label>
+            <Label className="text-xs">Horário fim</Label>
             <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="rounded-xl text-sm" />
           </div>
         )}

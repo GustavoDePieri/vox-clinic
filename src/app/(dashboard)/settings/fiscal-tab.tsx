@@ -269,7 +269,7 @@ export function FiscalTab() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-xs">Codigo de Servico (LC 116)</Label>
+              <Label className="text-xs">Código de Serviço (LC 116)</Label>
               <Input
                 value={form.codigoServico}
                 onChange={(e) => updateField("codigoServico", e.target.value)}
@@ -296,7 +296,7 @@ export function FiscalTab() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs">Descricao Padrao do Servico</Label>
+            <Label className="text-xs">Descrição Padrão do Serviço</Label>
             <Input
               value={form.descricaoServico}
               onChange={(e) => updateField("descricaoServico", e.target.value)}
@@ -309,7 +309,7 @@ export function FiscalTab() {
       {/* Endereco */}
       <Card className="rounded-2xl border-border/40">
         <CardHeader className="pb-4">
-          <CardTitle className="text-sm font-medium">Endereco do Prestador</CardTitle>
+          <CardTitle className="text-sm font-medium">Endereço do Prestador</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">

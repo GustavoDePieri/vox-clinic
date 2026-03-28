@@ -91,10 +91,10 @@ export const inviteTeamMember = safeAction(async (email: string, role: string = 
   await requireOwnerOrAdmin(workspaceId, userId)
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email.trim())) throw new ActionError("Formato de email invalido.")
+  if (!emailRegex.test(email.trim())) throw new ActionError("Formato de email inválido.")
 
   const validRoles: string[] = INVITABLE_ROLES
-  if (!validRoles.includes(role)) throw new ActionError("Role invalido. Roles validos: " + validRoles.join(", "))
+  if (!validRoles.includes(role)) throw new ActionError("Role inválido. Roles válidos: " + validRoles.join(", "))
 
   // Plan enforcement: check team member limit
   const workspace = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
@@ -183,7 +183,7 @@ export const updateMemberRole = safeAction(async (memberId: string, role: string
   await requireOwnerOrAdmin(workspaceId, userId)
 
   const validRoles: string[] = INVITABLE_ROLES
-  if (!validRoles.includes(role)) throw new ActionError("Role invalido. Roles validos: " + validRoles.join(", "))
+  if (!validRoles.includes(role)) throw new ActionError("Role inválido. Roles válidos: " + validRoles.join(", "))
 
   const member = await db.workspaceMember.findFirst({
     where: { id: memberId, workspaceId },

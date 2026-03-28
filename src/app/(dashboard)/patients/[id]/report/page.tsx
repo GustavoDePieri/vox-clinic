@@ -48,7 +48,7 @@ export default async function PatientReportPage({
     : null
 
   const customFields = (user?.workspace?.customFields as any[]) ?? []
-  const clinicName = user?.clinicName ?? "Clinica"
+  const clinicName = user?.clinicName ?? "Clínica"
   const professionalName = user?.name ?? "Profissional"
   const today = formatDateLong(new Date())
 
@@ -146,7 +146,7 @@ export default async function PatientReportPage({
               )}
               {patient.guardian && (
                 <div>
-                  <span className="text-slate-500 print:text-gray-600">Responsavel</span>
+                  <span className="text-slate-500 print:text-gray-600">Responsável</span>
                   <p className="font-medium text-slate-900 print:text-black">{patient.guardian}</p>
                 </div>
               )}

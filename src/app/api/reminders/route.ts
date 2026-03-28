@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     const errors: string[] = []
 
     for (const appointment of appointments) {
-      const clinicName = appointment.workspace.user.clinicName || "Clinica"
+      const clinicName = appointment.workspace.user.clinicName || "Clínica"
       const dateStr = appointment.date.toLocaleDateString("pt-BR")
       const timeStr = appointment.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
 
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
             `Ola ${appointment.patient.name}! Lembrete: sua consulta na ${clinicName} esta marcada para ${dateStr} as ${timeStr}.\n\nPor favor, confirme sua presenca:`,
             [
               { id: `confirm_${appointment.id}`, title: "Confirmar" },
-              { id: `cancel_${appointment.id}`, title: "Nao poderei ir" },
+              { id: `cancel_${appointment.id}`, title: "Não poderei ir" },
             ],
             clinicName,
             "Responda para confirmar ou cancelar"

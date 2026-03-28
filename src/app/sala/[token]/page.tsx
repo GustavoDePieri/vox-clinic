@@ -18,9 +18,9 @@ export default async function PatientJoinPage({ params }: { params: Promise<{ to
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
             </svg>
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">Teleconsulta indisponivel</h1>
+          <h1 className="text-lg font-semibold text-gray-900">Teleconsulta indisponível</h1>
           <p className="text-sm text-gray-500">{message}</p>
-          <p className="text-xs text-gray-400">Entre em contato com seu profissional de saude para mais informacoes.</p>
+          <p className="text-xs text-gray-400">Entre em contato com seu profissional de saúde para mais informacoes.</p>
         </div>
       </div>
     )

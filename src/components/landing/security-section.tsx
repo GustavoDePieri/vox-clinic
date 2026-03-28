@@ -10,15 +10,15 @@ const trustPoints = [
   },
   {
     icon: Lock,
-    text: "Consentimento LGPD obrigatorio antes de gravar",
+    text: "Consentimento LGPD obrigatório antes de gravar",
   },
   {
     icon: FileSearch,
-    text: "Auditoria completa de todas as acoes",
+    text: "Auditoria completa de todas as ações",
   },
   {
     icon: Timer,
-    text: "URLs de audio com expiracao de 5 minutos",
+    text: "URLs de áudio com expiração de 5 minutos",
   },
 ]
 
@@ -74,7 +74,7 @@ export function SecuritySection() {
           <BlurFade inView>
             <div>
               <h2 className="text-3xl md:text-4xl font-bold">
-                Seguranca e conformidade LGPD
+                Segurança e conformidade LGPD
               </h2>
               <p className="mt-3 text-muted-foreground">
                 Seus dados e os dos seus pacientes protegidos por design

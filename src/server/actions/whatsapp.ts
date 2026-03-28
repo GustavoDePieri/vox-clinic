@@ -13,7 +13,7 @@ import { logAudit } from "@/lib/audit"
 
 async function getAuthContext(): Promise<{ workspaceId: string; userId: string }> {
   const { userId } = await auth()
-  if (!userId) throw new Error("Nao autenticado")
+  if (!userId) throw new Error("Não autenticado")
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -21,7 +21,7 @@ async function getAuthContext(): Promise<{ workspaceId: string; userId: string }
   })
 
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace nao encontrado")
+  if (!workspaceId) throw new Error("Workspace não encontrado")
 
   return { workspaceId, userId: user!.id }
 }
@@ -261,7 +261,7 @@ export async function fetchTemplates(): Promise<{
     })
 
     if (!config) {
-      return { templates: [], error: "WhatsApp nao configurado" }
+      return { templates: [], error: "WhatsApp não configurado" }
     }
 
     const client = await createWhatsAppClient(workspaceId)
@@ -293,7 +293,7 @@ export async function checkWhatsAppHealth(): Promise<{
     })
 
     if (!config) {
-      return { connected: false, error: "Nao configurado" }
+      return { connected: false, error: "Não configurado" }
     }
 
     const client = await createWhatsAppClient(workspaceId)
@@ -308,7 +308,7 @@ export async function checkWhatsAppHealth(): Promise<{
   } catch (error) {
     return {
       connected: false,
-      error: error instanceof Error ? error.message : "Erro de conexao",
+      error: error instanceof Error ? error.message : "Erro de conexão",
     }
   }
 }

@@ -36,7 +36,7 @@ function parseAIResponse<T>(text: string, schema: z.ZodSchema<T>): T {
       parsed = JSON.parse(match[0])
     } catch (parseErr) {
       throw new Error(
-        'JSON extraido da resposta da IA e invalido: ' +
+        'JSON extraído da resposta da IA é inválido: ' +
         (parseErr instanceof Error ? parseErr.message : String(parseErr))
       )
     }
@@ -123,10 +123,10 @@ const GENERATE_CONSULTATION_SUMMARY_TOOL: Anthropic.Tool = {
     type: 'object' as const,
     properties: {
       procedures: { type: 'array', items: { type: 'string' }, description: 'Procedimentos realizados' },
-      observations: { type: ['string', 'null'], description: 'Observacoes clinicas relevantes (sinais, sintomas, evolucao, exame fisico)' },
-      recommendations: { type: ['string', 'null'], description: 'Recomendacoes ao paciente' },
-      nextAppointment: { type: ['string', 'null'], description: 'Sugestao para proxima consulta' },
-      diagnosis: { type: ['string', 'null'], description: 'Diagnostico ou hipotese diagnostica mencionada' },
+      observations: { type: ['string', 'null'], description: 'Observações clínicas relevantes (sinais, sintomas, evolução, exame físico)' },
+      recommendations: { type: ['string', 'null'], description: 'Recomendações ao paciente' },
+      nextAppointment: { type: ['string', 'null'], description: 'Sugestão para próxima consulta' },
+      diagnosis: { type: ['string', 'null'], description: 'Diagnóstico ou hipótese diagnóstica mencionada' },
       medications: {
         type: 'array',
         items: {
@@ -134,8 +134,8 @@ const GENERATE_CONSULTATION_SUMMARY_TOOL: Anthropic.Tool = {
           properties: {
             name: { type: 'string', description: 'Nome do medicamento' },
             dosage: { type: 'string', description: 'Dosagem (ex: 500mg)' },
-            frequency: { type: 'string', description: 'Frequencia (ex: 8/8h, 1x ao dia)' },
-            notes: { type: 'string', description: 'Observacoes sobre o medicamento' },
+            frequency: { type: 'string', description: 'Frequência (ex: 8/8h, 1x ao dia)' },
+            notes: { type: 'string', description: 'Observações sobre o medicamento' },
           },
           required: ['name'],
         },
@@ -144,14 +144,14 @@ const GENERATE_CONSULTATION_SUMMARY_TOOL: Anthropic.Tool = {
       patientInfoUpdates: {
         type: 'object',
         properties: {
-          address: { type: ['string', 'null'], description: 'Endereco mencionado pelo paciente' },
+          address: { type: ['string', 'null'], description: 'Endereço mencionado pelo paciente' },
           phone: { type: ['string', 'null'], description: 'Telefone mencionado pelo paciente' },
-          insurance: { type: ['string', 'null'], description: 'Convenio/plano de saude mencionado' },
+          insurance: { type: ['string', 'null'], description: 'Convênio/plano de saúde mencionado' },
           allergies: { type: 'array', items: { type: 'string' }, description: 'Alergias mencionadas' },
-          medications: { type: 'array', items: { type: 'string' }, description: 'Medicacoes de uso continuo mencionadas' },
-          chronicDiseases: { type: 'array', items: { type: 'string' }, description: 'Doencas cronicas mencionadas' },
+          medications: { type: 'array', items: { type: 'string' }, description: 'Medicações de uso contínuo mencionadas' },
+          chronicDiseases: { type: 'array', items: { type: 'string' }, description: 'Doenças crônicas mencionadas' },
         },
-        description: 'Dados pessoais do paciente mencionados na consulta que devem atualizar o cadastro (endereco, telefone, convenio, alergias, medicacoes cronicas, doencas)',
+        description: 'Dados pessoais do paciente mencionados na consulta que devem atualizar o cadastro (endereço, telefone, convênio, alergias, medicações crônicas, doenças)',
       },
       cidCodes: {
         type: 'array',
@@ -252,14 +252,14 @@ export async function extractEntities(
     temperature: 0,
     tools: [EXTRACT_PATIENT_DATA_TOOL],
     tool_choice: { type: 'tool', name: 'extract_patient_data' },
-    system: `Voce e um assistente especializado em extrair dados estruturados de transcricoes de consultas medicas/clinicas.
+    system: `Você é um assistente especializado em extrair dados estruturados de transcrições de consultas médicas/clínicas.
 
-Extraia os dados do paciente da transcricao fornecida. Inclua um campo "confidence" com valor 0 a 1 para cada campo extraido, indicando sua certeza.
-Para campos nao mencionados na transcricao, retorne null.`,
+Extraia os dados do paciente da transcrição fornecida. Inclua um campo "confidence" com valor 0 a 1 para cada campo extraído, indicando sua certeza.
+Para campos não mencionados na transcrição, retorne null.`,
     messages: [{
       role: 'user',
-      content: `Campos disponiveis no workspace: ${JSON.stringify(workspaceConfig.customFields)}
-Procedimentos disponiveis: ${JSON.stringify(workspaceConfig.procedures)}
+      content: `Campos disponíveis no workspace: ${JSON.stringify(workspaceConfig.customFields)}
+Procedimentos disponíveis: ${JSON.stringify(workspaceConfig.procedures)}
 
 Transcricao do audio:
 "${transcript}"`,
@@ -281,7 +281,7 @@ export async function generateWorkspaceSuggestions(
     max_tokens: 4096,
     tools: [GENERATE_WORKSPACE_CONFIG_TOOL],
     tool_choice: { type: 'tool', name: 'generate_workspace_config' },
-    system: `Voce e um assistente especializado em configurar sistemas de gestao para profissionais de saude e servicos.
+    system: `Você é um assistente especializado em configurar sistemas de gestão para profissionais de saúde e serviços.
 
 Gere um workspace personalizado para a profissao indicada. Inclua pelo menos 10 procedimentos, 8 campos customizados e 10 perguntas de anamnese. Use terminologia profissional correta em portugues brasileiro.`,
     messages: [{
@@ -310,19 +310,19 @@ export async function generateConsultationSummary(
     temperature: 0,
     tools: [GENERATE_CONSULTATION_SUMMARY_TOOL],
     tool_choice: { type: 'tool', name: 'generate_consultation_summary' },
-    system: `Voce e um assistente especializado em resumir consultas medicas/clinicas.
+    system: `Você é um assistente especializado em resumir consultas médicas/clínicas.
 
-Regras de extracao:
-1. Identifique os procedimentos realizados comparando com a lista disponivel. Se um procedimento mencionado nao estiver na lista, inclua-o mesmo assim.
-2. Separe observacoes clinicas (sinais, sintomas, evolucao, exame fisico) de dados pessoais do paciente.
-3. Se houver diagnostico ou hipotese diagnostica, extraia no campo "diagnosis".
-4. Se houver medicamentos prescritos ou mencionados, extraia cada um com dosagem e frequencia quando disponiveis.
-5. Se o paciente mencionar dados pessoais (endereco, telefone, convenio, alergias, medicacoes de uso continuo, doencas cronicas), extraia em "patientInfoUpdates". NAO coloque esses dados em "observations".
+Regras de extração:
+1. Identifique os procedimentos realizados comparando com a lista disponível. Se um procedimento mencionado não estiver na lista, inclua-o mesmo assim.
+2. Separe observações clínicas (sinais, sintomas, evolução, exame físico) de dados pessoais do paciente.
+3. Se houver diagnóstico ou hipótese diagnóstica, extraia no campo "diagnosis".
+4. Se houver medicamentos prescritos ou mencionados, extraia cada um com dosagem e frequência quando disponíveis.
+5. Se o paciente mencionar dados pessoais (endereço, telefone, convênio, alergias, medicações de uso contínuo, doenças crônicas), extraia em "patientInfoUpdates". NAO coloque esses dados em "observations".
 6. Se houver diagnóstico ou hipótese diagnóstica, sugira os códigos CID-10 correspondentes no campo cidCodes. Use códigos válidos da CID-10. Se não houver certeza do diagnóstico, não inclua códigos CID.
-7. Seja conciso e objetivo. Use portugues brasileiro.`,
+7. Seja conciso e objetivo. Use português brasileiro.`,
     messages: [{
       role: 'user',
-      content: `Procedimentos disponiveis no workspace: ${JSON.stringify(workspaceProcedures)}
+      content: `Procedimentos disponíveis no workspace: ${JSON.stringify(workspaceProcedures)}
 
 Transcricao da consulta:
 "${transcript}"`,

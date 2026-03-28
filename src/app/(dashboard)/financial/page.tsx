@@ -40,8 +40,8 @@ const InventoryTab = dynamic(
   { ssr: false }
 )
 
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+const formatBRL = (centavos: number) =>
+  (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 const monthNames = [
   "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",

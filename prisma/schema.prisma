@@ -131,7 +131,7 @@ model Appointment {
   aiSummary         String?
   audioUrl          String?
   transcript        String?
-  price             Float? // valor da consulta em BRL
+  price             Int? // valor da consulta em centavos
   source            String? // "online", "whatsapp", null (manual/legacy)
   status            String            @default("completed")
   type              String? // "presencial" | "teleconsulta" (null = presencial for backward compat)

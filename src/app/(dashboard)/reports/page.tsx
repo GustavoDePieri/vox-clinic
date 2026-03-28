@@ -37,8 +37,8 @@ import { MessageSquare } from "lucide-react"
 type ReportsData = Exclude<Awaited<ReturnType<typeof getReportsData>>, { error: string }>
 type NpsSurvey = Awaited<ReturnType<typeof getNpsSurveys>>[number]
 
-const formatBRL = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
+const formatBRL = (centavos: number) =>
+  (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 const COLORS = {
   primary: "#14B8A6",

@@ -232,12 +232,12 @@ export function NfseTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Numero</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Número</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Paciente</th>
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">Valor</th>
                   <th className="px-4 py-3 text-center font-medium text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Data</th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Acoes</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Ações</th>
                 </tr>
               </thead>
               <tbody>

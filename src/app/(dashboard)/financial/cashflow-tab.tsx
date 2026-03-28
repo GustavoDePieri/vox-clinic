@@ -78,7 +78,7 @@ export default function CashFlowTab() {
       const data = await getCashFlowProjection()
       setProjection(data)
     } catch {
-      toast.error("Erro ao carregar projecao")
+      toast.error("Erro ao carregar projeção")
     } finally {
       setProjectionLoading(false)
     }
@@ -307,7 +307,7 @@ export default function CashFlowTab() {
                   stroke="hsl(var(--muted-foreground))"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v: number) => formatBRLShort(v * 100)}
+                  tickFormatter={(v: number) => formatBRLShort(v)}
                 />
                 <Tooltip
                   contentStyle={{
@@ -354,7 +354,7 @@ export default function CashFlowTab() {
       <Card className="rounded-2xl">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold">Projecao de Fluxo de Caixa</h3>
+            <h3 className="text-sm font-semibold">Projeção de Fluxo de Caixa</h3>
             <Button
               variant="outline"
               size="sm"
@@ -367,13 +367,13 @@ export default function CashFlowTab() {
               ) : (
                 <BarChart3 className="size-3.5" />
               )}
-              {projection ? "Atualizar" : "Carregar projecao"}
+              {projection ? "Atualizar" : "Carregar projeção"}
             </Button>
           </div>
 
           {!projection ? (
             <p className="text-sm text-muted-foreground text-center py-12">
-              Clique em &quot;Carregar projecao&quot; para visualizar a projecao dos proximos 6 meses.
+              Clique em &quot;Carregar projeção&quot; para visualizar a projeção dos próximos 6 meses.
             </p>
           ) : projection.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-12">
@@ -403,7 +403,7 @@ export default function CashFlowTab() {
                   stroke="hsl(var(--muted-foreground))"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v: number) => formatBRLShort(v * 100)}
+                  tickFormatter={(v: number) => formatBRLShort(v)}
                 />
                 <Tooltip
                   contentStyle={{

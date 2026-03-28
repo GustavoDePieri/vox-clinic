@@ -86,7 +86,7 @@ export async function getDefaultAgendaIdForWorkspace(workspaceId: string) {
 export const createAgenda = safeAction(async (data: { name: string; color?: string }) => {
   const workspaceId = await getWorkspaceId()
 
-  if (!data.name.trim()) throw new ActionError("Nome da agenda e obrigatorio")
+  if (!data.name.trim()) throw new ActionError("Nome da agenda é obrigatório")
 
   // Plan enforcement: check agenda limit
   const workspace = await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
@@ -124,7 +124,7 @@ export const updateAgenda = safeAction(async (
 
   // Cannot deactivate default agenda
   if (existing.isDefault && data.isActive === false) {
-    throw new ActionError("Nao e possivel desativar a agenda padrao")
+    throw new ActionError("Não é possível desativar a agenda padrão")
   }
 
   const updated = await db.agenda.update({
@@ -155,7 +155,7 @@ export const deleteAgenda = safeAction(async (id: string) => {
   if (!existing) throw new ActionError(ERR_AGENDA_NOT_FOUND)
 
   if (existing.isDefault) {
-    throw new ActionError("Nao e possivel excluir a agenda padrao")
+    throw new ActionError("Não é possível excluir a agenda padrão")
   }
 
   if (existing._count.appointments > 0) {
