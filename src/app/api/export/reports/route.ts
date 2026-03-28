@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Aggregate data
-    const totalRevenue = appointments.reduce((sum, a) => sum + (a.price ?? 0), 0)
+    const totalRevenue = appointments.filter((a) => a.status === "completed").reduce((sum, a) => sum + (a.price ?? 0), 0)
     const totalAppointments = appointments.length
     const ticketMedio = totalAppointments > 0 ? totalRevenue / totalAppointments : 0
     const noShowCount = appointments.filter((a) => a.status === "no_show").length
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     const resumoData = [
       {
         Metrica: "Receita Total",
-        Valor: `R$ ${totalRevenue.toFixed(2)}`,
+        Valor: `R$ ${(totalRevenue / 100).toFixed(2)}`,
       },
       {
         Metrica: "Total Atendimentos",
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       },
       {
         Metrica: "Ticket Medio",
-        Valor: `R$ ${ticketMedio.toFixed(2)}`,
+        Valor: `R$ ${(ticketMedio / 100).toFixed(2)}`,
       },
       {
         Metrica: "Taxa No-Show",
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
     const mensalData = Object.entries(monthlyMap).map(([month, data]) => ({
       Mes: month,
       Atendimentos: data.count,
-      Receita: `R$ ${data.revenue.toFixed(2)}`,
+      Receita: `R$ ${(data.revenue / 100).toFixed(2)}`,
     }))
 
     // Procedures sheet
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
       .map(([name, data]) => ({
         Procedimento: name,
         Quantidade: data.count,
-        Receita: `R$ ${data.revenue.toFixed(2)}`,
+        Receita: `R$ ${(data.revenue / 100).toFixed(2)}`,
       }))
 
     const buffer = generateXlsxMultiSheet([

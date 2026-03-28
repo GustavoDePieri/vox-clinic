@@ -37,7 +37,7 @@ function generateCertificateContent(
     case "atestado":
       return `Atesto para os devidos fins que o(a) paciente ${patientName}${cpfText} esteve sob meus cuidados profissionais no dia ${today}, necessitando de afastamento de suas atividades por ${options.days ?? 1} dia(s).`
     case "declaracao_comparecimento":
-      return `Declaro para os devidos fins que o(a) paciente ${patientName}${cpfText} compareceu a esta clinica no dia ${today} para atendimento, no periodo das ${options.startTime ?? "___"} as ${options.endTime ?? "___"}.`
+      return `Declaro para os devidos fins que o(a) paciente ${patientName}${cpfText} compareceu a esta clínica no dia ${today} para atendimento, no periodo das ${options.startTime ?? "___"} as ${options.endTime ?? "___"}.`
     case "encaminhamento":
       return options.content ?? ""
     case "laudo":
@@ -60,11 +60,11 @@ export const createCertificate = safeAction(async (data: {
   const { userId, workspaceId } = await getAuthContext()
 
   const validTypes = ["atestado", "declaracao_comparecimento", "encaminhamento", "laudo"]
-  if (!validTypes.includes(data.type)) throw new ActionError("Tipo de documento invalido")
+  if (!validTypes.includes(data.type)) throw new ActionError("Tipo de documento inválido")
 
   if (data.days !== undefined && data.days !== null) {
-    if (data.days < 1) throw new ActionError("Numero de dias deve ser maior que zero.")
-    if (data.days > 365) throw new ActionError("Maximo de 365 dias permitido.")
+    if (data.days < 1) throw new ActionError("Número de dias deve ser maior que zero.")
+    if (data.days > 365) throw new ActionError("Máximo de 365 dias permitido.")
   }
 
   const patient = await db.patient.findFirst({
@@ -79,7 +79,7 @@ export const createCertificate = safeAction(async (data: {
     content: data.content,
   })
 
-  if (!content.trim()) throw new ActionError("O conteudo do documento nao pode ser vazio")
+  if (!content.trim()) throw new ActionError("O conteúdo do documento não pode ser vazio")
 
   const certificate = await db.medicalCertificate.create({
     data: {
@@ -127,8 +127,8 @@ export async function getCertificate(id: string) {
     patientName: certificate.patient.name,
     patientDocument: certificate.patient.document,
     createdAt: certificate.createdAt.toISOString(),
-    clinicName: user.clinicName ?? "Clinica",
-    profession: user.profession ?? "Profissional de Saude",
+    clinicName: user.clinicName ?? "Clínica",
+    profession: user.profession ?? "Profissional de Saúde",
     doctorName: user.name,
   }
 }

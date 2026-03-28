@@ -17,7 +17,7 @@ function DashboardMockup() {
         <div className="flex items-center gap-2">
           <div className="size-6 rounded-lg bg-vox-primary flex items-center justify-center text-[8px] font-bold">V</div>
           <span className="text-[10px] font-semibold opacity-80">VoxClinic</span>
-          <span className="text-[9px] opacity-40 ml-1">clinica exemplo</span>
+          <span className="text-[9px] opacity-40 ml-1">clínica exemplo</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-6 w-24 rounded-lg bg-white/5 border border-white/10 flex items-center px-2">
@@ -49,9 +49,9 @@ function DashboardMockup() {
           <div className="grid grid-cols-4 gap-2">
             {[
               { label: "Pacientes", value: "847", color: "text-vox-primary" },
-              { label: "Este Mes", value: "124", color: "text-emerald-400" },
+              { label: "Este Mês", value: "124", color: "text-emerald-400" },
               { label: "Agendados", value: "18", color: "text-white" },
-              { label: "Gravacoes", value: "1.2k", color: "text-vox-primary" },
+              { label: "Gravações", value: "1.2k", color: "text-vox-primary" },
             ].map((kpi) => (
               <div key={kpi.label} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2">
                 <p className="text-[7px] uppercase tracking-wider opacity-40">{kpi.label}</p>
@@ -75,8 +75,8 @@ function DashboardMockup() {
             <p className="text-[8px] font-medium opacity-60">Agenda de Hoje</p>
             {[
               { time: "09:00", name: "Maria Silva", proc: "Limpeza" },
-              { time: "10:30", name: "Joao Santos", proc: "Retorno" },
-              { time: "14:00", name: "Ana Costa", proc: "Avaliacao" },
+              { time: "10:30", name: "João Santos", proc: "Retorno" },
+              { time: "14:00", name: "Ana Costa", proc: "Avaliação" },
             ].map((apt) => (
               <div key={apt.time} className="flex items-center gap-2 rounded-md bg-white/[0.02] px-2 py-1">
                 <span className="text-[8px] text-vox-primary font-mono tabular-nums">{apt.time}</span>
@@ -107,7 +107,7 @@ export function HeroSection({ isAuthenticated = false, dashboardUrl = "/dashboar
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/50 px-4 py-1.5 text-sm">
               <ChevronRight className="size-3.5 text-vox-primary" />
               <AnimatedGradientText colorFrom="#14B8A6" colorTo="#0D9488">
-                CRM com Inteligencia Artificial
+                CRM com Inteligência Artificial
               </AnimatedGradientText>
             </div>
           </BlurFade>
@@ -124,7 +124,7 @@ export function HeroSection({ isAuthenticated = false, dashboardUrl = "/dashboar
             <div className="flex flex-wrap items-center gap-x-2 text-xl md:text-2xl text-muted-foreground">
               <span>O CRM inteligente para</span>
               <WordRotate
-                words={["dentistas", "medicos", "nutricionistas", "esteticistas", "advogados"]}
+                words={["dentistas", "médicos", "nutricionistas", "esteticistas", "advogados"]}
                 className="text-vox-primary font-bold text-xl md:text-2xl"
                 duration={2500}
               />
@@ -139,7 +139,7 @@ export function HeroSection({ isAuthenticated = false, dashboardUrl = "/dashboar
                 showCursor
                 cursorStyle="line"
               >
-                Paciente Maria Silva, 34 anos, retorno de limpeza periodontal. Sem queixas. Gengiva com boa cicatrizacao...
+                Paciente Maria Silva, 34 anos, retorno de limpeza periodontal. Sem queixas. Gengiva com boa cicatrização...
               </TypingAnimation>
             </div>
           </BlurFade>
@@ -150,7 +150,7 @@ export function HeroSection({ isAuthenticated = false, dashboardUrl = "/dashboar
                 href={isAuthenticated ? dashboardUrl : "/sign-up"}
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-vox-primary px-8 text-sm font-medium text-white hover:bg-vox-primary/90 transition-colors active:scale-[0.98]"
               >
-                {isAuthenticated ? "Ir para o Dashboard" : "Comecar Gratis"}
+                {isAuthenticated ? "Ir para o Dashboard" : "Começar Grátis"}
               </Link>
               <a
                 href="#how-it-works"
@@ -163,7 +163,7 @@ export function HeroSection({ isAuthenticated = false, dashboardUrl = "/dashboar
 
           <BlurFade delay={0.5} inView>
             <p className="text-xs text-muted-foreground">
-              Comece gratis. Sem cartao de credito.
+              Comece grátis. Sem cartão de crédito.
             </p>
           </BlurFade>
         </div>

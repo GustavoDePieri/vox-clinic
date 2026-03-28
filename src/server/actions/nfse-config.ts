@@ -120,20 +120,20 @@ export async function saveNfseConfig(data: {
   // Validate all fields upfront and collect errors
   const errors: string[] = []
   const cnpjDigits = data.cnpj.replace(/\D/g, "")
-  if (!cnpjDigits) errors.push("CPF/CNPJ e obrigatorio")
-  else if (!validateCpfCnpj(cnpjDigits)) errors.push(cnpjDigits.length === 11 ? "CPF invalido (digito verificador incorreto)" : "CNPJ invalido (digito verificador incorreto)")
-  if (!data.inscricaoMunicipal.trim()) errors.push("Inscricao Municipal e obrigatoria")
-  if (!data.codigoServico.trim()) errors.push("Codigo de Servico e obrigatorio")
-  if (!data.descricaoServico.trim()) errors.push("Descricao do Servico e obrigatoria")
-  if (data.aliquotaISS < 0 || data.aliquotaISS > 1) errors.push("Aliquota ISS invalida (deve ser entre 0% e 100%)")
-  if (!data.clientId.trim()) errors.push("Client ID e obrigatorio")
+  if (!cnpjDigits) errors.push("CPF/CNPJ é obrigatório")
+  else if (!validateCpfCnpj(cnpjDigits)) errors.push(cnpjDigits.length === 11 ? "CPF inválido (dígito verificador incorreto)" : "CNPJ inválido (dígito verificador incorreto)")
+  if (!data.inscricaoMunicipal.trim()) errors.push("Inscrição Municipal é obrigatória")
+  if (!data.codigoServico.trim()) errors.push("Código de Serviço é obrigatório")
+  if (!data.descricaoServico.trim()) errors.push("Descrição do Serviço é obrigatória")
+  if (data.aliquotaISS < 0 || data.aliquotaISS > 1) errors.push("Alíquota ISS inválida (deve ser entre 0% e 100%)")
+  if (!data.clientId.trim()) errors.push("Client ID é obrigatório")
   const isMaskedSecret = data.clientSecret.startsWith('****')
-  if (!isMaskedSecret && !data.clientSecret.trim()) errors.push("Client Secret e obrigatorio")
-  if (!data.clinicCity.trim()) errors.push("Cidade e obrigatoria")
-  if (!data.clinicState.trim()) errors.push("Estado e obrigatorio")
+  if (!isMaskedSecret && !data.clientSecret.trim()) errors.push("Client Secret é obrigatório")
+  if (!data.clinicCity.trim()) errors.push("Cidade é obrigatória")
+  if (!data.clinicState.trim()) errors.push("Estado é obrigatório")
   const cepDigits = data.clinicCep.replace(/\D/g, "")
-  if (!cepDigits) errors.push("CEP e obrigatorio")
-  else if (cepDigits.length !== 8) errors.push("CEP deve ter exatamente 8 digitos")
+  if (!cepDigits) errors.push("CEP é obrigatório")
+  else if (cepDigits.length !== 8) errors.push("CEP deve ter exatamente 8 dígitos")
 
   if (errors.length > 0) {
     return { error: errors.join(". ") }
@@ -220,7 +220,7 @@ export async function saveNfseConfig(data: {
   return { id: config.id }
   } catch (err) {
     logger.error("saveNfseConfig: upsert failed", { action: "saveNfseConfig", workspaceId }, err)
-    return { error: "Erro ao salvar configuracao no banco de dados" }
+    return { error: "Erro ao salvar configuração no banco de dados" }
   }
 }
 
@@ -235,7 +235,7 @@ export const uploadNfseCertificate = safeAction(async (formData: FormData) => {
   if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const config = await db.nfseConfig.findUnique({ where: { workspaceId } })
-  if (!config) throw new ActionError("Salve a configuracao fiscal antes de enviar o certificado.")
+  if (!config) throw new ActionError("Salve a configuração fiscal antes de enviar o certificado.")
   if (!config.certificateId || !config.apiKey) throw new ActionError("Configure Client ID e Client Secret primeiro.")
 
   const file = formData.get("certificate") as File | null
@@ -256,7 +256,7 @@ export const uploadNfseCertificate = safeAction(async (formData: FormData) => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido"
     if (msg.includes("InvalidCertificateOrPassword")) {
-      throw new ActionError("Certificado ou senha invalidos. Verifique o arquivo .pfx e a senha.")
+      throw new ActionError("Certificado ou senha inválidos. Verifique o arquivo .pfx e a senha.")
     }
     throw new ActionError(`Erro ao enviar certificado: ${msg}`)
   }
@@ -276,8 +276,8 @@ export const testNfseConnection = safeAction(async () => {
     where: { workspaceId },
   })
 
-  if (!config) throw new ActionError("Configuracao NFS-e nao encontrada. Salve a configuracao primeiro.")
-  if (!config.certificateId || !config.apiKey) throw new ActionError("Client ID e Client Secret nao configurados")
+  if (!config) throw new ActionError("Configuração NFS-e não encontrada. Salve a configuração primeiro.")
+  if (!config.certificateId || !config.apiKey) throw new ActionError("Client ID e Client Secret não configurados")
 
   const isSandbox = process.env.NFSE_AMBIENTE !== "producao"
   const client = new NfseClient(config.certificateId, decrypt(config.apiKey), isSandbox)
@@ -294,8 +294,8 @@ export const testNfseConnection = safeAction(async () => {
 
   try {
     const ok = await client.testConnection()
-    if (!ok) throw new ActionError("Falha na conexao")
-    return { success: true, message: "Conexao com o provedor realizada com sucesso!" }
+    if (!ok) throw new ActionError("Falha na conexão")
+    return { success: true, message: "Conexão com o provedor realizada com sucesso!" }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro desconhecido"
     throw new ActionError(`Falha ao conectar com o provedor: ${message}`)

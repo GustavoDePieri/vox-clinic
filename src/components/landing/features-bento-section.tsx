@@ -16,47 +16,47 @@ import { BlurFade } from "@/components/ui/blur-fade"
 const features = [
   {
     icon: Mic,
-    title: "Transcricao por Voz",
+    title: "Transcrição por Voz",
     description:
-      "Grave e a IA transcreve automaticamente com vocabulario medico em portugues",
+      "Grave e a IA transcreve automaticamente com vocabulário médico em português",
     className: "lg:col-span-2",
   },
   {
     icon: Sparkles,
     title: "Onboarding Inteligente",
     description:
-      "Workspace personalizado por profissao, gerado por IA em segundos",
+      "Workspace personalizado por profissão, gerado por IA em segundos",
   },
   {
     icon: ClipboardList,
-    title: "Prontuario Estruturado",
+    title: "Prontuário Estruturado",
     description:
-      "Dados extraidos e organizados automaticamente no prontuario do paciente",
+      "Dados extraídos e organizados automaticamente no prontuário do paciente",
   },
   {
     icon: CalendarDays,
     title: "Agenda Inteligente",
     description:
-      "Calendario com deteccao de conflitos, drag & drop e lembretes automaticos",
+      "Calendário com detecção de conflitos, drag & drop e lembretes automáticos",
   },
   {
     icon: Users,
-    title: "Multi-profissao",
+    title: "Multi-profissão",
     description:
-      "Dentistas, medicos, nutricionistas, esteticistas e advogados",
+      "Dentistas, médicos, nutricionistas, esteticistas e advogados",
   },
   {
     icon: MessageCircle,
     title: "WhatsApp Business",
     description:
-      "Comunicacao integrada com seus pacientes via WhatsApp Business API",
+      "Comunicação integrada com seus pacientes via WhatsApp Business API",
     className: "lg:col-span-2",
   },
   {
     icon: BarChart3,
-    title: "Relatorios",
+    title: "Relatórios",
     description:
-      "Tendencias, receita mensal, taxa de retorno e no-show em tempo real",
+      "Tendências, receita mensal, taxa de retorno e no-show em tempo real",
   },
   {
     icon: Shield,
@@ -73,10 +73,10 @@ export function FeaturesBentoSection() {
         <BlurFade inView>
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold">
-              Tudo que voce precisa em um so lugar
+              Tudo que você precisa em um só lugar
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Funcionalidades pensadas para profissionais de saude
+              Funcionalidades pensadas para profissionais de saúde
             </p>
           </div>
         </BlurFade>

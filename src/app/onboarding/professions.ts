@@ -22,7 +22,7 @@ export interface Question {
 }
 
 export const professions: ProfessionOption[] = [
-  { id: "medico", name: "Medico", icon: Stethoscope },
+  { id: "medico", name: "Médico", icon: Stethoscope },
   { id: "dentista", name: "Dentista", icon: Cross },
   { id: "nutricionista", name: "Nutricionista", icon: Apple },
   { id: "esteticista", name: "Esteticista", icon: Sparkles },
@@ -34,7 +34,7 @@ export const questionsByProfession: Record<string, Question[]> = {
   dentista: [
     {
       id: "procedimentos",
-      label: "Quais procedimentos voce mais realiza?",
+      label: "Quais procedimentos você mais realiza?",
       type: "multi-select",
       options: [
         "Limpeza",
@@ -56,7 +56,7 @@ export const questionsByProfession: Record<string, Question[]> = {
     },
     {
       id: "esteticos",
-      label: "Voce realiza procedimentos esteticos (botox, preenchimento)?",
+      label: "Você realiza procedimentos estéticos (botox, preenchimento)?",
       type: "boolean",
     },
   ],
@@ -65,16 +65,16 @@ export const questionsByProfession: Record<string, Question[]> = {
       id: "area_atuacao",
       label: "Qual sua area de atuacao principal?",
       type: "select",
-      options: ["Clinica", "Esportiva", "Comportamental", "Materno-infantil"],
+      options: ["Clínica", "Esportiva", "Comportamental", "Materno-infantil"],
     },
     {
       id: "planos_personalizados",
-      label: "Voce trabalha com planos alimentares personalizados?",
+      label: "Você trabalha com planos alimentares personalizados?",
       type: "boolean",
     },
     {
       id: "avaliacoes",
-      label: "Quais avaliacoes voce realiza?",
+      label: "Quais avaliações você realiza?",
       type: "multi-select",
       options: [
         "Bioimpedancia",
@@ -108,14 +108,14 @@ export const questionsByProfession: Record<string, Question[]> = {
     },
     {
       id: "prontuario_eletronico",
-      label: "Voce ja utiliza prontuario eletronico?",
+      label: "Você já utiliza prontuário eletrônico?",
       type: "boolean",
     },
   ],
   esteticista: [
     {
       id: "procedimentos",
-      label: "Quais procedimentos voce mais realiza?",
+      label: "Quais procedimentos você mais realiza?",
       type: "multi-select",
       options: [
         "Limpeza de pele",
@@ -136,7 +136,7 @@ export const questionsByProfession: Record<string, Question[]> = {
     },
     {
       id: "protocolos",
-      label: "Voce trabalha com protocolos de tratamento personalizados?",
+      label: "Você trabalha com protocolos de tratamento personalizados?",
       type: "boolean",
     },
   ],
@@ -157,13 +157,13 @@ export const questionsByProfession: Record<string, Question[]> = {
     },
     {
       id: "volume_clientes",
-      label: "Quantos clientes ativos voce tem em media?",
+      label: "Quantos clientes ativos você tem em média?",
       type: "select",
       options: ["1-10", "11-30", "31-50", "Mais de 50"],
     },
     {
       id: "consultoria",
-      label: "Voce realiza consultoria preventiva?",
+      label: "Você realiza consultoria preventiva?",
       type: "boolean",
     },
   ],
@@ -189,7 +189,7 @@ export const questionsByProfession: Record<string, Question[]> = {
     },
     {
       id: "fichas_customizadas",
-      label: "Voce precisa de fichas de atendimento customizadas?",
+      label: "Você precisa de fichas de atendimento customizadas?",
       type: "boolean",
     },
   ],

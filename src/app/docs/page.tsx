@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "VoxClinic - Documentacao de Funcionalidades",
-  description: "Documentacao completa de todas as funcionalidades do CRM VoxClinic para clinicas e consultorios.",
+  title: "VoxClinic - Documentação de Funcionalidades",
+  description: "Documentação completa de todas as funcionalidades do CRM VoxClinic para clínicas e consultórios.",
 }
 
 /*
@@ -31,7 +31,7 @@ type FeatureStatus = "done" | "partial" | "planned"
 
 function StatusBadge({ status }: { status: FeatureStatus }) {
   const config = {
-    done: { label: "Disponivel", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+    done: { label: "Disponível", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
     partial: { label: "Parcial", bg: "bg-amber-50 text-amber-700 border-amber-200" },
     planned: { label: "Planejado", bg: "bg-slate-50 text-slate-500 border-slate-200" },
   }
@@ -56,7 +56,7 @@ function FeatureCard({ title, description, status = "done" }: { title: string; d
 
 function CategorySection({ icon, title, description, count, children }: { icon: string; title: string; description: string; count: number; children: React.ReactNode }) {
   return (
-    <section className="scroll-mt-20" id={title.toLowerCase().replace(/[^a-z0-9]/g, "-")}>
+    <section className="scroll-mt-20" id={title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "-")}>
       <div className="flex items-start gap-3 mb-4">
         <span className="text-2xl">{icon}</span>
         <div>
@@ -103,8 +103,8 @@ export default function DocsPage() {
             Funcionalidades do CRM
           </h1>
           <p className="text-base text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Documentacao completa de todas as funcionalidades disponiveis no VoxClinic.
-            CRM inteligente com IA para clinicas e consultorios.
+            Documentação completa de todas as funcionalidades disponíveis no VoxClinic.
+            CRM inteligente com IA para clínicas e consultórios.
           </p>
           <div className="flex items-center justify-center gap-6 pt-2">
             <div className="text-center">
@@ -121,18 +121,18 @@ export default function DocsPage() {
 
         {/* Table of Contents */}
         <nav className="rounded-2xl border border-slate-100 bg-white p-5">
-          <h2 className="text-sm font-bold text-slate-900 mb-3">Indice</h2>
+          <h2 className="text-sm font-bold text-slate-900 mb-3">Índice</h2>
           <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 text-[13px]">
             {[
-              { icon: "👤", label: "Gestao de Pacientes", id: "gestao-de-pacientes" },
+              { icon: "👤", label: "Gestão de Pacientes", id: "gestao-de-pacientes" },
               { icon: "📅", label: "Agendamento e Agenda", id: "agendamento-e-agenda" },
-              { icon: "🎙️", label: "Prontuario e IA", id: "prontuario-e-ia" },
-              { icon: "💊", label: "Prescricoes e Documentos", id: "prescricoes-e-documentos" },
-              { icon: "💬", label: "Comunicacao", id: "comunicacao" },
+              { icon: "🎙️", label: "Prontuário e IA", id: "prontuario-e-ia" },
+              { icon: "💊", label: "Prescrições e Documentos", id: "prescricoes-e-documentos" },
+              { icon: "💬", label: "Comunicação", id: "comunicacao" },
               { icon: "💰", label: "Financeiro", id: "financeiro" },
-              { icon: "📊", label: "Relatorios e Analytics", id: "relatorios-e-analytics" },
-              { icon: "⚙️", label: "Configuracoes", id: "configuracoes" },
-              { icon: "🔐", label: "Seguranca e LGPD", id: "seguranca-e-lgpd" },
+              { icon: "📊", label: "Relatórios e Analytics", id: "relatorios-e-analytics" },
+              { icon: "⚙️", label: "Configurações", id: "configuracoes" },
+              { icon: "🔐", label: "Segurança e LGPD", id: "seguranca-e-lgpd" },
               { icon: "📱", label: "Infraestrutura e UX", id: "infraestrutura-e-ux" },
               { icon: "🎥", label: "Telemedicina", id: "telemedicina" },
             ].map((item) => (
@@ -145,174 +145,174 @@ export default function DocsPage() {
         </nav>
 
         {/* ── 1. GESTAO DE PACIENTES ── */}
-        <CategorySection icon="👤" title="Gestao de Pacientes" description="Cadastro completo, busca avancada, tags e organizacao de pacientes." count={12}>
-          <FeatureCard title="Cadastro Completo" description="Nome, CPF, RG, telefone, email, data de nascimento, sexo, endereco completo, convenio, responsavel (menores), origem/fonte do paciente." />
-          <FeatureCard title="Campos Personalizaveis" description="Campos extras configuraveis por especialidade: texto, numero, booleano, data, selecao. Gerados automaticamente pela IA no onboarding." />
-          <FeatureCard title="Historico Medico" description="Secao dedicada com alergias, doencas cronicas, medicacoes em uso, tipo sanguineo e observacoes medicas. Tudo editavel inline." />
+        <CategorySection icon="👤" title="Gestão de Pacientes" description="Cadastro completo, busca avançada, tags e organização de pacientes." count={12}>
+          <FeatureCard title="Cadastro Completo" description="Nome, CPF, RG, telefone, email, data de nascimento, sexo, endereço completo, convênio, responsável (menores), origem/fonte do paciente." />
+          <FeatureCard title="Campos Personalizáveis" description="Campos extras configuráveis por especialidade: texto, número, booleano, data, seleção. Gerados automaticamente pela IA no onboarding." />
+          <FeatureCard title="Histórico Médico" description="Seção dedicada com alergias, doenças crônicas, medicações em uso, tipo sanguíneo e observações médicas. Tudo editável inline." />
           <FeatureCard title="Upload de Documentos" description="Galeria de imagens, PDFs e documentos Word anexados ao perfil do paciente. Limite de 10MB, URLs assinadas de 5 minutos." />
-          <FeatureCard title="Busca Avancada" description="Busca por nome, CPF, telefone, email, convenio. Filtro por tags com barra de tags clicaveis. Paginacao server-side." />
-          <FeatureCard title="Tags e Segmentacao" description="Sistema de tags com cores (VIP, retorno pendente, gestante, etc). Filtro por tag na lista de pacientes. Tags visiveis no perfil." />
-          <FeatureCard title="Importacao/Exportacao" description="Importacao CSV com mapeamento de colunas (PapaParse). Exportacao individual em JSON. Exportacao em massa para Excel (.xlsx)." />
-          <FeatureCard title="Deteccao e Merge de Duplicatas" description="Deteccao por CPF e nome. Merge atomico: transfere consultas, gravacoes, documentos e planos. Unifica tags, alertas e historico medico." />
-          <FeatureCard title="Origem do Paciente" description="Campo de rastreamento de fonte: Instagram, Google, Facebook, Indicacao, Convenio, Site, Outro. Para medir ROI de marketing." />
-          <FeatureCard title="Desativacao Segura" description="Soft delete de pacientes (nunca perde historico). Atende exigencia CFM de 20 anos de guarda de prontuario." />
-          <FeatureCard title="Relatorio Imprimivel" description="Pagina de relatorio completo do paciente com todos os dados, historico e tratamentos. Ctrl+P gera PDF." />
-          <FeatureCard title="Imagens Clinicas" description="Galeria de fotos clinicas por paciente. Upload com camera ou galeria, compressao automatica (2048px JPEG 85%), categorias (antes/depois/progresso/geral/intraoral), regioes corporais, pareamento antes/depois com comparacao lado a lado, lightbox com navegacao, filtros por regiao e categoria, views grid e timeline." />
+          <FeatureCard title="Busca Avançada" description="Busca por nome, CPF, telefone, email, convênio. Filtro por tags com barra de tags clicáveis. Paginação server-side." />
+          <FeatureCard title="Tags e Segmentação" description="Sistema de tags com cores (VIP, retorno pendente, gestante, etc). Filtro por tag na lista de pacientes. Tags visíveis no perfil." />
+          <FeatureCard title="Importação/Exportação" description="Importação CSV com mapeamento de colunas (PapaParse). Exportação individual em JSON. Exportação em massa para Excel (.xlsx)." />
+          <FeatureCard title="Detecção e Merge de Duplicatas" description="Detecção por CPF e nome. Merge atômico: transfere consultas, gravações, documentos e planos. Unifica tags, alertas e histórico médico." />
+          <FeatureCard title="Origem do Paciente" description="Campo de rastreamento de fonte: Instagram, Google, Facebook, Indicação, Convênio, Site, Outro. Para medir ROI de marketing." />
+          <FeatureCard title="Desativação Segura" description="Soft delete de pacientes (nunca perde histórico). Atende exigência CFM de 20 anos de guarda de prontuário." />
+          <FeatureCard title="Relatório Imprimível" description="Página de relatório completo do paciente com todos os dados, histórico e tratamentos. Ctrl+P gera PDF." />
+          <FeatureCard title="Imagens Clínicas" description="Galeria de fotos clínicas por paciente. Upload com câmera ou galeria, compressão automática (2048px JPEG 85%), categorias (antes/depois/progresso/geral/intraoral), regiões corporais, pareamento antes/depois com comparação lado a lado, lightbox com navegação, filtros por região e categoria, views grid e timeline." />
         </CategorySection>
 
         {/* ── 2. AGENDAMENTO ── */}
-        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendario completo com multiplas visoes, bloqueio de horarios, agendamentos recorrentes, multiplas agendas, agendamento online e lista de espera." count={14}>
-          <FeatureCard title="Agendamento Online (Paciente)" description="Link publico para pacientes agendarem sozinhos. Multi-step: procedimento, data/hora com slots disponiveis, dados do paciente. Sem login. Configura em Settings > Online. Advisory lock anti-double-booking." />
-          <FeatureCard title="Multiplas Agendas" description="Suporte a varias agendas por workspace (por profissional ou sala). Pills coloridos para filtrar. Conflitos e bloqueios por agenda. CRUD completo em Configuracoes > Agendas." />
-          <FeatureCard title="Calendario Multi-visao" description="Visualizacao diaria, semanal, mensal e em lista. Arquitetura modular com 12 sub-componentes otimizados (React.memo). Cache client-side com TTL de 60s para navegacao rapida. Busca O(1) via indexes Map." />
-          <FeatureCard title="Drag and Drop" description="Arraste consultas na visao semanal para reagendar. Integrado com @dnd-kit/core. Suporte a forceSchedule no reagendamento." />
-          <FeatureCard title="Deteccao de Conflitos" description="Verifica janela de +/-30 minutos. AlertDialog dedicado (substitui confirm() nativo) com opcao de forcar agendamento. Tambem verifica bloqueios de horario." />
-          <FeatureCard title="Bloqueio de Horarios" description="Bloqueie almoco, ferias, feriados ou reunioes. Suporte a bloqueios unicos e recorrentes semanais. Barras cinza no calendario." />
-          <FeatureCard title="Agenda Recorrente" description="Agende series de consultas: semanal ou quinzenal, de 2 a 52 ocorrencias. Criacao atomica em transacao. Ideal para fisioterapia e estetica." />
-          <FeatureCard title="Duracao por Procedimento" description="Cada procedimento pode ter duracao em minutos configuravel em Configuracoes. Padrao: 30 minutos." />
-          <FeatureCard title="Reagendamento" description="Mova consultas para outra data/hora via drag-and-drop ou formulario. Atualiza automaticamente." />
-          <FeatureCard title="Cancelamento com Confirmacao" description="Cancele agendamentos com confirmacao. Status atualiza para 'cancelado' com registro no historico." />
-          <FeatureCard title="Valor no Agendamento" description="Campo opcional de preco (R$) ao agendar consulta pelo calendario. Valor salvo no atendimento para uso no financeiro." />
-          <FeatureCard title="Botao de Lembrete Manual" description="Botao no card de consulta agendada para enviar lembrete por email ao paciente sob demanda." />
-          <FeatureCard title="Lista de Espera" description="Fila de pacientes com preferencias (dias, horarios, agenda, procedimento). Matching automatico ao cancelar consulta. Panel no calendario com badge, prioridade (normal/alta/urgente)." />
-          <FeatureCard title="Widget de Agendamento Embeddable" description="Script leve (widget.js) para incorporar agendamento no site da clinica. Botao flutuante ou modo inline. Popup com iframe em modo compacto. Comunicacao via postMessage (resize, booked, close). Gerador de codigo embed nas Configuracoes. Cor e posicao customizaveis. Mobile: overlay full-screen." />
+        <CategorySection icon="📅" title="Agendamento e Agenda" description="Calendário completo com múltiplas visões, bloqueio de horários, agendamentos recorrentes, múltiplas agendas, agendamento online e lista de espera." count={14}>
+          <FeatureCard title="Agendamento Online (Paciente)" description="Link público para pacientes agendarem sozinhos. Multi-step: procedimento, data/hora com slots disponíveis, dados do paciente. Sem login. Configura em Settings > Online. Advisory lock anti-double-booking." />
+          <FeatureCard title="Múltiplas Agendas" description="Suporte a várias agendas por workspace (por profissional ou sala). Pills coloridos para filtrar. Conflitos e bloqueios por agenda. CRUD completo em Configurações > Agendas." />
+          <FeatureCard title="Calendário Multi-visão" description="Visualização diária, semanal, mensal e em lista. Arquitetura modular com 12 sub-componentes otimizados (React.memo). Cache client-side com TTL de 60s para navegação rápida. Busca O(1) via indexes Map." />
+          <FeatureCard title="Drag and Drop" description="Arraste consultas na visão semanal para reagendar. Integrado com @dnd-kit/core. Suporte a forceSchedule no reagendamento." />
+          <FeatureCard title="Detecção de Conflitos" description="Verifica janela de +/-30 minutos. AlertDialog dedicado (substitui confirm() nativo) com opção de forçar agendamento. Também verifica bloqueios de horário." />
+          <FeatureCard title="Bloqueio de Horários" description="Bloqueie almoço, férias, feriados ou reuniões. Suporte a bloqueios únicos e recorrentes semanais. Barras cinza no calendário." />
+          <FeatureCard title="Agenda Recorrente" description="Agende séries de consultas: semanal ou quinzenal, de 2 a 52 ocorrências. Criação atômica em transação. Ideal para fisioterapia e estética." />
+          <FeatureCard title="Duração por Procedimento" description="Cada procedimento pode ter duração em minutos configurável em Configurações. Padrão: 30 minutos." />
+          <FeatureCard title="Reagendamento" description="Mova consultas para outra data/hora via drag-and-drop ou formulário. Atualiza automaticamente." />
+          <FeatureCard title="Cancelamento com Confirmação" description="Cancele agendamentos com confirmação. Status atualiza para 'cancelado' com registro no histórico." />
+          <FeatureCard title="Valor no Agendamento" description="Campo opcional de preço (R$) ao agendar consulta pelo calendário. Valor salvo no atendimento para uso no financeiro." />
+          <FeatureCard title="Botão de Lembrete Manual" description="Botão no card de consulta agendada para enviar lembrete por email ao paciente sob demanda." />
+          <FeatureCard title="Lista de Espera" description="Fila de pacientes com preferências (dias, horários, agenda, procedimento). Matching automático ao cancelar consulta. Panel no calendário com badge, prioridade (normal/alta/urgente)." />
+          <FeatureCard title="Widget de Agendamento Embeddable" description="Script leve (widget.js) para incorporar agendamento no site da clínica. Botão flutuante ou modo inline. Popup com iframe em modo compacto. Comunicação via postMessage (resize, booked, close). Gerador de código embed nas Configurações. Cor e posição customizáveis. Mobile: overlay full-screen." />
         </CategorySection>
 
         {/* ── 3. PRONTUARIO E IA ── */}
-        <CategorySection icon="🎙️" title="Prontuario e IA" description="Gravacao de voz, transcricao automatica, extracao de dados por inteligencia artificial e formularios customizaveis." count={15}>
-          <FeatureCard title="Gravacao de Audio" description="Gravacao via MediaRecorder (webm/opus). Consentimento LGPD obrigatorio. Audio nunca salvo localmente. Limite de 25MB." />
-          <FeatureCard title="Transcricao por IA (Whisper)" description="Transcricao automatica em portugues via OpenAI Whisper. Vocabulario medico como hints. Timeout de 60 segundos." />
-          <FeatureCard title="Extracao de Dados (Claude)" description="Claude Sonnet extrai nome, CPF, telefone, procedimentos, observacoes via tool_use. Validacao Zod. Temperatura 0 para precisao." />
-          <FeatureCard title="Revisao antes de Salvar" description="Dados extraidos pela IA nunca sao salvos automaticamente. Profissional revisa, edita e confirma. Campos com confianca < 80% destacados em amarelo." />
-          <FeatureCard title="Cadastro por Voz" description="Fale os dados do paciente e a IA preenche o cadastro. Deteccao de duplicatas por CPF/nome antes de salvar." />
-          <FeatureCard title="Templates por Especialidade" description="IA gera templates customizados no onboarding: procedimentos, campos extras e perguntas de anamnese por profissao." />
-          <FeatureCard title="Reproducao de Audio" description="Player de audio com controles play/pause na aba de gravacoes do paciente. URLs assinadas de 5 minutos." />
-          <FeatureCard title="Planos de Tratamento" description="Crie planos com multiplas sessoes (ex: clareamento 6 sessoes). Rastreie progresso, marque sessoes concluidas, pause ou cancele." />
-          <FeatureCard title="Anamnese Customizada" description="Template de perguntas por profissao (texto, booleano, selecao). Preenchido na aba Anamnese do paciente. Gerado pela IA no onboarding." />
-          <FeatureCard title="Extracao Estruturada (7 campos)" description="IA separa: procedimentos, diagnostico, observacoes, medicamentos, recomendacoes, proxima consulta e atualizacoes de dados pessoais do paciente." />
-          <FeatureCard title="CID-10 com Sugestao por IA" description="Busca de codigos CID-10 (1022 codigos PT-BR) com autocomplete. IA sugere CIDs a partir da transcricao. Codigos vinculados a consultas e atestados. Busca accent-insensitive por codigo ou descricao." />
-          <FeatureCard title="Formularios Customizaveis" description="Editor visual de formularios com 11 tipos de campo (texto, numero, selecao, escala, etc). Templates por especialidade. Respostas vinculadas a pacientes e consultas." />
-          <FeatureCard title="Biblioteca de Templates" description="5 templates pre-construidos (Anamnese Geral, Odontologica, Nutricional, SOAP, Retorno). Importar, clonar e customizar para o workspace." />
-          <FeatureCard title="Historico de Formularios" description="Aba Formularios no perfil do paciente com historico cronologico de respostas. Draft e completed status. Visualizacao inline read-only. Compatibilidade com anamnese legada." />
-          <FeatureCard title="Preenchimento Automatico de Endereco (CEP)" description="Ao digitar o CEP, o sistema busca automaticamente rua, bairro, cidade e estado via ViaCEP. Funciona no cadastro e edicao de pacientes." />
+        <CategorySection icon="🎙️" title="Prontuário e IA" description="Gravação de voz, transcrição automática, extração de dados por inteligência artificial e formulários customizáveis." count={15}>
+          <FeatureCard title="Gravação de Áudio" description="Gravação via MediaRecorder (webm/opus). Consentimento LGPD obrigatório. Áudio nunca salvo localmente. Limite de 25MB." />
+          <FeatureCard title="Transcrição por IA (Whisper)" description="Transcrição automática em português via OpenAI Whisper. Vocabulário médico como hints. Timeout de 60 segundos." />
+          <FeatureCard title="Extração de Dados (Claude)" description="Claude Sonnet extrai nome, CPF, telefone, procedimentos, observações via tool_use. Validação Zod. Temperatura 0 para precisão." />
+          <FeatureCard title="Revisão antes de Salvar" description="Dados extraídos pela IA nunca são salvos automaticamente. Profissional revisa, edita e confirma. Campos com confiança < 80% destacados em amarelo." />
+          <FeatureCard title="Cadastro por Voz" description="Fale os dados do paciente e a IA preenche o cadastro. Detecção de duplicatas por CPF/nome antes de salvar." />
+          <FeatureCard title="Templates por Especialidade" description="IA gera templates customizados no onboarding: procedimentos, campos extras e perguntas de anamnese por profissão." />
+          <FeatureCard title="Reprodução de Áudio" description="Player de áudio com controles play/pause na aba de gravações do paciente. URLs assinadas de 5 minutos." />
+          <FeatureCard title="Planos de Tratamento" description="Crie planos com múltiplas sessões (ex: clareamento 6 sessões). Rastreie progresso, marque sessões concluídas, pause ou cancele." />
+          <FeatureCard title="Anamnese Customizada" description="Template de perguntas por profissão (texto, booleano, seleção). Preenchido na aba Anamnese do paciente. Gerado pela IA no onboarding." />
+          <FeatureCard title="Extração Estruturada (7 campos)" description="IA separa: procedimentos, diagnóstico, observações, medicamentos, recomendações, próxima consulta e atualizações de dados pessoais do paciente." />
+          <FeatureCard title="CID-10 com Sugestão por IA" description="Busca de códigos CID-10 (1022 códigos PT-BR) com autocomplete. IA sugere CIDs a partir da transcrição. Códigos vinculados a consultas e atestados. Busca accent-insensitive por código ou descrição." />
+          <FeatureCard title="Formulários Customizáveis" description="Editor visual de formulários com 11 tipos de campo (texto, número, seleção, escala, etc). Templates por especialidade. Respostas vinculadas a pacientes e consultas." />
+          <FeatureCard title="Biblioteca de Templates" description="5 templates pré-construídos (Anamnese Geral, Odontológica, Nutricional, SOAP, Retorno). Importar, clonar e customizar para o workspace." />
+          <FeatureCard title="Histórico de Formulários" description="Aba Formulários no perfil do paciente com histórico cronológico de respostas. Draft e completed status. Visualização inline read-only. Compatibilidade com anamnese legada." />
+          <FeatureCard title="Preenchimento Automático de Endereço (CEP)" description="Ao digitar o CEP, o sistema busca automaticamente rua, bairro, cidade e estado via ViaCEP. Funciona no cadastro e edição de pacientes." />
         </CategorySection>
 
         {/* ── 4. PRESCRICOES E DOCUMENTOS ── */}
-        <CategorySection icon="💊" title="Prescricoes e Documentos" description="Prescricao eletronica, atestados, declaracoes e laudos com impressao em PDF. Integracao Memed." count={6}>
-          <FeatureCard title="Prescricao Eletronica" description="Crie prescricoes com lista de medicamentos (nome, posologia, frequencia, duracao, observacoes). Imprima como PDF (Ctrl+P). Acessivel pelo perfil do paciente." />
-          <FeatureCard title="Integracao Memed" description="Prescricao digital via Memed (60k+ medicamentos, alertas de interacao, assinatura ICP-Brasil). Gratuito para parceiros. Chooser automatico: Memed ou manual." />
-          <FeatureCard title="Prescricao Memed — Assinatura Digital" description="Prescricoes Memed sao assinadas digitalmente com certificado ICP-Brasil. PDF assinado armazenado, link digital para o paciente, badge de assinatura na listagem." />
-          <FeatureCard title="Atestados Medicos" description="Geracao automatica de texto com nome, CPF, data e dias de afastamento. Campo opcional para codigo CID. Impressao em PDF." />
-          <FeatureCard title="Declaracao de Comparecimento" description="Texto auto-gerado com horario de entrada e saida. Impressao em PDF com assinatura e dados da clinica." />
-          <FeatureCard title="Encaminhamento e Laudo" description="Documentos com texto livre para encaminhamentos medicos e laudos tecnicos. Impressao em PDF padronizada." />
+        <CategorySection icon="💊" title="Prescrições e Documentos" description="Prescrição eletrônica, atestados, declarações e laudos com impressão em PDF. Integração Memed." count={6}>
+          <FeatureCard title="Prescrição Eletrônica" description="Crie prescrições com lista de medicamentos (nome, posologia, frequência, duração, observações). Imprima como PDF (Ctrl+P). Acessível pelo perfil do paciente." />
+          <FeatureCard title="Integração Memed" description="Prescrição digital via Memed (60k+ medicamentos, alertas de interação, assinatura ICP-Brasil). Gratuito para parceiros. Chooser automático: Memed ou manual." />
+          <FeatureCard title="Prescrição Memed — Assinatura Digital" description="Prescrições Memed são assinadas digitalmente com certificado ICP-Brasil. PDF assinado armazenado, link digital para o paciente, badge de assinatura na listagem." />
+          <FeatureCard title="Atestados Médicos" description="Geração automática de texto com nome, CPF, data e dias de afastamento. Campo opcional para código CID. Impressão em PDF." />
+          <FeatureCard title="Declaração de Comparecimento" description="Texto auto-gerado com horário de entrada e saída. Impressão em PDF com assinatura e dados da clínica." />
+          <FeatureCard title="Encaminhamento e Laudo" description="Documentos com texto livre para encaminhamentos médicos e laudos técnicos. Impressão em PDF padronizada." />
         </CategorySection>
 
         {/* ── 5. COMUNICACAO ── */}
-        <CategorySection icon="💬" title="Comunicacao" description="WhatsApp Business API, lembretes automaticos, NPS e notificacoes." count={8}>
-          <FeatureCard title="WhatsApp Business API" description="Integracao completa via Meta Cloud API. Setup wizard de 5 passos com Facebook Embedded Signup. Envio e recebimento de mensagens." />
-          <FeatureCard title="Lembretes Automaticos" description="Cron diario envia lembretes 24h antes da consulta. WhatsApp com botoes interativos (Confirmar/Nao poderei ir), email como fallback." />
-          <FeatureCard title="Confirmacao Automatizada" description="Paciente confirma ou cancela via clique de botao WhatsApp ou resposta em texto (sim/nao). Status da consulta atualiza automaticamente." />
-          <FeatureCard title="Mensagens de Aniversario" description="Cron diario verifica aniversariantes. Envia felicitacao via WhatsApp ou email automaticamente." />
-          <FeatureCard title="Pesquisa NPS" description="Enviada automaticamente apos consultas completadas. Pagina publica com escala 0-10 + comentario. Score NPS nos relatorios." />
-          <FeatureCard title="Email Transacional" description="Lembretes, confirmacoes e NPS via Resend API. Templates HTML em pt-BR. Fallback gracioso se API key nao configurada." />
-          <FeatureCard title="Notificacoes In-App" description="Sino de notificacoes no header. Tipos: consulta em breve, falta, tratamento completo, sistema. Polling a cada 60 segundos." />
-          <FeatureCard title="Inbox WhatsApp" description="Pagina de mensagens com lista de conversas e chat em tempo real. Envio de texto, indicador de leitura, busca de contatos. Polling automatico." />
+        <CategorySection icon="💬" title="Comunicação" description="WhatsApp Business API, lembretes automáticos, NPS e notificações." count={8}>
+          <FeatureCard title="WhatsApp Business API" description="Integração completa via Meta Cloud API. Setup wizard de 5 passos com Facebook Embedded Signup. Envio e recebimento de mensagens." />
+          <FeatureCard title="Lembretes Automáticos" description="Cron diário envia lembretes 24h antes da consulta. WhatsApp com botões interativos (Confirmar/Não poderei ir), email como fallback." />
+          <FeatureCard title="Confirmação Automatizada" description="Paciente confirma ou cancela via clique de botão WhatsApp ou resposta em texto (sim/não). Status da consulta atualiza automaticamente." />
+          <FeatureCard title="Mensagens de Aniversário" description="Cron diário verifica aniversariantes. Envia felicitação via WhatsApp ou email automaticamente." />
+          <FeatureCard title="Pesquisa NPS" description="Enviada automaticamente após consultas completadas. Página pública com escala 0-10 + comentário. Score NPS nos relatórios." />
+          <FeatureCard title="Email Transacional" description="Lembretes, confirmações e NPS via Resend API. Templates HTML em pt-BR. Fallback gracioso se API key não configurada." />
+          <FeatureCard title="Notificações In-App" description="Sino de notificações no header. Tipos: consulta em breve, falta, tratamento completo, sistema. Polling a cada 60 segundos." />
+          <FeatureCard title="Inbox WhatsApp" description="Página de mensagens com lista de conversas e chat em tempo real. Envio de texto, indicador de leitura, busca de contatos. Polling automático." />
         </CategorySection>
 
         {/* ── 6. FINANCEIRO ── */}
         <CategorySection icon="💰" title="Financeiro" description="Controle completo de receitas, despesas, pagamentos, NFS-e, TISS e fluxo de caixa." count={19}>
-          <FeatureCard title="Preco por Consulta" description="Cada consulta pode ter valor em BRL. Editavel na revisao e no historico. Procedimentos com preco configuravel." />
-          <FeatureCard title="Recibos de Atendimento" description="Geracao automatica com dados do paciente, procedimentos e valor. Impressao em PDF (Ctrl+P). Assinatura manual." />
-          <FeatureCard title="Dashboard Financeiro" description="Receita total, ticket medio, faturamento mensal, breakdown por procedimento. Exportacao para Excel." />
-          <FeatureCard title="Contas a Receber" description="Registro de cobrancas com parcelamento (1-24x), controle de pagamentos por metodo (PIX, cartao, dinheiro, boleto, convenio), deteccao automatica de vencidos, saldo por paciente." />
-          <FeatureCard title="Fluxo de Caixa" description="Visao diaria/mensal de entradas e saidas com grafico combinado (barras + linha de saldo). Despesas com categorias, recorrencia e projecao futura." />
-          <FeatureCard title="Gestao de Despesas" description="Cadastro de despesas com 8 categorias padrao (Aluguel, Salarios, Material, etc.), recorrencia semanal/mensal/anual, pagamento inline." />
-          <FeatureCard title="NFS-e (Nota Fiscal)" description="Emissao de Nota Fiscal de Servico Eletronica via API Nuvem Fiscal. Configuracao fiscal completa (CNPJ, ISS, regime tributario). Download PDF, cancelamento." />
-          <FeatureCard title="Tabela de Precos" description="Configuracao de precos por procedimento, editavel diretamente na pagina financeira." />
-          <FeatureCard title="Edicao de Despesas" description="Despesas podem ser editadas apos criacao. Dialog pre-preenchido com dados atuais, salvamento via updateExpense." />
-          <FeatureCard title="Projecao de Fluxo de Caixa" description="Grafico de projecao de receitas e despesas para os proximos 6 meses. Baseado em cobrancas e despesas recorrentes." />
+          <FeatureCard title="Preço por Consulta" description="Cada consulta pode ter valor em BRL. Editável na revisão e no histórico. Procedimentos com preço configurável." />
+          <FeatureCard title="Recibos de Atendimento" description="Geração automática com dados do paciente, procedimentos e valor. Impressão em PDF (Ctrl+P). Assinatura manual." />
+          <FeatureCard title="Dashboard Financeiro" description="Receita total, ticket médio, faturamento mensal, breakdown por procedimento. Exportação para Excel." />
+          <FeatureCard title="Contas a Receber" description="Registro de cobranças com parcelamento (1-24x), controle de pagamentos por método (PIX, cartão, dinheiro, boleto, convênio), detecção automática de vencidos, saldo por paciente." />
+          <FeatureCard title="Fluxo de Caixa" description="Visão diária/mensal de entradas e saídas com gráfico combinado (barras + linha de saldo). Despesas com categorias, recorrência e projeção futura." />
+          <FeatureCard title="Gestão de Despesas" description="Cadastro de despesas com 8 categorias padrão (Aluguel, Salários, Material, etc.), recorrência semanal/mensal/anual, pagamento inline." />
+          <FeatureCard title="NFS-e (Nota Fiscal)" description="Emissão de Nota Fiscal de Serviço Eletrônica via API Nuvem Fiscal. Configuração fiscal completa (CNPJ, ISS, regime tributário). Download PDF, cancelamento." />
+          <FeatureCard title="Tabela de Preços" description="Configuração de preços por procedimento, editável diretamente na página financeira." />
+          <FeatureCard title="Edição de Despesas" description="Despesas podem ser editadas após criação. Dialog pré-preenchido com dados atuais, salvamento via updateExpense." />
+          <FeatureCard title="Projeção de Fluxo de Caixa" description="Gráfico de projeção de receitas e despesas para os próximos 6 meses. Baseado em cobranças e despesas recorrentes." />
           <FeatureCard title="Saldo do Paciente" description="Badge no detalhe do paciente mostrando saldo devedor total e valores vencidos, com destaque visual em vermelho." />
-          <FeatureCard title="Certificado Digital NFS-e" description="Upload de certificado digital A1 (.pfx) para emissao de NFS-e. Cadastro automatico da empresa na NuvemFiscal e configuracao fiscal integrada." />
-          <FeatureCard title="TISS — Guia de Consulta" description="Geracao de Guia de Consulta TISS (ANS 4.01.00) com XML valido, codigo TUSS, dados do beneficiario e profissional. Integrado com agenda e paciente." />
-          <FeatureCard title="TISS — Guia SP/SADT" description="Geracao de Guia SP/SADT para procedimentos e exames. Lista de procedimentos com codigo TUSS, quantidade e valores." />
-          <FeatureCard title="TISS — Gestao de Operadoras" description="Cadastro de convenios (operadoras) com registro ANS, CNPJ. Dados estruturados de convenio no perfil do paciente (carteira, plano, validade)." />
-          <FeatureCard title="TISS — Lote XML e Ciclo de Vida" description="Exportacao em lote de guias TISS como XML batch. Ciclo de vida: rascunho, enviada, paga, glosada, cancelada. Hash SHA-256 para integridade." />
-          <FeatureCard title="Comissoes / Repasse" description="Regras de comissao por profissional e/ou procedimento (percentual ou valor fixo). Calculo automatico ao concluir consulta. Relatorio por profissional com receita bruta, comissao e retencao clinica. Pagamento em lote com data." />
-          <FeatureCard title="Controle de Estoque" description="Cadastro de itens (insumos, materiais, medicamentos) com categorias, unidade de medida, custo unitario e fornecedor. Movimentacoes atomicas (entrada/saida/ajuste) com historico. Alerta de estoque minimo com banner visual. Cards de resumo: total de itens, itens abaixo do minimo, valor total em estoque." />
-          <FeatureCard title="Gateway de Pagamento (Asaas)" description="Cobranca online via PIX (QR code instantaneo), boleto e cartao de credito. Integracao com Asaas, webhook para confirmacao automatica de pagamento, link de pagamento para envio ao paciente. Configuracao em Configuracoes > Pagamento com modo sandbox para testes." />
+          <FeatureCard title="Certificado Digital NFS-e" description="Upload de certificado digital A1 (.pfx) para emissão de NFS-e. Cadastro automático da empresa na NuvemFiscal e configuração fiscal integrada." />
+          <FeatureCard title="TISS — Guia de Consulta" description="Geração de Guia de Consulta TISS (ANS 4.01.00) com XML válido, código TUSS, dados do beneficiário e profissional. Integrado com agenda e paciente." />
+          <FeatureCard title="TISS — Guia SP/SADT" description="Geração de Guia SP/SADT para procedimentos e exames. Lista de procedimentos com código TUSS, quantidade e valores." />
+          <FeatureCard title="TISS — Gestão de Operadoras" description="Cadastro de convênios (operadoras) com registro ANS, CNPJ. Dados estruturados de convênio no perfil do paciente (carteira, plano, validade)." />
+          <FeatureCard title="TISS — Lote XML e Ciclo de Vida" description="Exportação em lote de guias TISS como XML batch. Ciclo de vida: rascunho, enviada, paga, glosada, cancelada. Hash SHA-256 para integridade." />
+          <FeatureCard title="Comissões / Repasse" description="Regras de comissão por profissional e/ou procedimento (percentual ou valor fixo). Cálculo automático ao concluir consulta. Relatório por profissional com receita bruta, comissão e retenção clínica. Pagamento em lote com data." />
+          <FeatureCard title="Controle de Estoque" description="Cadastro de itens (insumos, materiais, medicamentos) com categorias, unidade de medida, custo unitário e fornecedor. Movimentações atômicas (entrada/saída/ajuste) com histórico. Alerta de estoque mínimo com banner visual. Cards de resumo: total de itens, itens abaixo do mínimo, valor total em estoque." />
+          <FeatureCard title="Gateway de Pagamento (Asaas)" description="Cobrança online via PIX (QR code instantâneo), boleto e cartão de crédito. Integração com Asaas, webhook para confirmação automática de pagamento, link de pagamento para envio ao paciente. Configuração em Configurações > Pagamento com modo sandbox para testes." />
         </CategorySection>
 
         {/* ── 7. RELATORIOS ── */}
-        <CategorySection icon="📊" title="Relatorios e Analytics" description="Dashboard gerencial com KPIs, graficos e rankings." count={9}>
+        <CategorySection icon="📊" title="Relatórios e Analytics" description="Dashboard gerencial com KPIs, gráficos e rankings." count={9}>
           <FeatureCard title="Dashboard Gerencial" description="KPIs: total de pacientes, consultas mensais, receita total, taxa de retorno, taxa de no-show, NPS score." />
-          <FeatureCard title="Grafico de Receita Mensal" description="Linha/barra de evolucao de receita e atendimentos por mes. Periodos: 3, 6 ou 12 meses." />
-          <FeatureCard title="Novos Pacientes por Mes" description="Grafico de barras com crescimento da base de pacientes ao longo do tempo." />
-          <FeatureCard title="Distribuicao por Status" description="Grafico de pizza: concluidos, agendados, cancelados, faltaram." />
-          <FeatureCard title="Horarios mais Procurados" description="Heatmap de atendimentos por hora do dia (7h-20h). Identifica picos de demanda." />
+          <FeatureCard title="Gráfico de Receita Mensal" description="Linha/barra de evolução de receita e atendimentos por mês. Períodos: 3, 6 ou 12 meses." />
+          <FeatureCard title="Novos Pacientes por Mês" description="Gráfico de barras com crescimento da base de pacientes ao longo do tempo." />
+          <FeatureCard title="Distribuição por Status" description="Gráfico de pizza: concluídos, agendados, cancelados, faltaram." />
+          <FeatureCard title="Horários mais Procurados" description="Heatmap de atendimentos por hora do dia (7h-20h). Identifica picos de demanda." />
           <FeatureCard title="Procedimentos mais Realizados" description="Ranking dos 10 procedimentos mais frequentes com barras de progresso." />
-          <FeatureCard title="Ranking de Pacientes" description="Top 10 pacientes por frequencia de consultas e top 10 por receita gerada. Identifica VIPs automaticamente." />
-          <FeatureCard title="Exportacao Excel" description="Exporte lista de pacientes e relatorios completos em .xlsx. Multi-sheet: Resumo, Mensal, Procedimentos." />
-          <FeatureCard title="Respostas Individuais NPS" description="Listagem detalhada de respostas NPS com nome do paciente, score colorido (Promotor/Neutro/Detrator), comentario e data." />
+          <FeatureCard title="Ranking de Pacientes" description="Top 10 pacientes por frequência de consultas e top 10 por receita gerada. Identifica VIPs automaticamente." />
+          <FeatureCard title="Exportação Excel" description="Exporte lista de pacientes e relatórios completos em .xlsx. Multi-sheet: Resumo, Mensal, Procedimentos." />
+          <FeatureCard title="Respostas Individuais NPS" description="Listagem detalhada de respostas NPS com nome do paciente, score colorido (Promotor/Neutro/Detrator), comentário e data." />
         </CategorySection>
 
         {/* ── 8. CONFIGURACOES ── */}
-        <CategorySection icon="⚙️" title="Configuracoes" description="Personalize o workspace, equipe, permissoes e integracoes." count={7}>
-          <FeatureCard title="Procedimentos com Duracao" description="Cadastre procedimentos com nome, categoria, preco e duracao em minutos. Gerados por IA no onboarding." />
-          <FeatureCard title="Campos Personalizados" description="Crie campos extras por especialidade: texto, numero, booleano, data, selecao com opcoes. Aparecem no cadastro e perfil do paciente." />
-          <FeatureCard title="Anamnese Configuravel" description="Template de perguntas de anamnese por profissao. Texto, booleano ou selecao. Gerado pela IA." />
-          <FeatureCard title="Gestao de Equipe" description="Convite por email com roles: proprietario, admin, profissional, secretaria, visualizador. Convites com expiracao de 7 dias." />
-          <FeatureCard title="Controle de Acesso (RBAC)" description="5 papeis com permissoes granulares. Navegacao e paginas filtradas por role. Secretaria sem acesso clinico, visualizador somente leitura, profissional sem financeiro/configuracoes." />
-          <FeatureCard title="Configuracao WhatsApp" description="Wizard de 5 etapas para conectar WhatsApp Business via Facebook Embedded Signup. Tokens criptografados." />
-          <FeatureCard title="Tema Claro/Escuro" description="Alterne entre modo claro, escuro ou preferencia do sistema. Salvo localmente." />
+        <CategorySection icon="⚙️" title="Configurações" description="Personalize o workspace, equipe, permissões e integrações." count={7}>
+          <FeatureCard title="Procedimentos com Duração" description="Cadastre procedimentos com nome, categoria, preço e duração em minutos. Gerados por IA no onboarding." />
+          <FeatureCard title="Campos Personalizados" description="Crie campos extras por especialidade: texto, número, booleano, data, seleção com opções. Aparecem no cadastro e perfil do paciente." />
+          <FeatureCard title="Anamnese Configurável" description="Template de perguntas de anamnese por profissão. Texto, booleano ou seleção. Gerado pela IA." />
+          <FeatureCard title="Gestão de Equipe" description="Convite por email com roles: proprietário, admin, profissional, secretária, visualizador. Convites com expiração de 7 dias." />
+          <FeatureCard title="Controle de Acesso (RBAC)" description="5 papéis com permissões granulares. Navegação e páginas filtradas por role. Secretária sem acesso clínico, visualizador somente leitura, profissional sem financeiro/configurações." />
+          <FeatureCard title="Configuração WhatsApp" description="Wizard de 5 etapas para conectar WhatsApp Business via Facebook Embedded Signup. Tokens criptografados." />
+          <FeatureCard title="Tema Claro/Escuro" description="Alterne entre modo claro, escuro ou preferência do sistema. Salvo localmente." />
         </CategorySection>
 
         {/* ── 9. SEGURANCA ── */}
-        <CategorySection icon="🔐" title="Seguranca e LGPD" description="Conformidade com LGPD e boas praticas de seguranca." count={10}>
-          <FeatureCard title="Consentimento LGPD" description="Modal obrigatorio antes de gravacao de audio. ConsentRecord armazenado no banco com timestamp e responsavel." />
-          <FeatureCard title="Isolamento Multi-tenant" description="Todas as queries filtradas por workspaceId. Gravacoes, pacientes e consultas completamente isolados entre clinicas." />
-          <FeatureCard title="Auditoria Completa" description="Log de todas as operacoes: criacao, edicao, exclusao, merge, exportacao. Registra usuario, acao, entidade e timestamp." />
-          <FeatureCard title="Soft Delete (20 anos)" description="Pacientes desativados, nunca deletados. Atende exigencia do CFM de guarda por 20 anos. Dados retidos para compliance." />
-          <FeatureCard title="Criptografia" description="HTTPS em transito (Fly.io). Tokens WhatsApp criptografados em repouso (AES). URLs de audio assinadas (5 min expiry)." />
-          <FeatureCard title="Autenticacao Clerk" description="Login seguro via Clerk com suporte a Google, social login e 2FA. Sessoes gerenciadas automaticamente." />
-          <FeatureCard title="Log de Auditoria" description="Pagina em Configuracoes > Auditoria com historico paginado de todas as acoes: criacao, edicao, exclusao de pacientes e consultas." />
-          <FeatureCard title="Dashboard de Uso do Plano" description="Barras de progresso em Configuracoes > Plano mostrando consumo de pacientes, consultas e gravacoes vs limites do plano." />
-          <FeatureCard title="Canal do DPO (Encarregado)" description="Pagina publica /dpo para exercicio de direitos de titular (Art. 18 LGPD): acesso, correcao, exclusao, portabilidade. Formulario com prazo de 15 dias." />
-          <FeatureCard title="Plano de Resposta a Incidentes" description="Documento interno seguindo Resolucao CD/ANPD 15/2024: classificacao de severidade, fases de resposta, modelos de notificacao a ANPD e titulares." />
+        <CategorySection icon="🔐" title="Segurança e LGPD" description="Conformidade com LGPD e boas práticas de segurança." count={10}>
+          <FeatureCard title="Consentimento LGPD" description="Modal obrigatório antes de gravação de áudio. ConsentRecord armazenado no banco com timestamp e responsável." />
+          <FeatureCard title="Isolamento Multi-tenant" description="Todas as queries filtradas por workspaceId. Gravações, pacientes e consultas completamente isolados entre clínicas." />
+          <FeatureCard title="Auditoria Completa" description="Log de todas as operações: criação, edição, exclusão, merge, exportação. Registra usuário, ação, entidade e timestamp." />
+          <FeatureCard title="Soft Delete (20 anos)" description="Pacientes desativados, nunca deletados. Atende exigência do CFM de guarda por 20 anos. Dados retidos para compliance." />
+          <FeatureCard title="Criptografia" description="HTTPS em trânsito (Fly.io). Tokens WhatsApp criptografados em repouso (AES). URLs de áudio assinadas (5 min expiry)." />
+          <FeatureCard title="Autenticação Clerk" description="Login seguro via Clerk com suporte a Google, social login e 2FA. Sessões gerenciadas automaticamente." />
+          <FeatureCard title="Log de Auditoria" description="Página em Configurações > Auditoria com histórico paginado de todas as ações: criação, edição, exclusão de pacientes e consultas." />
+          <FeatureCard title="Dashboard de Uso do Plano" description="Barras de progresso em Configurações > Plano mostrando consumo de pacientes, consultas e gravações vs limites do plano." />
+          <FeatureCard title="Canal do DPO (Encarregado)" description="Página pública /dpo para exercício de direitos de titular (Art. 18 LGPD): acesso, correção, exclusão, portabilidade. Formulário com prazo de 15 dias." />
+          <FeatureCard title="Plano de Resposta a Incidentes" description="Documento interno seguindo Resolução CD/ANPD 15/2024: classificação de severidade, fases de resposta, modelos de notificação a ANPD e titulares." />
         </CategorySection>
 
         {/* ── 10. INFRAESTRUTURA ── */}
-        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiencia do usuario." count={14}>
+        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiência do usuário." count={14}>
           <FeatureCard title="Design Responsivo" description="Mobile-first com sidebar no desktop e bottom nav no mobile. Funciona em celular, tablet e desktop." />
-          <FeatureCard title="PWA Ready" description="Manifest.json e service worker para instalacao como app. Icones configurados para iOS e Android." />
-          <FeatureCard title="Performance" description="Next.js 16 com Turbopack. Server components, cache com unstable_cache. Carregamento rapido com skeletons." />
-          <FeatureCard title="Busca Global (Ctrl+K)" description="Paleta de comandos acessivel de qualquer pagina. Busca pacientes, paginas e acoes rapidas. Navegacao por teclado." />
-          <FeatureCard title="Onboarding com IA" description="Wizard de 4 etapas: escolha da profissao (8 opcoes), perguntas contextuais, dados da clinica, preview editavel gerado por Claude. Workspace pronto em segundos." />
-          <FeatureCard title="Tour Guiado Pos-Onboarding" description="10 steps interativos com spotlight overlay: dashboard, agenda, pacientes, financeiro, gravacao de voz. Progress tracking, skip/restart, adaptacao desktop/mobile." />
-          <FeatureCard title="Verificacao de Documento Digital" description="Pagina publica /verificar/[token] para validacao de prescricoes e atestados assinados digitalmente. Nome mascarado (LGPD), dados do profissional e certificado." />
-          <FeatureCard title="Impressao em PDF" description="Paginas de recibo, prescricao e atestado otimizadas para impressao (Ctrl+P). Estilos @media print dedicados." />
-          <FeatureCard title="Health Check" description="Endpoint /api/health para monitoramento de disponibilidade e integracao com ferramentas de uptime." />
-          <FeatureCard title="Validacao de Ambiente" description="Todas as variaveis de ambiente validadas via Zod no startup. App falha rapido se configuracao incorreta." />
-          <FeatureCard title="Indicador de Horario Atual" description="Linha vermelha nas visoes semanal e diaria mostrando a hora atual (useRef, sem re-renders no pai), com auto-scroll para o horario do dia." />
-          <FeatureCard title="Mensagens de Erro Amigaveis" description="Todas as mensagens de erro em portugues, claras e orientativas. Erros tecnicos traduzidos automaticamente para linguagem acessivel via helper centralizado (friendlyError)." />
-          <FeatureCard title="Filtro por Convenio" description="Filtro de pacientes por convenio (plano de saude) na lista de pacientes, complementando o filtro por tags existente." />
-          <FeatureCard title="Busca Automatica (Debounce)" description="Campos de busca em dialogs (NFS-e, merge de pacientes) iniciam a pesquisa automaticamente ao digitar, sem necessidade de clicar em botao. Debounce de 300ms." />
+          <FeatureCard title="PWA Ready" description="Manifest.json e service worker para instalação como app. Ícones configurados para iOS e Android." />
+          <FeatureCard title="Performance" description="Next.js 16 com Turbopack. Server components, cache com unstable_cache. Carregamento rápido com skeletons." />
+          <FeatureCard title="Busca Global (Ctrl+K)" description="Paleta de comandos acessível de qualquer página. Busca pacientes, páginas e ações rápidas. Navegação por teclado." />
+          <FeatureCard title="Onboarding com IA" description="Wizard de 4 etapas: escolha da profissão (8 opções), perguntas contextuais, dados da clínica, preview editável gerado por Claude. Workspace pronto em segundos." />
+          <FeatureCard title="Tour Guiado Pós-Onboarding" description="10 steps interativos com spotlight overlay: dashboard, agenda, pacientes, financeiro, gravação de voz. Progress tracking, skip/restart, adaptação desktop/mobile." />
+          <FeatureCard title="Verificação de Documento Digital" description="Página pública /verificar/[token] para validação de prescrições e atestados assinados digitalmente. Nome mascarado (LGPD), dados do profissional e certificado." />
+          <FeatureCard title="Impressão em PDF" description="Páginas de recibo, prescrição e atestado otimizadas para impressão (Ctrl+P). Estilos @media print dedicados." />
+          <FeatureCard title="Health Check" description="Endpoint /api/health para monitoramento de disponibilidade e integração com ferramentas de uptime." />
+          <FeatureCard title="Validação de Ambiente" description="Todas as variáveis de ambiente validadas via Zod no startup. App falha rápido se configuração incorreta." />
+          <FeatureCard title="Indicador de Horário Atual" description="Linha vermelha nas visões semanal e diária mostrando a hora atual (useRef, sem re-renders no pai), com auto-scroll para o horário do dia." />
+          <FeatureCard title="Mensagens de Erro Amigáveis" description="Todas as mensagens de erro em português, claras e orientativas. Erros técnicos traduzidos automaticamente para linguagem acessível via helper centralizado (friendlyError)." />
+          <FeatureCard title="Filtro por Convênio" description="Filtro de pacientes por convênio (plano de saúde) na lista de pacientes, complementando o filtro por tags existente." />
+          <FeatureCard title="Busca Automática (Debounce)" description="Campos de busca em dialogs (NFS-e, merge de pacientes) iniciam a pesquisa automaticamente ao digitar, sem necessidade de clicar em botão. Debounce de 300ms." />
         </CategorySection>
 
         {/* ── 11. TELEMEDICINA ── */}
-        <CategorySection icon="🎥" title="Telemedicina" description="Teleconsulta por video integrada ao fluxo de atendimento." count={4}>
-          <FeatureCard title="Teleconsulta por Video" description="Videochamada integrada via Daily.co com sala privada, sala de espera (knocking), compartilhamento de tela e chat. Iframe embeddable sem dependencias." />
-          <FeatureCard title="Acesso do Paciente" description="Link publico de acesso (/sala/[token]) sem necessidade de login. Janela de acesso de 24h antes/depois da consulta. Tela pre-chamada com consentimento LGPD, dados da consulta e botao de entrada." />
-          <FeatureCard title="Gravacao Automatica de Video" description="Webhook Daily.co captura gravacoes de teleconsulta e salva automaticamente no Supabase Storage. Vinculado ao atendimento para consulta posterior." />
-          <FeatureCard title="Billing e Planos (Stripe)" description="Assinaturas via Stripe Checkout com planos Free/Pro/Enterprise. Customer Portal para autogestao, webhooks para sincronizacao de plano, suporte a PIX e boleto." />
+        <CategorySection icon="🎥" title="Telemedicina" description="Teleconsulta por vídeo integrada ao fluxo de atendimento." count={4}>
+          <FeatureCard title="Teleconsulta por Vídeo" description="Videochamada integrada via Daily.co com sala privada, sala de espera (knocking), compartilhamento de tela e chat. Iframe embeddable sem dependências." />
+          <FeatureCard title="Acesso do Paciente" description="Link público de acesso (/sala/[token]) sem necessidade de login. Janela de acesso de 24h antes/depois da consulta. Tela pré-chamada com consentimento LGPD, dados da consulta e botão de entrada." />
+          <FeatureCard title="Gravação Automática de Vídeo" description="Webhook Daily.co captura gravações de teleconsulta e salva automaticamente no Supabase Storage. Vinculado ao atendimento para consulta posterior." />
+          <FeatureCard title="Billing e Planos (Stripe)" description="Assinaturas via Stripe Checkout com planos Free/Pro/Enterprise. Customer Portal para autogestão, webhooks para sincronização de plano, suporte a PIX e boleto." />
         </CategorySection>
 
         {/* Footer */}
         <footer className="border-t border-slate-100 pt-8 pb-12 text-center space-y-2">
           <p className="text-xs text-slate-400">
-            VoxClinic — CRM inteligente com IA para clinicas e consultorios
+            VoxClinic — CRM inteligente com IA para clínicas e consultórios
           </p>
           <p className="text-[10px] text-slate-300">
-            Ultima atualizacao: {lastUpdated} · {FEATURES_SUMMARY.total} funcionalidades documentadas
+            Última atualização: {lastUpdated} · {FEATURES_SUMMARY.total} funcionalidades documentadas
           </p>
           {/* Agent instruction: update lastUpdated and FEATURES_SUMMARY when adding features */}
         </footer>

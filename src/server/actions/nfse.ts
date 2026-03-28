@@ -55,8 +55,8 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
   if (!appointment) throw new ActionError(ERR_APPOINTMENT_NOT_FOUND)
   if (!appointment.price) throw new ActionError(ERR_NFSE_NO_PRICE)
 
-  // Narrow price after the guard above
-  const appointmentPrice = appointment.price!
+  // Narrow price after the guard above — convert centavos to BRL for NFS-e API
+  const appointmentPrice = appointment.price! / 100
 
   // Use transaction to prevent duplicate NFS-e race condition
   return await db.$transaction(async (tx) => {
@@ -186,7 +186,7 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
       })
 
       // Fetch IBGE code and full address from CEP via ViaCEP
-      let logradouro = "Rua nao informada"
+      let logradouro = "Rua não informada"
       let bairro = "Centro"
       let codigoMunicipio = ""
       try {
@@ -387,7 +387,7 @@ export async function getNfseByAppointment(appointmentId: string) {
 export const cancelNfse = safeAction(async (nfseId: string, motivo: string) => {
   const { workspaceId } = await getAuthContext()
 
-  if (!motivo.trim()) throw new ActionError("Motivo do cancelamento e obrigatorio")
+  if (!motivo.trim()) throw new ActionError("Motivo do cancelamento é obrigatório")
 
   // Load config outside transaction (immutable config data)
   const config = await db.nfseConfig.findUnique({
@@ -464,7 +464,7 @@ export const refreshNfseStatus = safeAction(async (nfseId: string) => {
 
     const nfse = rows[0]
     if (!nfse) throw new ActionError(ERR_NFSE_NOT_FOUND)
-    if (!nfse.externalId) throw new ActionError("NFS-e sem referencia externa")
+    if (!nfse.externalId) throw new ActionError("NFS-e sem referência externa")
     if (nfse.status === "cancelled") throw new ActionError(ERR_NFSE_CANCELLED_NO_UPDATE)
 
     const client = new NfseClient(config.certificateId ?? '', decrypt(config.apiKey), process.env.NFSE_AMBIENTE !== 'producao')

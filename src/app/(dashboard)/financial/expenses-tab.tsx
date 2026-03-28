@@ -146,7 +146,7 @@ export default function ExpensesTab() {
     showConfirm(
       "Excluir despesa",
       hasRecurrence
-        ? "Deseja excluir tambem as recorrencias futuras desta despesa?"
+        ? "Deseja excluir também as recorrencias futuras desta despesa?"
         : "Tem certeza que deseja excluir esta despesa? Esta acao nao pode ser desfeita.",
       () => executeDelete(id, hasRecurrence),
     )

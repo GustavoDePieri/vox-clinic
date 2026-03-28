@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   })
 
   if (!config || !config.isActive) {
-    return NextResponse.json({ error: "Agendamento online nao disponivel" }, { status: 404 })
+    return NextResponse.json({ error: "Agendamento online não disponível" }, { status: 404 })
   }
 
   // Filter procedures if allowedProcedureIds is set
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!config || !config.isActive) {
-      return NextResponse.json({ error: "Agendamento online nao disponivel" }, { status: 404 })
+      return NextResponse.json({ error: "Agendamento online não disponível" }, { status: 404 })
     }
 
     const workspaceId = config.workspace.id
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     now.setSeconds(0, 0)
     if (targetDate < now) {
       return NextResponse.json(
-        { error: "Nao e possivel agendar em uma data no passado" },
+        { error: "Não é possível agendar em uma data no passado" },
         { status: 400 }
       )
     }
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     const timeStr = `${String(targetDate.getHours()).padStart(2, "0")}:${String(targetDate.getMinutes()).padStart(2, "0")}`
     const targetSlot = slots.find((s) => s.time === timeStr)
     if (!targetSlot?.available) {
-      return NextResponse.json({ error: "Horario nao disponivel" }, { status: 409 })
+      return NextResponse.json({ error: "Horário não disponível" }, { status: 409 })
     }
 
     // Atomic: find/create patient + create appointment with advisory lock
@@ -297,13 +297,13 @@ export async function POST(request: NextRequest) {
     })
   } catch (err: any) {
     if (err.message === "SLOT_TAKEN") {
-      return NextResponse.json({ error: "Horario ja foi reservado. Escolha outro horario." }, { status: 409 })
+      return NextResponse.json({ error: "Horário já foi reservado. Escolha outro horário." }, { status: 409 })
     }
     if (err.message === "RATE_LIMIT") {
       return NextResponse.json({ error: "Muitas solicitacoes. Tente novamente mais tarde." }, { status: 429 })
     }
     if (err.message === "DUPLICATE_BOOKING") {
-      return NextResponse.json({ error: "Agendamento ja realizado. Verifique seus agendamentos." }, { status: 409 })
+      return NextResponse.json({ error: "Agendamento já realizado. Verifique seus agendamentos." }, { status: 409 })
     }
     console.error("Booking error:", err)
     return NextResponse.json({ error: "Erro ao agendar. Tente novamente." }, { status: 500 })

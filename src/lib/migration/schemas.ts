@@ -6,7 +6,7 @@ export const MigrationPatientSchema = z.object({
   document: z.string().nullable(),
   rg: z.string().nullable(),
   phone: z.string().nullable(),
-  email: z.string().email("Email invalido").nullable().or(z.literal("")),
+  email: z.string().email("Email inválido").nullable().or(z.literal("")),
   birthDate: z.string().nullable(),
   gender: z.enum(["masculino", "feminino", "outro", "nao_informado"]).nullable(),
   address: z.object({
@@ -38,7 +38,7 @@ export const MigrationAppointmentSchema = z.object({
   patientExternalId: z.string().nullable(),
   patientDocument: z.string().nullable(),
   patientName: z.string().nullable(),
-  date: z.string().min(1, "Data da consulta e obrigatoria"),
+  date: z.string().min(1, "Data da consulta é obrigatória"),
   procedures: z.array(z.string()),
   notes: z.string().nullable(),
   status: z.enum(["scheduled", "completed", "cancelled", "no_show"]),

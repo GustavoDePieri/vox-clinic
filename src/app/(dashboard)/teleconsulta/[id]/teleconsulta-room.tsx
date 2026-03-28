@@ -81,7 +81,7 @@ export function TeleconsultaRoom({ appointment }: TeleconsultaRoomProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Video className="size-12 text-muted-foreground" />
-        <p className="text-muted-foreground">Sala de video nao disponivel</p>
+        <p className="text-muted-foreground">Sala de vídeo não disponível</p>
         <Button variant="outline" onClick={() => router.push("/calendar")}>
           Voltar para Agenda
         </Button>
@@ -125,7 +125,7 @@ export function TeleconsultaRoom({ appointment }: TeleconsultaRoomProps) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Encerrar teleconsulta?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  A consulta sera marcada como concluida e a sala de video sera encerrada.
+                  A consulta será marcada como concluida e a sala de video será encerrada.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

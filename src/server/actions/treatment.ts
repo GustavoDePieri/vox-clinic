@@ -64,8 +64,8 @@ export const createTreatmentPlan = safeAction(async (data: {
   })
   if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
-  if (data.totalSessions < 1) throw new ActionError("Total de sessoes deve ser pelo menos 1")
-  if (data.totalSessions > 365) throw new ActionError("Maximo de 365 sessoes permitido.")
+  if (data.totalSessions < 1) throw new ActionError("Total de sessões deve ser pelo menos 1")
+  if (data.totalSessions > 365) throw new ActionError("Máximo de 365 sessões permitido.")
 
   const plan = await db.treatmentPlan.create({
     data: {
@@ -108,8 +108,8 @@ export const addSessionToTreatment = safeAction(async (planId: string) => {
 
     const plan = rows[0]
     if (!plan) throw new Error(ERR_TREATMENT_NOT_FOUND)
-    if (plan.status !== "active") throw new ActionError("Plano nao esta ativo")
-    if (plan.completedSessions >= plan.totalSessions) throw new ActionError("Todas as sessoes ja foram concluidas")
+    if (plan.status !== "active") throw new ActionError("Plano não está ativo")
+    if (plan.completedSessions >= plan.totalSessions) throw new ActionError("Todas as sessões já foram concluídas")
 
     const newCompleted = plan.completedSessions + 1
     const isComplete = newCompleted >= plan.totalSessions
@@ -144,7 +144,7 @@ export const updateTreatmentPlanStatus = safeAction(async (planId: string, statu
   const { userId, workspaceId } = await getAuthContext()
 
   const validStatuses = ["active", "completed", "cancelled", "paused"]
-  if (!validStatuses.includes(status)) throw new ActionError("Status invalido")
+  if (!validStatuses.includes(status)) throw new ActionError("Status inválido")
 
   const plan = await db.treatmentPlan.findFirst({
     where: { id: planId, workspaceId },

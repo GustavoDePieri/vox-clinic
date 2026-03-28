@@ -90,11 +90,11 @@ const professionLabels: Record<string, string> = {
   dentista: "Dentista",
   nutricionista: "Nutricionista",
   esteticista: "Esteticista",
-  medico: "Medico",
+  medico: "Médico",
   advogado: "Advogado",
-  psicologo: "Psicologo",
+  psicologo: "Psicólogo",
   fisioterapeuta: "Fisioterapeuta",
-  veterinario: "Veterinario",
+  veterinario: "Veterinário",
 }
 
 const professionIcons: Record<string, string> = {
@@ -222,7 +222,7 @@ export default function SettingsPage() {
           <div className="flex-1 space-y-1.5 animate-fade-in">
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                {clinicName || "Minha Clinica"}
+                {clinicName || "Minha Clínica"}
               </h1>
               <Badge className="bg-vox-primary/10 text-vox-primary border-vox-primary/20 hover:bg-vox-primary/15">
                 {profLabel}
@@ -304,7 +304,7 @@ export default function SettingsPage() {
         >
           <TabsTrigger value="clinica" className="gap-2 px-4 py-2.5 text-[13px]">
             <Building2 className="size-4" />
-            Clinica
+            Clínica
           </TabsTrigger>
           <TabsTrigger value="procedimentos" className="gap-2 px-4 py-2.5 text-[13px]">
             <ListChecks className="size-4" />
@@ -489,3 +489,4 @@ export default function SettingsPage() {
     </div>
   )
 }
+

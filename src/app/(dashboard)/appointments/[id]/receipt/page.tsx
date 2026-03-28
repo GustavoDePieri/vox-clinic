@@ -19,11 +19,11 @@ function formatDateLong(date: Date): string {
   })
 }
 
-function formatCurrency(value: number): string {
+function formatCurrency(centavos: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value)
+  }).format(centavos / 100)
 }
 
 export default async function ReceiptPage({

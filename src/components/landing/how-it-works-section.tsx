@@ -9,21 +9,21 @@ const steps = [
     number: "1",
     title: "Fale",
     description:
-      "Grave ou dite suas observacoes durante ou apos a consulta.",
+      "Grave ou dite suas observações durante ou após a consulta.",
   },
   {
     icon: Sparkles,
     number: "2",
     title: "A IA processa",
     description:
-      "Transcricao automatica com vocabulario medico e extracao inteligente de dados.",
+      "Transcrição automática com vocabulário médico e extração inteligente de dados.",
   },
   {
     icon: ClipboardCheck,
     number: "3",
-    title: "Prontuario pronto",
+    title: "Prontuário pronto",
     description:
-      "Revise o resumo gerado, ajuste se necessario e confirme com um clique.",
+      "Revise o resumo gerado, ajuste se necessário e confirme com um clique.",
   },
 ]
 
@@ -37,7 +37,7 @@ export function HowItWorksSection() {
               Como funciona
             </h2>
             <p className="mt-3 text-lg text-muted-foreground">
-              Da sua voz ao prontuario completo em 3 passos
+              Da sua voz ao prontuário completo em 3 passos
             </p>
           </div>
         </BlurFade>

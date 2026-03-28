@@ -194,8 +194,8 @@ export default function NewAppointmentPage() {
         <div className="text-center space-y-2">
           <h1 className="text-xl font-semibold tracking-tight">Gravar Consulta</h1>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Fale sobre procedimentos, observacoes clinicas e recomendacoes.
-            Ate 30 minutos de gravacao.
+            Fale sobre procedimentos, observações clínicas e recomendações.
+            Até 30 minutos de gravacao.
           </p>
         </div>
 

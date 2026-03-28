@@ -33,8 +33,8 @@ interface EmitNfseDialogProps {
   onSuccess: () => void
 }
 
-const formatBRL = (value: number) =>
-  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+const formatBRL = (centavos: number) =>
+  (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
 const formatDateBR = (date: Date | string) =>
   new Date(date).toLocaleDateString("pt-BR")
@@ -104,10 +104,10 @@ export function EmitNfseDialog({ open, onOpenChange, onSuccess }: EmitNfseDialog
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
-  const getEffectivePrice = () => {
+  const getEffectivePrice = (): number => {
     if (selected?.price != null && selected.price > 0) return selected.price
     const parsed = parseFloat(manualPrice.replace(/\./g, '').replace(',', '.'))
-    return isNaN(parsed) ? 0 : parsed
+    return isNaN(parsed) ? 0 : Math.round(parsed * 100)
   }
 
   const handleEmit = async () => {

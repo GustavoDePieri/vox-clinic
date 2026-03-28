@@ -36,10 +36,10 @@ export const createPrescription = safeAction(async (data: {
   if (!data.medications.length) throw new ActionError("Adicione pelo menos um medicamento")
 
   for (const med of data.medications) {
-    if (!med.name?.trim()) throw new ActionError("Nome do medicamento e obrigatorio.")
-    if (!med.dosage?.trim()) throw new ActionError("Dosagem e obrigatoria para cada medicamento.")
-    if (!med.frequency?.trim()) throw new ActionError("Frequencia e obrigatoria para cada medicamento.")
-    if (!med.duration?.trim()) throw new ActionError("Duracao e obrigatoria para cada medicamento.")
+    if (!med.name?.trim()) throw new ActionError("Nome do medicamento é obrigatório.")
+    if (!med.dosage?.trim()) throw new ActionError("Dosagem é obrigatória para cada medicamento.")
+    if (!med.frequency?.trim()) throw new ActionError("Frequência é obrigatória para cada medicamento.")
+    if (!med.duration?.trim()) throw new ActionError("Duração é obrigatória para cada medicamento.")
   }
 
   // Validate appointmentId belongs to this workspace if provided
@@ -96,8 +96,8 @@ export async function getPrescription(id: string) {
     medications: prescription.medications as { name: string; dosage: string; frequency: string; duration: string; notes?: string }[],
     notes: prescription.notes,
     createdAt: prescription.createdAt.toISOString(),
-    clinicName: user.clinicName ?? "Clinica",
-    profession: user.profession ?? "Profissional de Saude",
+    clinicName: user.clinicName ?? "Clínica",
+    profession: user.profession ?? "Profissional de Saúde",
     doctorName: user.name,
     source: prescription.source,
     memedPrescriptionId: prescription.memedPrescriptionId,

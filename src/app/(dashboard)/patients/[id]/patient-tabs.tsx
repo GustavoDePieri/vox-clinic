@@ -28,13 +28,13 @@ const ImagensTab = dynamic(() => import("./tabs/imagens-tab"), { ssr: false })
 
 const tabs = [
   { id: "resumo" as const, label: "Resumo", icon: User },
-  { id: "historico" as const, label: "Historico", icon: Calendar },
+  { id: "historico" as const, label: "Histórico", icon: Calendar },
   { id: "tratamentos" as const, label: "Tratamentos", icon: ClipboardList },
-  { id: "prescricoes" as const, label: "Prescricoes", icon: Pill },
+  { id: "prescricoes" as const, label: "Prescrições", icon: Pill },
   { id: "documentos" as const, label: "Documentos", icon: FileImage },
   { id: "imagens" as const, label: "Imagens", icon: Camera },
-  { id: "gravacoes" as const, label: "Gravacoes", icon: Mic },
-  { id: "formularios" as const, label: "Formularios", icon: FileText },
+  { id: "gravacoes" as const, label: "Gravações", icon: Mic },
+  { id: "formularios" as const, label: "Formulários", icon: FileText },
 ]
 
 type TabId = "resumo" | "historico" | "tratamentos" | "prescricoes" | "documentos" | "imagens" | "gravacoes" | "formularios"

@@ -170,7 +170,7 @@ export default function BookingPage() {
   async function handleSubmit() {
     if (!selectedProcedure || !selectedAgenda || !selectedDate || !selectedTime) return
     if (patientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patientEmail.trim())) {
-      setErrorMessage("Email invalido. Verifique e tente novamente.")
+      setErrorMessage("Email inválido. Verifique e tente novamente.")
       setStep("error")
       return
     }
@@ -281,7 +281,7 @@ export default function BookingPage() {
         {step === "not-found" && (
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
             <div className="text-4xl mb-3">&#128274;</div>
-            <h1 className="text-lg font-semibold text-slate-800">Agendamento nao disponivel</h1>
+            <h1 className="text-lg font-semibold text-slate-800">Agendamento não disponível</h1>
             <p className="text-sm text-slate-500 mt-2">Este link de agendamento esta inativo ou nao existe.</p>
           </div>
         )}
@@ -468,7 +468,7 @@ export default function BookingPage() {
                     />
                   </div>
                 ) : slots.filter((s) => s.available).length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-4">Nenhum horario disponivel neste dia</p>
+                  <p className="text-xs text-slate-400 text-center py-4">Nenhum horário disponível neste dia</p>
                 ) : (
                   <div className="grid grid-cols-4 gap-1.5">
                     {slots.filter((s) => s.available).map((slot) => (
@@ -655,7 +655,7 @@ export default function BookingPage() {
                 Fechar
               </button>
             ) : (
-              <p className="text-xs text-slate-400">Voce pode fechar esta pagina.</p>
+              <p className="text-xs text-slate-400">Você pode fechar esta página.</p>
             )}
           </div>
         )}

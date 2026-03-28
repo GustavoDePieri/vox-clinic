@@ -49,10 +49,10 @@ export const createCharge = safeAction(async (input: CreateChargeInput) => {
   } = input
 
   if (totalAmount <= 0) throw new ActionError("Valor total deve ser maior que zero")
-  if (discount < 0) throw new ActionError("Desconto nao pode ser negativo")
-  if (discount > totalAmount) throw new ActionError("Desconto nao pode ser maior que o valor total")
+  if (discount < 0) throw new ActionError("Desconto não pode ser negativo")
+  if (discount > totalAmount) throw new ActionError("Desconto não pode ser maior que o valor total")
   if (installments < 1 || installments > 24) throw new ActionError("Parcelas devem ser entre 1 e 24")
-  if (!description.trim()) throw new ActionError("Descricao e obrigatoria")
+  if (!description.trim()) throw new ActionError("Descrição é obrigatória")
 
   const netAmount = totalAmount - discount
 
@@ -399,7 +399,7 @@ export const cancelCharge = safeAction(async (chargeId: string) => {
     }
 
     if (charge.status === "cancelled") {
-      throw new ActionError("Cobranca ja cancelada")
+      throw new ActionError("Cobrança já cancelada")
     }
 
     await tx.payment.updateMany({

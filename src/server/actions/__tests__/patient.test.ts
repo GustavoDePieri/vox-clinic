@@ -154,7 +154,7 @@ describe("patient actions", () => {
 
       const result = await createPatient(formData)
       expect('error' in result).toBe(true)
-      if ('error' in result) expect(result.error).toBe("Nome e obrigatorio")
+      if ('error' in result) expect(result.error).toBe("Nome é obrigatório")
     })
 
     it("parses customData JSON from FormData", async () => {
@@ -256,7 +256,7 @@ describe("patient actions", () => {
     it("throws when audio not found in workspace", async () => {
       mockDb.recording.findFirst.mockResolvedValue(null)
 
-      await expect(getAudioPlaybackUrl("audio/other.webm")).rejects.toThrow("Audio nao encontrado")
+      await expect(getAudioPlaybackUrl("audio/other.webm")).rejects.toThrow("Áudio não encontrado")
     })
   })
 })

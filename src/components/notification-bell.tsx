@@ -132,7 +132,7 @@ export function NotificationBell() {
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/50">
                   <Bell className="size-5 text-muted-foreground/40" />
                 </div>
-                <p className="text-xs text-muted-foreground">Nenhuma notificacao</p>
+                <p className="text-xs text-muted-foreground">Nenhuma notificação</p>
               </div>
             ) : (
               notifications.map((n) => {

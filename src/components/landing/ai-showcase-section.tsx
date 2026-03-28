@@ -18,10 +18,10 @@ export function AIShowcaseSection() {
         <BlurFade inView>
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold">
-              Inteligencia Artificial que entende saude
+              Inteligência Artificial que entende saúde
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Do audio bruto ao prontuario estruturado — automaticamente
+              Do áudio bruto ao prontuário estruturado — automaticamente
             </p>
           </div>
         </BlurFade>
@@ -34,7 +34,7 @@ export function AIShowcaseSection() {
                 <AudioWaveform className="size-8 text-vox-primary" />
                 <h3 className="text-lg font-semibold">Audio</h3>
                 <p className="text-sm text-muted-foreground">
-                  {"\uD83C\uDFA4"} 2min 34s de gravacao
+                  {"\uD83C\uDFA4"} 2min 34s de gravação
                 </p>
               </div>
             </div>
@@ -47,7 +47,7 @@ export function AIShowcaseSection() {
             <div className="flex-1 w-full rounded-2xl border border-border/40 p-5 bg-card">
               <div className="flex flex-col gap-3">
                 <FileText className="size-8 text-vox-primary" />
-                <h3 className="text-lg font-semibold">Transcricao</h3>
+                <h3 className="text-lg font-semibold">Transcrição</h3>
                 <p className="text-sm text-muted-foreground">
                   Paciente Maria Silva, 34 anos, retorno de limpeza...
                 </p>

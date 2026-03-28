@@ -6,7 +6,7 @@ import { BlurFade } from "@/components/ui/blur-fade"
 const testimonials = [
   {
     quote:
-      "Economizo 40 minutos por dia com a transcricao automatica. Mudou minha rotina.",
+      "Economizo 40 minutos por dia com a transcrição automática. Mudou minha rotina.",
     name: "Dra. Ana Beatriz",
     profession: "Dentista",
   },
@@ -18,13 +18,13 @@ const testimonials = [
   },
   {
     quote:
-      "Finalmente um sistema que entende vocabulario medico em portugues.",
+      "Finalmente um sistema que entende vocabulário médico em português.",
     name: "Dra. Juliana Costa",
-    profession: "Medica",
+    profession: "Médica",
   },
   {
     quote:
-      "A agenda com deteccao de conflitos me salvou de varias confusoes.",
+      "A agenda com detecção de conflitos me salvou de várias confusões.",
     name: "Dr. Rafael Lima",
     profession: "Esteticista",
   },
@@ -36,7 +36,7 @@ const testimonials = [
   },
   {
     quote:
-      "Os relatorios me ajudam a entender melhor o fluxo da clinica.",
+      "Os relatórios me ajudam a entender melhor o fluxo da clínica.",
     name: "Dr. Pedro Santos",
     profession: "Advogado",
   },
@@ -84,7 +84,7 @@ export function TestimonialsSection() {
     <section className="py-20 md:py-28 overflow-hidden">
       <BlurFade inView>
         <h2 className="text-3xl md:text-4xl font-bold text-center max-w-5xl mx-auto px-4 mb-12">
-          O que dizem nossos usuarios
+          O que dizem nossos usuários
         </h2>
       </BlurFade>
 

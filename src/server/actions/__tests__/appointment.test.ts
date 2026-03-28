@@ -181,7 +181,7 @@ describe("appointment actions", () => {
 
     it("returns error for invalid status", async () => {
       const result = await updateAppointmentStatus("a1", "invalid_status")
-      expect('error' in result && result.error).toBe("Status invalido")
+      expect('error' in result && result.error).toBe("Status inválido")
     })
 
     it("returns error when appointment not in workspace", async () => {

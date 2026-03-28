@@ -6,7 +6,7 @@ export default function SignInPage() {
     <div className="flex flex-col items-center gap-6">
       <SignIn />
       <p className="text-sm text-muted-foreground">
-        Nao tem conta?{' '}
+        Não tem conta?{' '}
         <Link
           href="/sign-up"
           className="font-medium text-vox-primary hover:underline"

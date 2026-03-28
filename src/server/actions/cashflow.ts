@@ -227,7 +227,7 @@ export async function getCashFlowProjection(months: number = 6) {
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
     const entry = monthMap.get(key)
     if (entry) {
-      entry.projectedInflows += Math.round((apt.price ?? 0) * 100) // convert to centavos
+      entry.projectedInflows += apt.price ?? 0 // already in centavos
     }
   }
 

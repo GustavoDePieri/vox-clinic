@@ -12,7 +12,7 @@ export default function TeleconsultaError({ error, reset }: { error: Error & { d
       <div className="text-center space-y-2">
         <h2 className="text-lg font-semibold">Erro na teleconsulta</h2>
         <p className="text-sm text-muted-foreground max-w-md">
-          Nao foi possivel carregar a sala de teleconsulta. Verifique se a consulta existe e tente novamente.
+          Não foi possível carregar a sala de teleconsulta. Verifique se a consulta existe e tente novamente.
         </p>
       </div>
       <div className="flex gap-3">

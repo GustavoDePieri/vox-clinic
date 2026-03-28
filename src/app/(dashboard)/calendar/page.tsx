@@ -470,7 +470,7 @@ export default function CalendarPage() {
               if ('error' in result) { toast.error(result.error); return }
               setShowBlockForm(false)
               reloadData()
-              toast.success("Horario bloqueado")
+              toast.success("Horário bloqueado")
             } catch (err) {
               toast.error(friendlyError(err, "Erro ao bloquear horario"))
             }

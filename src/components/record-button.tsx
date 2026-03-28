@@ -207,7 +207,7 @@ export function RecordButton({
       {showConsent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-xl bg-background p-6 shadow-xl space-y-4">
-            <h3 className="text-lg font-semibold">Consentimento para Gravacao</h3>
+            <h3 className="text-lg font-semibold">Consentimento para Gravação</h3>
             <p className="text-sm text-muted-foreground">
               De acordo com a LGPD (Lei 13.709/2018), este audio sera gravado,
               transcrito e processado por inteligencia artificial para extrair dados
@@ -215,7 +215,7 @@ export function RecordButton({
               compartilhado com terceiros.
             </p>
             <p className="text-sm text-muted-foreground">
-              Ao prosseguir, voce confirma que obteve o consentimento do paciente
+              Ao prosseguir, você confirma que obteve o consentimento do paciente
               para esta gravacao.
             </p>
             <div className="flex gap-3">

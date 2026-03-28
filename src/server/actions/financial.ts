@@ -34,6 +34,7 @@ export async function getFinancialData(period: "month" | "year", date: string) {
     where: {
       workspaceId,
       date: { gte: startDate, lte: endDate },
+      status: "completed",
     },
     include: {
       patient: { select: { id: true, name: true } },
@@ -107,7 +108,7 @@ export async function getFinancialData(period: "month" | "year", date: string) {
 }
 
 export const updateAppointmentPrice = safeAction(async (appointmentId: string, price: number) => {
-  if (!Number.isFinite(price) || price < 0) throw new ActionError("Preco invalido")
+  if (!Number.isFinite(price) || price < 0) throw new ActionError("Preço inválido")
 
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
@@ -135,7 +136,7 @@ export const updateAppointmentPrice = safeAction(async (appointmentId: string, p
 })
 
 export const updateProcedurePrice = safeAction(async (procedureId: string, price: number) => {
-  if (!Number.isFinite(price) || price < 0) throw new ActionError("Preco invalido")
+  if (!Number.isFinite(price) || price < 0) throw new ActionError("Preço inválido")
 
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
@@ -168,7 +169,7 @@ export const updateProcedurePrice = safeAction(async (procedureId: string, price
     if (result.count > 0) return { success: true }
   }
 
-  throw new ActionError("Nao foi possivel atualizar o preco. Tente novamente.")
+  throw new ActionError("Não foi possível atualizar o preço. Tente novamente.")
 })
 
 export async function getWorkspaceProcedures() {
