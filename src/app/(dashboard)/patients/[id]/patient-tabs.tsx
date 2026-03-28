@@ -147,7 +147,7 @@ export function PatientTabs({ patient, customFields, anamnesisTemplate }: { pati
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 rounded-xl bg-muted p-1 overflow-x-auto" role="tablist" aria-label="Abas do paciente">
+      <div className="flex gap-1 rounded-xl bg-muted p-1 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Abas do paciente">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
