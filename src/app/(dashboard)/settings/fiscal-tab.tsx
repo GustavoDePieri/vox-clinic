@@ -162,6 +162,7 @@ export function FiscalTab() {
       setIsConfigured(true)
       toast.success("Configuracao fiscal salva com sucesso!")
     } catch (err) {
+      console.error("[FiscalTab] save failed:", err)
       toast.error(err instanceof Error ? err.message : "Erro ao salvar configuracao")
     } finally {
       setSaving(false)

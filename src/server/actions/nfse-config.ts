@@ -3,6 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { NfseClient } from "@/lib/nfse/client"
+import { logger } from "@/lib/logger"
 
 function validateCpf(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "")
@@ -135,6 +136,8 @@ export async function saveNfseConfig(data: {
   // Only update clientSecret if the user provided a new (non-masked) value
   const secretToSave = isMaskedSecret ? undefined : data.clientSecret.trim()
 
+  logger.info("saveNfseConfig: starting upsert", { action: "saveNfseConfig", workspaceId, entityType: "NfseConfig" })
+
   const config = await db.nfseConfig.upsert({
     where: { workspaceId },
     create: {
@@ -168,6 +171,7 @@ export async function saveNfseConfig(data: {
     },
   })
 
+  logger.info("saveNfseConfig: success", { action: "saveNfseConfig", workspaceId, entityId: config.id })
   return { id: config.id }
 }
 
