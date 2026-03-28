@@ -177,6 +177,42 @@ export async function saveNfseConfig(data: {
   })
 
   logger.info("saveNfseConfig: success", { action: "saveNfseConfig", workspaceId, entityId: config.id })
+
+  // Register/update company in NuvemFiscal (required before emitting NFS-e)
+  const actualSecret = secretToSave ?? config.apiKey
+  if (config.certificateId && actualSecret) {
+    try {
+      const isSandbox = process.env.NFSE_AMBIENTE !== "producao"
+      const client = new NfseClient(config.certificateId, actualSecret, isSandbox)
+
+      // 1. Register company
+      const workspace = await db.workspace.findUnique({
+        where: { id: workspaceId },
+        include: { user: { select: { clinicName: true, email: true } } },
+      })
+      await client.registerCompany({
+        cpf_cnpj: cnpjDigits,
+        inscricao_municipal: data.inscricaoMunicipal.trim(),
+        nome_razao_social: workspace?.user?.clinicName || "Clinica",
+        email: workspace?.user?.email || undefined,
+        endereco: {
+          cep: cepDigits,
+          uf: data.clinicState.trim(),
+        },
+      })
+
+      // 2. Configure NFS-e for the company
+      await client.configureNfse(cnpjDigits, {
+        ambiente: isSandbox ? "homologacao" : "producao",
+      })
+
+      logger.info("saveNfseConfig: company registered in NuvemFiscal", { action: "saveNfseConfig", workspaceId, cnpj: cnpjDigits })
+    } catch (err) {
+      // Non-blocking: log but don't fail the save
+      logger.error("saveNfseConfig: failed to register company in NuvemFiscal", { action: "saveNfseConfig", workspaceId }, err)
+    }
+  }
+
   return { id: config.id }
   } catch (err) {
     logger.error("saveNfseConfig: upsert failed", { action: "saveNfseConfig", workspaceId }, err)

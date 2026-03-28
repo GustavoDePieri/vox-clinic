@@ -113,6 +113,52 @@ export class NfseClient {
     }
   }
 
+  /** Register or update company in NuvemFiscal (required before emitting NFS-e) */
+  async registerCompany(data: {
+    cpf_cnpj: string
+    inscricao_municipal?: string
+    nome_razao_social: string
+    email?: string
+    endereco?: {
+      logradouro?: string
+      numero?: string
+      complemento?: string
+      bairro?: string
+      codigo_municipio?: string
+      codigo_pais?: string
+      uf?: string
+      cep?: string
+    }
+  }): Promise<unknown> {
+    // Try to create; if already exists (409), update instead
+    try {
+      return await this.request("/empresas", {
+        method: "POST",
+        body: JSON.stringify(data),
+      })
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("409")) {
+        // Already exists — update
+        return await this.request(`/empresas/${data.cpf_cnpj}`, {
+          method: "PUT",
+          body: JSON.stringify(data),
+        })
+      }
+      throw err
+    }
+  }
+
+  /** Configure NFS-e settings for a company (series, batch number, environment) */
+  async configureNfse(cpfCnpj: string, data: {
+    rps?: { lote?: number; serie?: string; numero?: number }
+    ambiente?: string
+  }): Promise<unknown> {
+    return this.request(`/empresas/${cpfCnpj}/nfse`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
   /** Test connectivity by fetching the token (validates credentials) */
   async testConnection(): Promise<boolean> {
     try {

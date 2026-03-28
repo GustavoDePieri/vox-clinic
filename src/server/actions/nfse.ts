@@ -136,7 +136,12 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
             },
             tribFed: {
               piscofins: {
-                CST: "06", // Operacao tributada a aliquota zero
+                // CST PIS/COFINS baseado no regime tributario:
+                // 01=Simples Nacional, 04=MEI, 06=Aliquota zero (profissional liberal/PF)
+                // 07=Isenta (imunidade), 08=Sem incidencia
+                CST: config.regimeTributario === "simples_nacional" ? "01"
+                   : config.regimeTributario === "mei" ? "04"
+                   : "06", // default: aliquota zero (PF, lucro presumido, etc.)
                 vBCPisCofins: 0,
                 pAliqPis: 0,
                 pAliqCofins: 0,
