@@ -27,6 +27,23 @@ export async function deleteAudio(path: string): Promise<void> {
   await supabase.storage.from('audio').remove([path])
 }
 
+export async function uploadVideo(file: Buffer, filename: string): Promise<string> {
+  const path = `video/${Date.now()}-${filename}`
+  const { error } = await supabase.storage
+    .from('audio')  // reuse same bucket, different folder
+    .upload(path, file, { contentType: 'video/mp4' })
+  if (error) throw error
+  return path
+}
+
+export async function getSignedVideoUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from('audio')
+    .createSignedUrl(path, 300) // 5 min expiry
+  if (error || !data?.signedUrl) throw error ?? new Error('Failed to create signed URL')
+  return data.signedUrl
+}
+
 export async function getAudioBuffer(path: string): Promise<Buffer> {
   const { data, error } = await supabase.storage
     .from('audio')

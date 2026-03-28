@@ -41,7 +41,8 @@ function AppointmentCardInner({
     try {
       const result = await createTeleconsultaRoom(appointment.id)
       if ('error' in result) { toast.error(result.error); setStartingRoom(false); return }
-      router.push(`/teleconsulta/${appointment.id}`)
+      // Full navigation (not router.push) to ensure server component re-fetches fresh data
+      window.location.href = `/teleconsulta/${appointment.id}`
     } catch {
       toast.error("Erro ao criar sala de teleconsulta")
       setStartingRoom(false)

@@ -68,6 +68,10 @@ const envSchema = z.object({
     .string()
     .optional()
     .default(''),
+  DAILY_WEBHOOK_SECRET: z
+    .string()
+    .optional()
+    .default(''),
 })
 
 function validateEnv() {

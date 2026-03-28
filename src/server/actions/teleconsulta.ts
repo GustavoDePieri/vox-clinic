@@ -131,10 +131,10 @@ export const getPatientJoinInfo = safeAction(async (videoToken: string) => {
     throw new ActionError(ERR_TELECONSULTA_ROOM_NOT_CONFIGURED)
   }
 
-  // Allow joining from 30 min before until 3 hours after appointment time
+  // Allow joining from 24h before until 24h after appointment time
   const now = new Date()
-  const earliestJoin = new Date(appointment.date.getTime() - 30 * 60 * 1000)
-  const latestJoin = new Date(appointment.date.getTime() + 3 * 60 * 60 * 1000)
+  const earliestJoin = new Date(appointment.date.getTime() - 24 * 60 * 60 * 1000)
+  const latestJoin = new Date(appointment.date.getTime() + 24 * 60 * 60 * 1000)
 
   if (now < earliestJoin) {
     throw new ActionError(ERR_TELECONSULTA_NOT_READY)
