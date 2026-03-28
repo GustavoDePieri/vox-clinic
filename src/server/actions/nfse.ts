@@ -96,7 +96,6 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
         prest: {
           CNPJ: config.cnpj.length === 14 ? config.cnpj : undefined,
           CPF: config.cnpj.length === 11 ? config.cnpj : undefined,
-          IM: config.inscricaoMunicipal,
         },
         toma: {
           CPF: patientCpf && patientCpf.length === 11 ? patientCpf : undefined,
