@@ -197,6 +197,7 @@ export const emitNfse = safeAction(async (appointmentId: string) => {
         },
       })
       await client.configureNfse(config.cnpj, {
+        rps: { lote: 1, serie: "NF", numero: 1 },
         ambiente: isSandbox ? "homologacao" : "producao",
       })
     } catch (regErr) {
