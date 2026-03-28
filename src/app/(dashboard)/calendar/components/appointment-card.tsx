@@ -2,6 +2,7 @@
 
 import { useState, memo } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Clock, Check, XCircle, AlertTriangle, X, Video, Copy, ExternalLink, Globe, MessageCircle, Bell, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -29,9 +30,23 @@ function AppointmentCardInner({
   onDelete: (id: string) => void
   compact?: boolean
 }) {
+  const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [copyingLink, setCopyingLink] = useState(false)
+  const [startingRoom, setStartingRoom] = useState(false)
   const [sendingReminder, setSendingReminder] = useState(false)
+
+  async function handleStartTeleconsulta() {
+    setStartingRoom(true)
+    try {
+      const result = await createTeleconsultaRoom(appointment.id)
+      if ('error' in result) { toast.error(result.error); setStartingRoom(false); return }
+      router.push(`/teleconsulta/${appointment.id}`)
+    } catch {
+      toast.error("Erro ao criar sala de teleconsulta")
+      setStartingRoom(false)
+    }
+  }
 
   async function handleCopyPatientLink() {
     setCopyingLink(true)
@@ -96,13 +111,10 @@ function AppointmentCardInner({
                   </span>
                 )}
                 {appointment.type === "teleconsulta" && (
-                  <Link href={`/teleconsulta/${appointment.id}`} onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-0.5 rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600 hover:bg-purple-100 transition-colors shrink-0"
-                    title="Iniciar teleconsulta"
-                  >
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600 shrink-0">
                     <Video className="size-3" />
-                    Video
-                  </Link>
+                    Teleconsulta
+                  </span>
                 )}
               </div>
             </div>
@@ -126,11 +138,11 @@ function AppointmentCardInner({
                   className="rounded-xl text-[11px] h-7 gap-1 bg-vox-primary hover:bg-vox-primary/90 text-white">
                   <Copy className="size-3" />{copyingLink ? "Gerando..." : "Copiar Link do Paciente"}
                 </Button>
-                <Link href={`/teleconsulta/${appointment.id}`} onClick={(e) => e.stopPropagation()}>
-                  <Button size="sm" variant="outline" className="rounded-xl text-[11px] h-7 gap-1 text-vox-primary border-vox-primary/30 hover:bg-vox-primary/5">
-                    <ExternalLink className="size-3" />Iniciar Teleconsulta
-                  </Button>
-                </Link>
+                <Button size="sm" variant="outline" onClick={handleStartTeleconsulta} disabled={startingRoom}
+                  className="rounded-xl text-[11px] h-7 gap-1 text-vox-primary border-vox-primary/30 hover:bg-vox-primary/5">
+                  {startingRoom ? <Loader2 className="size-3 animate-spin" /> : <ExternalLink className="size-3" />}
+                  {startingRoom ? "Criando sala..." : "Iniciar Teleconsulta"}
+                </Button>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
