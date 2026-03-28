@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -19,14 +19,26 @@ export function MergeDialog({ patientId, patientName }: { patientId: string; pat
   const [merging, startMerge] = useTransition()
   const router = useRouter()
 
-  const handleSearch = (value: string) => {
-    setQuery(value)
-    if (value.trim().length < 2) { setResults([]); return }
+  const doSearch = (value: string) => {
     startSearch(async () => {
       const found = await searchPatients(value)
       setResults(found.filter(p => p.id !== patientId))
     })
   }
+
+  // Auto-search with debounce
+  useEffect(() => {
+    const trimmed = query.trim()
+    if (trimmed.length < 2) {
+      setResults([])
+      return
+    }
+    const timer = setTimeout(() => {
+      doSearch(trimmed)
+    }, 300)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
 
   const handleMerge = () => {
     if (!selected) return
@@ -66,7 +78,7 @@ export function MergeDialog({ patientId, patientName }: { patientId: string; pat
           <Input
             placeholder="Buscar paciente para mesclar..."
             value={query}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             className="pl-9"
             autoFocus
           />

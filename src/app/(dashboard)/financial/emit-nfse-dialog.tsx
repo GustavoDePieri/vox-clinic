@@ -90,6 +90,20 @@ export function EmitNfseDialog({ open, onOpenChange, onSuccess }: EmitNfseDialog
     }
   }
 
+  // Auto-search with debounce
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (query.length < 2) {
+      setAppointments([])
+      return
+    }
+    const timer = setTimeout(() => {
+      handleSearch()
+    }, 300)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery])
+
   const getEffectivePrice = () => {
     if (selected?.price != null && selected.price > 0) return selected.price
     const parsed = parseFloat(manualPrice.replace(/\./g, '').replace(',', '.'))
