@@ -179,6 +179,7 @@ export function FiscalTab() {
     setTesting(true)
     try {
       const result = await testNfseConnection()
+      if ('error' in result) { toast.error(result.error!); return }
       toast.success(result.message)
     } catch (err) {
       toast.error(friendlyError(err, "Erro ao testar conexao"))

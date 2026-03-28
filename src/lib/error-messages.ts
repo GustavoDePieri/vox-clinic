@@ -2,18 +2,70 @@
 // Centraliza todas as mensagens para consistencia e facilidade de manutencao
 
 /**
- * Custom error class for server actions.
- * Next.js in production sanitizes regular Error messages from server actions.
- * This class stores the message in the `digest` property which IS forwarded to the client.
+ * Error class for expected/business-logic errors in server actions.
+ *
+ * IMPORTANTE — Next.js em producao sanitiza Error.message de server actions
+ * por seguranca. O client recebe apenas "An error occurred in the Server
+ * Components render" em vez da mensagem real. O campo `digest` tambem e
+ * substituido por um hash numerico interno.
+ *
+ * SOLUCAO OFICIAL (Next.js docs): "model expected errors as return values,
+ * not thrown errors". Em vez de throw, retorne { error: "mensagem" }.
+ *
+ * Esta classe e usada DENTRO do wrapper `safeAction` para distinguir
+ * erros esperados (retornados ao client) de erros inesperados (re-thrown
+ * para error boundaries).
+ *
+ * @see https://nextjs.org/docs/app/getting-started/error-handling
+ * @see https://joulev.dev/blogs/throwing-expected-errors-in-react-server-actions
  */
 export class ActionError extends Error {
   constructor(message: string) {
     super(message)
     this.name = "ActionError"
-    // The digest property is forwarded to the client by Next.js
-    this.digest = message
   }
-  digest: string
+}
+
+/**
+ * Tipo de retorno padrao para server actions wrapped com safeAction.
+ * O frontend deve verificar `result.error` antes de usar `result` como dado.
+ */
+export type SafeActionResult<T> =
+  | (T & { error?: never })
+  | { error: string }
+
+/**
+ * Wrapper para server actions que captura ActionError e retorna { error }
+ * em vez de lancar — garantindo que a mensagem chega ao client em producao.
+ *
+ * Erros inesperados (nao-ActionError) sao re-thrown normalmente para
+ * serem capturados por error boundaries.
+ *
+ * Uso no server action:
+ *   export const myAction = safeAction(async (data) => {
+ *     if (!valid) throw new ActionError("Mensagem para o usuario")
+ *     return { id: "123" }
+ *   })
+ *
+ * Uso no client:
+ *   const result = await myAction(data)
+ *   if (result.error) { toast.error(result.error); return }
+ *   // result e o dado de sucesso
+ */
+export function safeAction<Args extends unknown[], Return extends Record<string, unknown>>(
+  fn: (...args: Args) => Promise<Return>
+): (...args: Args) => Promise<SafeActionResult<Return>> {
+  return async (...args: Args) => {
+    try {
+      return await fn(...args)
+    } catch (err) {
+      if (err instanceof ActionError) {
+        return { error: err.message }
+      }
+      // Re-throw unexpected errors (Prisma, network, etc.)
+      throw err
+    }
+  }
 }
 
 // ============================================================
@@ -161,19 +213,13 @@ const ERROR_MAP: Record<string, string> = {
 /**
  * Traduz mensagens de erro tecnicas para mensagens amigaveis ao usuario.
  * Usa o mapa de traducao e fallback para a mensagem original se ja estiver em pt-BR.
+ *
+ * Aceita tanto Error objects quanto strings ou { error: string } de safeAction.
  */
 export function friendlyError(error: unknown, fallback?: string): string {
-  // Check for ActionError digest first (Next.js forwards this to client)
-  const digest = (error as any)?.digest
-  if (typeof digest === "string" && digest.length > 0 && digest.length < 200) {
-    // Check if digest looks like a real message (not a Next.js internal hash)
-    if (!/^[a-z0-9]{20,}$/i.test(digest) && !digest.startsWith("NEXT_")) {
-      if (ERROR_MAP[digest]) return ERROR_MAP[digest]
-      for (const [key, friendly] of Object.entries(ERROR_MAP)) {
-        if (digest.includes(key)) return friendly
-      }
-      return digest
-    }
+  // SafeAction retorna { error: string } — extrair a mensagem
+  if (error && typeof error === "object" && "error" in error && typeof (error as any).error === "string") {
+    return (error as any).error
   }
 
   const message = error instanceof Error ? error.message : String(error || "")

@@ -60,9 +60,12 @@ describe("voice actions", () => {
 
       const result = await processVoiceRegistration(formData)
 
-      expect(result.recordingId).toBe("rec_1")
-      expect(result.transcript).toBeDefined()
-      expect(result.extractedData).toBeDefined()
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.recordingId).toBe("rec_1")
+        expect(result.transcript).toBeDefined()
+        expect(result.extractedData).toBeDefined()
+      }
 
       // Verify pipeline order
       expect(mockUploadAudio).toHaveBeenCalledTimes(1)
@@ -99,13 +102,17 @@ describe("voice actions", () => {
       const formData = new FormData()
       formData.set("audio", createAudioFile(26 * 1024 * 1024))
 
-      await expect(processVoiceRegistration(formData)).rejects.toThrow(ERR_AUDIO_TOO_LARGE)
+      const result = await processVoiceRegistration(formData)
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_AUDIO_TOO_LARGE)
     })
 
     it("throws when no audio file provided", async () => {
       const formData = new FormData()
 
-      await expect(processVoiceRegistration(formData)).rejects.toThrow(ERR_NO_AUDIO)
+      const result = await processVoiceRegistration(formData)
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_NO_AUDIO)
     })
 
     it("saves error recording on transcription failure (preserves audio)", async () => {
@@ -201,9 +208,12 @@ describe("voice actions", () => {
         procedures: ["Limpeza"],
       })
 
-      expect(result.patientId).toBe("p_new")
-      expect(result.appointmentId).toBe("a_new")
-      expect(result.duplicatePatient).toBeNull()
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.patientId).toBe("p_new")
+        expect(result.appointmentId).toBe("a_new")
+        expect(result.duplicatePatient).toBeNull()
+      }
 
       // Verify transaction was used
       expect(mockDb.$transaction).toHaveBeenCalledTimes(1)
@@ -245,7 +255,8 @@ describe("voice actions", () => {
       })
 
       // Still creates the patient but returns duplicate info
-      expect(result.duplicatePatient).toEqual({ id: "p_existing", name: "Maria S." })
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.duplicatePatient).toEqual({ id: "p_existing", name: "Maria S." })
     })
 
     it("detects duplicate patients by name when no document", async () => {
@@ -265,7 +276,8 @@ describe("voice actions", () => {
         name: "Maria Silva",
       })
 
-      expect(result.duplicatePatient).toEqual({ id: "p_existing", name: "Maria Silva" })
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.duplicatePatient).toEqual({ id: "p_existing", name: "Maria Silva" })
     })
 
     it("rejects recording from different workspace (multi-tenant isolation)", async () => {
@@ -273,9 +285,9 @@ describe("voice actions", () => {
       // FOR UPDATE returns empty array (recording not found in this workspace)
       mockDb.$queryRawUnsafe.mockResolvedValue([])
 
-      await expect(
-        confirmPatientRegistration({ recordingId: "rec_other_ws", name: "Test" })
-      ).rejects.toThrow(ERR_RECORDING_NOT_FOUND)
+      const result = await confirmPatientRegistration({ recordingId: "rec_other_ws", name: "Test" })
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_RECORDING_NOT_FOUND)
 
       // Should NOT create patient or appointment
       expect(mockDb.patient.create).not.toHaveBeenCalled()

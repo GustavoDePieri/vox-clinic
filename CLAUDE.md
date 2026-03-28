@@ -171,7 +171,7 @@ Decomposed from a monolithic page into modular sub-components:
 - `src/lib/schemas.ts` — Zod schemas: `ExtractedPatientDataSchema`, `WorkspaceConfigSchema`, `AppointmentSummarySchema`
 - `src/lib/storage.ts` — `uploadAudio`, `getSignedAudioUrl` (5min), `getAudioBuffer`
 - `src/lib/export-xlsx.ts` — `generateXlsx(data, sheetName)` and `generateXlsxMultiSheet(sheets)` for Excel export via `xlsx` library
-- `src/lib/error-messages.ts` — Centralized error constants (pt-BR) + `friendlyError(error, fallback?)` helper that translates technical errors to user-friendly messages. All server actions import constants from here; frontend catch blocks use `friendlyError()`
+- `src/lib/error-messages.ts` — Centralized error constants (pt-BR), `ActionError` class, `safeAction` wrapper, and `friendlyError(error, fallback?)` helper. See "Server Action Error Handling" section below
 - `src/lib/viacep.ts` — `formatCep(value)` (formats as XXXXX-XXX) and `fetchAddressByCep(cep)` for ViaCEP integration (auto-fills street, neighborhood, city, state from CEP)
 
 ### Excel Export API Routes
@@ -307,7 +307,42 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 - NPS survey: public token-based page at `/nps/[token]` with 0-10 score grid + comment.
 - Audio playback: signed URL player in patient recordings tab.
 - Error states shown to users (no silent catches). Toast/banner pattern.
-- Error messages: all user-facing errors are in pt-BR via centralized constants in `src/lib/error-messages.ts`. Frontend uses `friendlyError(err, fallback)` helper to translate technical errors. No `alert()` — all errors via Sonner toasts or inline Alert components.
+- Error messages: all user-facing errors are in pt-BR via centralized constants in `src/lib/error-messages.ts`. No `alert()` — all errors via Sonner toasts or inline Alert components.
+
+### Server Action Error Handling (CRITICAL)
+**Next.js in production sanitizes `Error.message` from server actions** — the client receives a generic message with a numeric `digest` hash, NEVER the original error text. This is a security feature that cannot be disabled.
+
+**Solution — `safeAction` wrapper pattern** (`src/lib/error-messages.ts`):
+- `ActionError` — custom error class for expected/business-logic errors (validation, plan limits, conflicts)
+- `safeAction(fn)` — wrapper that catches `ActionError` and returns `{ error: "message" }` instead of throwing
+- `friendlyError(result)` — also handles `{ error: string }` objects from `safeAction`
+
+**Server action pattern:**
+```typescript
+import { ActionError, safeAction } from "@/lib/error-messages"
+export const createAgenda = safeAction(async (data: { name: string }) => {
+  if (!data.name.trim()) throw new ActionError("Nome da agenda e obrigatorio")
+  // ... success path
+  return { id: agenda.id, name: agenda.name }
+})
+```
+
+**Frontend pattern:**
+```typescript
+const result = await createAgenda({ name })
+if ('error' in result) { toast.error(result.error); return }
+toast.success("Agenda criada")
+// result.id, result.name available here
+```
+
+**Rules:**
+1. Use `throw new ActionError("msg")` for expected user-facing errors (validation, limits, business rules)
+2. Use `throw new Error(ERR_UNAUTHORIZED)` (regular Error) for auth errors — caught by error boundaries
+3. Always wrap exported mutation functions with `safeAction()`
+4. Always check `'error' in result` on the frontend before using the result
+5. The try/catch on the frontend still catches unexpected errors (network failures, etc.)
+
+References: [Next.js Error Handling Docs](https://nextjs.org/docs/app/getting-started/error-handling), [joulev.dev Blog](https://joulev.dev/blogs/throwing-expected-errors-in-react-server-actions)
 
 ## GitHub Project & Issue Tracking
 

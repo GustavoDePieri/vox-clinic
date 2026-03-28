@@ -208,7 +208,7 @@ export default function CalendarPage() {
   }, forceSchedule = false) {
     try {
       if (data.recurringEnabled) {
-        await scheduleRecurringAppointments({
+        const result = await scheduleRecurringAppointments({
           patientId: data.patientId,
           startDate: data.date,
           agendaId: data.agendaId,
@@ -216,9 +216,16 @@ export default function CalendarPage() {
           recurrence: data.recurrence,
           occurrences: data.occurrences,
         })
+        if ('error' in result && result.error) {
+          if (result.error.startsWith("CONFLICT:")) {
+            setConflictMessage(result.error.replace("CONFLICT:", ""))
+            conflictResolveRef.current = () => handleSchedule(data, true)
+          } else { toast.error(result.error) }
+          return
+        }
         toast.success(`${data.occurrences} consultas agendadas`)
       } else {
-        await scheduleAppointment({
+        const result = await scheduleAppointment({
           patientId: data.patientId,
           date: data.date,
           agendaId: data.agendaId,
@@ -227,40 +234,43 @@ export default function CalendarPage() {
           price: data.price,
           forceSchedule,
         })
+        if ('error' in result && result.error) {
+          if (result.error.startsWith("CONFLICT:")) {
+            setConflictMessage(result.error.replace("CONFLICT:", ""))
+            conflictResolveRef.current = () => handleSchedule(data, true)
+          } else { toast.error(result.error) }
+          return
+        }
         toast.success(data.type === "teleconsulta" ? "Teleconsulta agendada" : "Consulta agendada")
       }
       setShowScheduleForm(false)
       reloadData()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : ""
-      if (msg.startsWith("CONFLICT:")) {
-        setConflictMessage(msg.replace("CONFLICT:", ""))
-        conflictResolveRef.current = () => handleSchedule(data, true)
-      } else {
-        toast.error(friendlyError(err, "Erro ao agendar consulta"))
-      }
+      toast.error(friendlyError(err, "Erro ao agendar consulta"))
     }
   }
 
   async function handleReschedule(appointmentId: string, newDate: string, forceSchedule = false) {
     try {
-      await rescheduleAppointment(appointmentId, newDate, forceSchedule)
+      const result = await rescheduleAppointment(appointmentId, newDate, forceSchedule)
+      if ('error' in result && result.error) {
+        if (result.error.startsWith("CONFLICT:")) {
+          setConflictMessage(result.error.replace("CONFLICT:", ""))
+          conflictResolveRef.current = () => handleReschedule(appointmentId, newDate, true)
+        } else { toast.error(result.error) }
+        return
+      }
       reloadData()
       toast.success("Consulta reagendada")
     } catch (err) {
-      const msg = err instanceof Error ? err.message : ""
-      if (msg.startsWith("CONFLICT:")) {
-        setConflictMessage(msg.replace("CONFLICT:", ""))
-        conflictResolveRef.current = () => handleReschedule(appointmentId, newDate, true)
-      } else {
-        toast.error(friendlyError(err, "Erro ao reagendar consulta"))
-      }
+      toast.error(friendlyError(err, "Erro ao reagendar consulta"))
     }
   }
 
   async function handleStatusChange(appointmentId: string, status: string) {
     try {
-      await updateAppointmentStatus(appointmentId, status)
+      const result = await updateAppointmentStatus(appointmentId, status)
+      if ('error' in result) { toast.error(result.error); return }
       reloadData()
       toast.success("Status atualizado")
     } catch (err) {
@@ -271,7 +281,8 @@ export default function CalendarPage() {
   async function confirmDelete() {
     if (!deleteTarget) return
     try {
-      await deleteAppointment(deleteTarget)
+      const result = await deleteAppointment(deleteTarget)
+      if ('error' in result) { toast.error(result.error); return }
       reloadData()
       toast.success("Consulta excluída")
     } catch (err) {
@@ -283,7 +294,8 @@ export default function CalendarPage() {
 
   async function handleDeleteBlockedSlot(id: string) {
     try {
-      await deleteBlockedSlot(id)
+      const result = await deleteBlockedSlot(id)
+      if ('error' in result) { toast.error(result.error); return }
       reloadData()
       toast.success("Bloqueio removido")
     } catch (err) {
@@ -411,7 +423,8 @@ export default function CalendarPage() {
           defaultAgendaId={defaultAgendaId}
           onSave={async (data) => {
             try {
-              await createBlockedSlot(data)
+              const result = await createBlockedSlot(data)
+              if ('error' in result) { toast.error(result.error); return }
               setShowBlockForm(false)
               reloadData()
               toast.success("Horario bloqueado")

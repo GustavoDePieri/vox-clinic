@@ -13,9 +13,9 @@ import { getDefaultAgendaIdForWorkspace } from "@/server/actions/agenda"
 import { readProcedures, readCustomFields, toJsonValue } from "@/lib/json-helpers"
 import { logger } from "@/lib/logger"
 import type { ExtractedPatientData } from "@/types"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ActionError, safeAction } from "@/lib/error-messages"
 
-export async function processVoiceRegistration(formData: FormData) {
+export const processVoiceRegistration = safeAction(async (formData: FormData) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
@@ -123,7 +123,7 @@ export async function processVoiceRegistration(formData: FormData) {
     }
     throw err
   }
-}
+})
 
 interface ConfirmPatientData {
   recordingId: string
@@ -138,7 +138,7 @@ interface ConfirmPatientData {
   notes?: string | null
 }
 
-export async function confirmPatientRegistration(data: ConfirmPatientData) {
+export const confirmPatientRegistration = safeAction(async (data: ConfirmPatientData) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
@@ -243,7 +243,7 @@ export async function confirmPatientRegistration(data: ConfirmPatientData) {
       ? { id: duplicatePatient.id, name: duplicatePatient.name }
       : null,
   }
-}
+})
 
 function normalizeCpf(doc: string): string {
   return doc.replace(/\D/g, "")

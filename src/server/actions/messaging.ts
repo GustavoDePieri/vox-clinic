@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { sendEmail } from "@/lib/email"
-import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NO_EMAIL, ERR_PATIENT_NO_PHONE, ERR_WHATSAPP_NOT_CONFIGURED, ERR_INVALID_CHANNEL, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NO_EMAIL, ERR_PATIENT_NO_PHONE, ERR_WHATSAPP_NOT_CONFIGURED, ERR_INVALID_CHANNEL, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -68,7 +68,7 @@ export async function updateMessagingConfig(data: {
   return { success: true }
 }
 
-export async function sendAppointmentMessage({ appointmentId, channel }: SendReminderParams) {
+export const sendAppointmentMessage = safeAction(async ({ appointmentId, channel }: SendReminderParams) => {
   const { user, workspaceId } = await getAuthContext()
 
   const appointment = await db.appointment.findFirst({
@@ -131,4 +131,4 @@ export async function sendAppointmentMessage({ appointmentId, channel }: SendRem
   }
 
   throw new ActionError(ERR_INVALID_CHANNEL)
-}
+})

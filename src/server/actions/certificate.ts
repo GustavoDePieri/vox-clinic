@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
-import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_CERTIFICATE_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_CERTIFICATE_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -47,7 +47,7 @@ function generateCertificateContent(
   }
 }
 
-export async function createCertificate(data: {
+export const createCertificate = safeAction(async (data: {
   patientId: string
   type: string
   days?: number
@@ -55,7 +55,7 @@ export async function createCertificate(data: {
   startTime?: string
   endTime?: string
   content?: string
-}) {
+}) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const validTypes = ["atestado", "declaracao_comparecimento", "encaminhamento", "laudo"]
@@ -100,7 +100,7 @@ export async function createCertificate(data: {
   })
 
   return { id: certificate.id }
-}
+})
 
 export async function getCertificate(id: string) {
   const { userId, user, workspaceId } = await getAuthContext()
@@ -153,7 +153,7 @@ export async function getPatientCertificates(patientId: string) {
   }))
 }
 
-export async function deleteCertificate(id: string) {
+export const deleteCertificate = safeAction(async (id: string) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const certificate = await db.medicalCertificate.findFirst({
@@ -172,4 +172,4 @@ export async function deleteCertificate(id: string) {
   })
 
   return { success: true }
-}
+})

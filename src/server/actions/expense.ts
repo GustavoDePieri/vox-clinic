@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_EXPENSE_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_EXPENSE_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 // ─── Auth helper (inline, not shared — Vercel bundler constraint) ────────────
 
@@ -79,7 +79,7 @@ export async function createExpenseCategory(data: {
 
 // ─── Expenses ────────────────────────────────────────────────────────────────
 
-export async function createExpense(data: {
+export const createExpense = safeAction(async (data: {
   description: string
   amount: number // centavos
   categoryId?: string
@@ -88,7 +88,7 @@ export async function createExpense(data: {
   recurrence?: "monthly" | "weekly" | "yearly" | null
   recurrenceEnd?: string | null // ISO string
   notes?: string
-}) {
+}) => {
   const { userId, workspaceId } = await getWorkspaceContext()
 
   if (!data.description?.trim()) throw new ActionError("Descricao da despesa e obrigatoria.")
@@ -166,7 +166,7 @@ export async function createExpense(data: {
 
     return parent
   })
-}
+})
 
 function getNextRecurrenceDate(
   date: Date,
@@ -199,7 +199,7 @@ function getNextRecurrenceDate(
   return next
 }
 
-export async function updateExpense(
+export const updateExpense = safeAction(async (
   id: string,
   data: {
     description?: string
@@ -210,7 +210,7 @@ export async function updateExpense(
     notes?: string | null
     status?: string
   }
-) {
+) => {
   const { workspaceId } = await getWorkspaceContext()
 
   if (data.description !== undefined && !data.description.trim()) throw new ActionError("Descricao da despesa e obrigatoria.")
@@ -234,9 +234,9 @@ export async function updateExpense(
     },
     include: { category: true },
   })
-}
+})
 
-export async function deleteExpense(id: string, deleteRecurrence = false) {
+export const deleteExpense = safeAction(async (id: string, deleteRecurrence = false) => {
   const { workspaceId } = await getWorkspaceContext()
 
   const expense = await db.expense.findUnique({ where: { id } })
@@ -271,16 +271,16 @@ export async function deleteExpense(id: string, deleteRecurrence = false) {
   }
 
   return { success: true }
-}
+})
 
-export async function payExpense(
+export const payExpense = safeAction(async (
   id: string,
   data: {
     paidAmount: number // centavos
     paymentMethod: string
     paidAt?: string // ISO string
   }
-) {
+) => {
   const { workspaceId } = await getWorkspaceContext()
 
   if (!data.paidAmount || data.paidAmount <= 0) throw new ActionError("Valor do pagamento deve ser maior que zero.")
@@ -300,7 +300,7 @@ export async function payExpense(
     },
     include: { category: true },
   })
-}
+})
 
 export async function getExpenses(params?: {
   status?: string

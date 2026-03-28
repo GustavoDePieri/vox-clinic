@@ -103,7 +103,7 @@ export default function CreateExpenseDialog({
 
     setSaving(true)
     try {
-      await createExpense({
+      const result = await createExpense({
         description: form.description.trim(),
         amount: amountCentavos,
         categoryId: form.categoryId || undefined,
@@ -116,6 +116,7 @@ export default function CreateExpenseDialog({
         paymentMethod: form.paymentMethod || undefined,
         notes: form.notes.trim() || undefined,
       })
+      if ('error' in result) { toast.error(result.error); return }
 
       toast.success("Despesa criada com sucesso")
       resetForm()

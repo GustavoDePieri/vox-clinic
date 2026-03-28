@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { NfseClient } from "@/lib/nfse/client"
 import type { EmitNfseInput } from "@/lib/nfse/types"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NFSE_NOT_CONFIGURED, ERR_NFSE_DISABLED, ERR_APPOINTMENT_NOT_FOUND, ERR_NFSE_NO_PRICE, ERR_NFSE_ALREADY_EXISTS, ERR_NFSE_NOT_FOUND, ERR_NFSE_ALREADY_CANCELLED, ERR_NFSE_CANCELLED_NO_UPDATE, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NFSE_NOT_CONFIGURED, ERR_NFSE_DISABLED, ERR_APPOINTMENT_NOT_FOUND, ERR_NFSE_NO_PRICE, ERR_NFSE_ALREADY_EXISTS, ERR_NFSE_NOT_FOUND, ERR_NFSE_ALREADY_CANCELLED, ERR_NFSE_CANCELLED_NO_UPDATE, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
@@ -21,7 +21,7 @@ async function getWorkspaceId() {
   return workspaceId
 }
 
-export async function emitNfse(appointmentId: string) {
+export const emitNfse = safeAction(async (appointmentId: string) => {
   const workspaceId = await getWorkspaceId()
 
   // Load NFS-e config
@@ -174,7 +174,7 @@ export async function emitNfse(appointmentId: string) {
 
     return nfse
   })
-}
+})
 
 export async function getNfseList(filters?: {
   status?: string
@@ -285,7 +285,7 @@ export async function getNfseByAppointment(appointmentId: string) {
   })
 }
 
-export async function cancelNfse(nfseId: string, motivo: string) {
+export const cancelNfse = safeAction(async (nfseId: string, motivo: string) => {
   const workspaceId = await getWorkspaceId()
 
   if (!motivo.trim()) throw new ActionError("Motivo do cancelamento e obrigatorio")
@@ -326,9 +326,9 @@ export async function cancelNfse(nfseId: string, motivo: string) {
   })
 
   return updated
-}
+})
 
-export async function refreshNfseStatus(nfseId: string) {
+export const refreshNfseStatus = safeAction(async (nfseId: string) => {
   const workspaceId = await getWorkspaceId()
 
   const nfse = await db.nfse.findFirst({
@@ -374,4 +374,4 @@ export async function refreshNfseStatus(nfseId: string) {
   })
 
   return updated
-}
+})

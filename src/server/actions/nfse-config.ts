@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { NfseClient } from "@/lib/nfse/client"
 import { logger } from "@/lib/logger"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ActionError, safeAction } from "@/lib/error-messages"
 
 function validateCpf(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "")
@@ -184,7 +184,7 @@ export async function saveNfseConfig(data: {
   }
 }
 
-export async function testNfseConnection() {
+export const testNfseConnection = safeAction(async () => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
@@ -212,4 +212,4 @@ export async function testNfseConnection() {
     const message = err instanceof Error ? err.message : "Erro desconhecido"
     throw new ActionError(`Falha ao conectar com o provedor: ${message}`)
   }
-}
+})

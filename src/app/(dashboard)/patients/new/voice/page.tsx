@@ -51,6 +51,7 @@ export default function VoicePatientPage() {
       const fd = new FormData()
       fd.append("audio", blob, "recording.webm")
       const result = await processVoiceRegistration(fd)
+      if ('error' in result) { setError(result.error!); setState("recording"); return }
       setTranscript(result.transcript)
       setExtractedData(result.extractedData)
       setRecordingId(result.recordingId)
@@ -94,6 +95,7 @@ export default function VoicePatientPage() {
         procedures: formData.procedures,
         alerts: formData.alerts,
       })
+      if ('error' in result) { setError(result.error!); setSaving(false); return }
       router.push(`/patients/${result.patientId}`)
     } catch (err) {
       setError(friendlyError(err, "Erro ao salvar paciente"))

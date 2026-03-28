@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { checkAgendaLimit } from "@/lib/plan-enforcement"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_AGENDA_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_AGENDA_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
@@ -87,7 +87,7 @@ export async function getDefaultAgendaIdForWorkspace(workspaceId: string) {
   return agenda.id
 }
 
-export async function createAgenda(data: { name: string; color?: string }) {
+export const createAgenda = safeAction(async (data: { name: string; color?: string }) => {
   const workspaceId = await getWorkspaceId()
 
   if (!data.name.trim()) throw new ActionError("Nome da agenda e obrigatorio")
@@ -113,12 +113,12 @@ export async function createAgenda(data: { name: string; color?: string }) {
     isActive: agenda.isActive,
     appointmentCount: 0,
   }
-}
+})
 
-export async function updateAgenda(
+export const updateAgenda = safeAction(async (
   id: string,
   data: { name?: string; color?: string; isActive?: boolean }
-) {
+) => {
   const workspaceId = await getWorkspaceId()
 
   const existing = await db.agenda.findFirst({
@@ -147,9 +147,9 @@ export async function updateAgenda(
     isDefault: updated.isDefault,
     isActive: updated.isActive,
   }
-}
+})
 
-export async function deleteAgenda(id: string) {
+export const deleteAgenda = safeAction(async (id: string) => {
   const workspaceId = await getWorkspaceId()
 
   const existing = await db.agenda.findFirst({
@@ -171,4 +171,4 @@ export async function deleteAgenda(id: string) {
   await db.agenda.delete({ where: { id } })
 
   return { success: true }
-}
+})

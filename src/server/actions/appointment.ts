@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
 import { revalidateTag } from "next/cache"
 import { checkAppointmentLimit } from "@/lib/plan-enforcement"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
@@ -212,7 +212,7 @@ export async function checkAppointmentConflicts(date: string, agendaId?: string)
   }
 }
 
-export async function scheduleAppointment(data: {
+export const scheduleAppointment = safeAction(async (data: {
   patientId: string
   date: string
   agendaId: string
@@ -221,7 +221,7 @@ export async function scheduleAppointment(data: {
   forceSchedule?: boolean
   type?: "presencial" | "teleconsulta"
   price?: number
-}) {
+}) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
@@ -319,7 +319,7 @@ export async function scheduleAppointment(data: {
     status: appointment.status,
     agendaId: appointment.agendaId,
   }
-}
+})
 
 function hashStringToInt(str: string): number {
   let hash = 0
@@ -330,7 +330,7 @@ function hashStringToInt(str: string): number {
   return hash
 }
 
-export async function updateAppointmentStatus(appointmentId: string, status: string) {
+export const updateAppointmentStatus = safeAction(async (appointmentId: string, status: string) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
@@ -363,9 +363,9 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
   revalidateTag("dashboard", "max")
 
   return { id: updated.id, status: updated.status }
-}
+})
 
-export async function rescheduleAppointment(appointmentId: string, newDate: string, forceSchedule = false) {
+export const rescheduleAppointment = safeAction(async (appointmentId: string, newDate: string, forceSchedule = false) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
@@ -425,9 +425,9 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
   })
 
   return { id: updated.id, date: updated.date.toISOString() }
-}
+})
 
-export async function deleteAppointment(appointmentId: string) {
+export const deleteAppointment = safeAction(async (appointmentId: string) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
@@ -454,9 +454,9 @@ export async function deleteAppointment(appointmentId: string) {
   revalidateTag("dashboard", "max")
 
   return { success: true }
-}
+})
 
-export async function scheduleRecurringAppointments(data: {
+export const scheduleRecurringAppointments = safeAction(async (data: {
   patientId: string
   startDate: string
   agendaId: string
@@ -464,7 +464,7 @@ export async function scheduleRecurringAppointments(data: {
   procedures?: string[]
   recurrence: "weekly" | "biweekly"
   occurrences: number
-}) {
+}) => {
   const workspaceId = await getWorkspaceId()
 
   if (data.occurrences < 2 || data.occurrences > 52) {
@@ -527,13 +527,15 @@ export async function scheduleRecurringAppointments(data: {
     return results
   })
 
-  return appointments.map((a) => ({
-    id: a.id,
-    date: a.date.toISOString(),
-    patient: a.patient,
-    procedures: (Array.isArray(a.procedures) ? a.procedures : []).map((p: unknown) => typeof p === "string" ? p : (p as any)?.name ?? String(p)),
-    notes: a.notes,
-    status: a.status,
-    agendaId: a.agendaId,
-  }))
-}
+  return {
+    appointments: appointments.map((a) => ({
+      id: a.id,
+      date: a.date.toISOString(),
+      patient: a.patient,
+      procedures: (Array.isArray(a.procedures) ? a.procedures : []).map((p: unknown) => typeof p === "string" ? p : (p as any)?.name ?? String(p)),
+      notes: a.notes,
+      status: a.status,
+      agendaId: a.agendaId,
+    })),
+  }
+})

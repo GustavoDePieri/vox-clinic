@@ -34,7 +34,7 @@ import { getReportsData, getNpsSurveys } from "@/server/actions/reports"
 import Link from "next/link"
 import { MessageSquare } from "lucide-react"
 
-type ReportsData = Awaited<ReturnType<typeof getReportsData>>
+type ReportsData = Exclude<Awaited<ReturnType<typeof getReportsData>>, { error: string }>
 type NpsSurvey = Awaited<ReturnType<typeof getNpsSurveys>>[number]
 
 const formatBRL = (v: number) =>
@@ -68,17 +68,24 @@ export default function ReportsPage() {
     setLoading(true)
     setError(null)
     try {
-      const [reportsData, surveysData] = await Promise.all([
+      const [reportsResult, surveysResult] = await Promise.all([
         getReportsData(period),
         getNpsSurveys(period).catch(() => [] as NpsSurvey[]),
       ])
-      setData(reportsData)
-      setNpsSurveys(surveysData)
+      if ('error' in reportsResult && reportsResult.error) {
+        setError(reportsResult.error.includes("plano") || reportsResult.error.includes("Limite")
+          ? "upgrade"
+          : reportsResult.error)
+        setData(null)
+        return
+      }
+      setData(reportsResult as ReportsData)
+      if (Array.isArray(surveysResult)) {
+        setNpsSurveys(surveysResult)
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : ""
-      setError(msg.includes("plano") || msg.includes("Limite") || msg.includes("upgrade")
-        ? "upgrade"
-        : msg || "Erro ao carregar relatorios")
+      setError(msg || "Erro ao carregar relatorios")
       setData(null)
     } finally {
       setLoading(false)

@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
-import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_PRESCRIPTION_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_PRESCRIPTION_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -20,12 +20,12 @@ async function getAuthContext() {
   return { userId, user, workspaceId }
 }
 
-export async function createPrescription(data: {
+export const createPrescription = safeAction(async (data: {
   patientId: string
   appointmentId?: string
   medications: { name: string; dosage: string; frequency: string; duration: string; notes?: string }[]
   notes?: string
-}) {
+}) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const patient = await db.patient.findFirst({
@@ -60,7 +60,7 @@ export async function createPrescription(data: {
   })
 
   return { id: prescription.id }
-}
+})
 
 export async function getPrescription(id: string) {
   const { userId, user, workspaceId } = await getAuthContext()
@@ -109,7 +109,7 @@ export async function getPatientPrescriptions(patientId: string) {
   }))
 }
 
-export async function deletePrescription(id: string) {
+export const deletePrescription = safeAction(async (id: string) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const prescription = await db.prescription.findFirst({
@@ -128,4 +128,4 @@ export async function deletePrescription(id: string) {
   })
 
   return { success: true }
-}
+})

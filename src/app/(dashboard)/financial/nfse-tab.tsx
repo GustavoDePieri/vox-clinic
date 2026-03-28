@@ -103,7 +103,8 @@ export function NfseTab() {
   const handleRefresh = async (nfseId: string) => {
     setRefreshingId(nfseId)
     try {
-      await refreshNfseStatus(nfseId)
+      const result = await refreshNfseStatus(nfseId)
+      if ('error' in result) { toast.error(result.error); return }
       toast.success("Status atualizado")
       loadData()
     } catch (err) {
@@ -120,7 +121,8 @@ export function NfseTab() {
     }
     setCancellingId(nfseId)
     try {
-      await cancelNfse(nfseId, cancelMotivo)
+      const result = await cancelNfse(nfseId, cancelMotivo)
+      if ('error' in result) { toast.error(result.error); return }
       toast.success("NFS-e cancelada com sucesso")
       setShowCancelConfirm(null)
       setCancelMotivo("")

@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_AGENDA_NOT_FOUND, ERR_BLOCKED_SLOT_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_AGENDA_NOT_FOUND, ERR_BLOCKED_SLOT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
@@ -105,14 +105,14 @@ export async function getBlockedSlots(startDate: string, endDate: string, agenda
   return results.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
 }
 
-export async function createBlockedSlot(data: {
+export const createBlockedSlot = safeAction(async (data: {
   title: string
   startDate: string
   endDate: string
   agendaId: string
   allDay?: boolean
   recurring?: string | null
-}) {
+}) => {
   const workspaceId = await getWorkspaceId()
 
   if (!data.title.trim()) throw new ActionError("Titulo e obrigatorio")
@@ -149,12 +149,12 @@ export async function createBlockedSlot(data: {
     recurring: slot.recurring,
     agendaId: slot.agendaId,
   }
-}
+})
 
-export async function updateBlockedSlot(
+export const updateBlockedSlot = safeAction(async (
   id: string,
   data: { title?: string; startDate?: string; endDate?: string; allDay?: boolean; recurring?: string | null }
-) {
+) => {
   const workspaceId = await getWorkspaceId()
 
   const existing = await db.blockedSlot.findFirst({
@@ -190,9 +190,9 @@ export async function updateBlockedSlot(
     recurring: updated.recurring,
     agendaId: updated.agendaId,
   }
-}
+})
 
-export async function deleteBlockedSlot(id: string) {
+export const deleteBlockedSlot = safeAction(async (id: string) => {
   const workspaceId = await getWorkspaceId()
 
   const existing = await db.blockedSlot.findFirst({
@@ -203,4 +203,4 @@ export async function deleteBlockedSlot(id: string) {
   await db.blockedSlot.delete({ where: { id } })
 
   return { success: true }
-}
+})

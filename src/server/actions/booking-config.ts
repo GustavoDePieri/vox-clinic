@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { checkFeatureAccess } from "@/lib/plan-enforcement"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
@@ -42,7 +42,7 @@ export async function getBookingConfig() {
   }
 }
 
-export async function toggleBooking(enabled: boolean) {
+export const toggleBooking = safeAction(async (enabled: boolean) => {
   const workspaceId = await getWorkspaceId()
 
   // Plan enforcement: check online booking feature access
@@ -65,16 +65,16 @@ export async function toggleBooking(enabled: boolean) {
     token: config.token,
     isActive: config.isActive,
   }
-}
+})
 
-export async function updateBookingConfig(data: {
+export const updateBookingConfig = safeAction(async (data: {
   allowedAgendaIds?: string[]
   allowedProcedureIds?: string[]
   maxDaysAhead?: number
   startHour?: number
   endHour?: number
   welcomeMessage?: string | null
-}) {
+}) => {
   const workspaceId = await getWorkspaceId()
 
   const config = await db.bookingConfig.upsert({
@@ -97,9 +97,9 @@ export async function updateBookingConfig(data: {
     endHour: config.endHour,
     welcomeMessage: config.welcomeMessage,
   }
-}
+})
 
-export async function regenerateBookingToken() {
+export const regenerateBookingToken = safeAction(async () => {
   const workspaceId = await getWorkspaceId()
 
   const existing = await db.bookingConfig.findUnique({
@@ -116,4 +116,4 @@ export async function regenerateBookingToken() {
   })
 
   return { token: config.token }
-}
+})

@@ -13,9 +13,9 @@ import { getDefaultAgendaIdForWorkspace } from "@/server/actions/agenda"
 import { readProcedures, toJsonValue, readMedicalHistory } from "@/lib/json-helpers"
 import { logger } from "@/lib/logger"
 import type { AppointmentSummary } from "@/types"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ActionError, safeAction } from "@/lib/error-messages"
 
-export async function processConsultation(formData: FormData, patientId: string) {
+export const processConsultation = safeAction(async (formData: FormData, patientId: string) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
@@ -127,7 +127,7 @@ export async function processConsultation(formData: FormData, patientId: string)
     }
     throw err
   }
-}
+})
 
 export async function getRecordingForReview(recordingId: string) {
   const { userId } = await auth()
@@ -154,14 +154,14 @@ export async function getRecordingForReview(recordingId: string) {
   }
 }
 
-export async function confirmConsultation(data: {
+export const confirmConsultation = safeAction(async (data: {
   recordingId: string
   patientId: string
   summary: AppointmentSummary
   audioPath: string
   transcript: string
   price?: number
-}) {
+}) => {
   const { userId } = await auth()
   if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
@@ -297,4 +297,4 @@ export async function confirmConsultation(data: {
     appointmentId: result.appointment.id,
     patientId: data.patientId,
   }
-}
+})

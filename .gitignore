@@ -54,3 +54,4 @@ next-env.d.ts
 # temporary/local files
 checklist_crm_clinica.xlsx
 dbsetup.js
+.env*.local

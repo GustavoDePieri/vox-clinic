@@ -84,6 +84,7 @@ function CreateCertificateModal({
           endTime: type === "declaracao_comparecimento" ? endTime : undefined,
           content: type === "encaminhamento" || type === "laudo" ? content : undefined,
         })
+        if ('error' in result) { toast.error(result.error); return }
         toast.success("Documento criado com sucesso")
         onClose()
         window.open(`/certificates/${result.id}`, "_blank")

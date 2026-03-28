@@ -90,12 +90,13 @@ export function RegisterPaymentDialog({ payment, open, onOpenChange, onSuccess }
 
     startTransition(async () => {
       try {
-        await recordPayment(payment.id, {
+        const result = await recordPayment(payment.id, {
           paidAmount: paidCentavos,
           paymentMethod,
           paidAt,
           notes: notes.trim() || undefined,
         })
+        if ('error' in result) { toast.error(result.error); return }
         toast.success("Pagamento registrado")
         onOpenChange(false)
         onSuccess()

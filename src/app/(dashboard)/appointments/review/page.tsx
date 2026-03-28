@@ -114,6 +114,7 @@ export default function AppointmentReviewPage() {
         transcript,
         price: !isNaN(parsedPrice) && parsedPrice > 0 ? parsedPrice : undefined,
       })
+      if ('error' in result) { setError(result.error!); setSaving(false); return }
       router.push(`/patients/${result.patientId}`)
     } catch (err) {
       setError(friendlyError(err, "Erro ao salvar consulta"))

@@ -68,6 +68,7 @@ export function ManualPatientForm({
     async (_prevState: FormState, formData: FormData): Promise<FormState> => {
       try {
         const result = await createPatient(formData)
+        if ('error' in result) return { error: result.error }
         toast.success("Paciente cadastrado com sucesso!")
         router.push(`/patients/${result.patientId}`)
         return undefined

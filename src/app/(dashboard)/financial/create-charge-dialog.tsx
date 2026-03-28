@@ -121,7 +121,7 @@ export function CreateChargeDialog({ open, onOpenChange, onSuccess, defaultPatie
 
     startTransition(async () => {
       try {
-        await createCharge({
+        const result = await createCharge({
           patientId: selectedPatient.id,
           description: description.trim(),
           totalAmount: totalCentavos,
@@ -130,6 +130,7 @@ export function CreateChargeDialog({ open, onOpenChange, onSuccess, defaultPatie
           firstDueDate,
           notes: notes.trim() || undefined,
         })
+        if (result && 'error' in result) { toast.error(result.error); return }
         toast.success("Cobranca criada com sucesso")
         onOpenChange(false)
         onSuccess()

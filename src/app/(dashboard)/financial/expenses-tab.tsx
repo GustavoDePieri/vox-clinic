@@ -133,7 +133,8 @@ export default function ExpensesTab() {
 
   const executeDelete = async (id: string, deleteAll: boolean) => {
     try {
-      await deleteExpense(id, deleteAll)
+      const result = await deleteExpense(id, deleteAll)
+      if ('error' in result) { toast.error(result.error); return }
       toast.success("Despesa excluida")
       loadData()
     } catch (err) {
@@ -159,10 +160,11 @@ export default function ExpensesTab() {
     }
 
     try {
-      await payExpense(id, {
+      const result = await payExpense(id, {
         paidAmount: amount,
         paymentMethod: payForm.method,
       })
+      if ('error' in result) { toast.error(result.error); return }
       toast.success("Despesa marcada como paga")
       setPayingId(null)
       setPayForm({ amount: "", method: "pix" })

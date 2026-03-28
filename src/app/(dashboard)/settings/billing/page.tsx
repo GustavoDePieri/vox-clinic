@@ -162,9 +162,10 @@ export default function BillingPage() {
   async function handleUpgrade(planKey: "pro" | "enterprise") {
     setActionLoading(planKey)
     try {
-      const { url } = await createCheckoutSession(planKey)
-      if (url) {
-        window.location.href = url
+      const result = await createCheckoutSession(planKey)
+      if ('error' in result) { toast.error(result.error!); return }
+      if (result.url) {
+        window.location.href = result.url
       } else {
         toast.error("Erro ao criar sessao de pagamento.")
       }
@@ -178,9 +179,10 @@ export default function BillingPage() {
   async function handleManageSubscription() {
     setActionLoading("portal")
     try {
-      const { url } = await createPortalSession()
-      if (url) {
-        window.location.href = url
+      const result = await createPortalSession()
+      if ('error' in result) { toast.error(result.error!); return }
+      if (result.url) {
+        window.location.href = result.url
       } else {
         toast.error("Erro ao abrir portal de assinatura.")
       }

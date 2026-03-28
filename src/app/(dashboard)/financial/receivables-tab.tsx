@@ -98,7 +98,8 @@ export function ReceivablesTab() {
   const handleCancelCharge = async (chargeId: string) => {
     setCancelling(chargeId)
     try {
-      await cancelCharge(chargeId)
+      const result = await cancelCharge(chargeId)
+      if ('error' in result) { toast.error(result.error); return }
       toast.success("Cobranca cancelada")
       loadData()
     } catch (err) {

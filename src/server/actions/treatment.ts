@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_TREATMENT_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_TREATMENT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -48,14 +48,14 @@ export async function getTreatmentPlans(patientId: string) {
   }))
 }
 
-export async function createTreatmentPlan(data: {
+export const createTreatmentPlan = safeAction(async (data: {
   patientId: string
   name: string
   procedures: string[]
   totalSessions: number
   notes?: string
   estimatedEndDate?: string
-}) {
+}) => {
   const { userId, workspaceId } = await getAuthContext()
 
   // Verify patient
@@ -88,9 +88,9 @@ export async function createTreatmentPlan(data: {
   })
 
   return { id: plan.id }
-}
+})
 
-export async function addSessionToTreatment(planId: string) {
+export const addSessionToTreatment = safeAction(async (planId: string) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const updated = await db.$transaction(async (tx) => {
@@ -138,9 +138,9 @@ export async function addSessionToTreatment(planId: string) {
     completedSessions: updated.completedSessions,
     status: updated.status,
   }
-}
+})
 
-export async function updateTreatmentPlanStatus(planId: string, status: string) {
+export const updateTreatmentPlanStatus = safeAction(async (planId: string, status: string) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const validStatuses = ["active", "completed", "cancelled", "paused"]
@@ -169,9 +169,9 @@ export async function updateTreatmentPlanStatus(planId: string, status: string) 
   })
 
   return { id: updated.id, status: updated.status }
-}
+})
 
-export async function deleteTreatmentPlan(planId: string) {
+export const deleteTreatmentPlan = safeAction(async (planId: string) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const plan = await db.treatmentPlan.findFirst({
@@ -190,4 +190,4 @@ export async function deleteTreatmentPlan(planId: string) {
   })
 
   return { success: true }
-}
+})

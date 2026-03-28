@@ -83,7 +83,8 @@ describe("treatment actions", () => {
         notes: "Sessoes quinzenais",
       })
 
-      expect(result.id).toBe("tp_new")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.id).toBe("tp_new")
       expect(mockDb.treatmentPlan.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           workspaceId: WORKSPACE_ID,
@@ -100,17 +101,16 @@ describe("treatment actions", () => {
       )
     })
 
-    it("validates totalSessions >= 1", async () => {
+    it("returns error when totalSessions < 1", async () => {
       mockDb.patient.findFirst.mockResolvedValue({ id: "p1", workspaceId: WORKSPACE_ID })
 
-      await expect(
-        createTreatmentPlan({
-          patientId: "p1",
-          name: "Invalid Plan",
-          procedures: [],
-          totalSessions: 0,
-        })
-      ).rejects.toThrow("Total de sessoes deve ser pelo menos 1")
+      const result = await createTreatmentPlan({
+        patientId: "p1",
+        name: "Invalid Plan",
+        procedures: [],
+        totalSessions: 0,
+      })
+      expect('error' in result && result.error).toBe("Total de sessoes deve ser pelo menos 1")
     })
 
     it("throws when patient not in workspace", async () => {
@@ -139,8 +139,11 @@ describe("treatment actions", () => {
 
       const result = await addSessionToTreatment("tp1")
 
-      expect(result.completedSessions).toBe(3)
-      expect(result.status).toBe("active")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.completedSessions).toBe(3)
+        expect(result.status).toBe("active")
+      }
       expect(mockDb.$transaction).toHaveBeenCalled()
     })
 
@@ -154,7 +157,8 @@ describe("treatment actions", () => {
 
       const result = await addSessionToTreatment("tp1")
 
-      expect(result.status).toBe("completed")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.status).toBe("completed")
       // Verify update call set status to completed and completedAt
       expect(mockDb.treatmentPlan.update).toHaveBeenCalledWith({
         where: { id: "tp1" },
@@ -171,7 +175,9 @@ describe("treatment actions", () => {
         { id: "tp1", completedSessions: 3, totalSessions: 5, status: "paused" },
       ])
 
-      await expect(addSessionToTreatment("tp1")).rejects.toThrow("Plano nao esta ativo")
+      const result = await addSessionToTreatment("tp1")
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe("Plano nao esta ativo")
     })
 
     it("rejects when all sessions already completed", async () => {
@@ -179,7 +185,9 @@ describe("treatment actions", () => {
         { id: "tp1", completedSessions: 5, totalSessions: 5, status: "active" },
       ])
 
-      await expect(addSessionToTreatment("tp1")).rejects.toThrow("Todas as sessoes ja foram concluidas")
+      const result = await addSessionToTreatment("tp1")
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe("Todas as sessoes ja foram concluidas")
     })
 
     it("throws when plan not found", async () => {
@@ -214,11 +222,14 @@ describe("treatment actions", () => {
       mockDb.treatmentPlan.update.mockResolvedValue({ id: "tp1", status })
 
       const result = await updateTreatmentPlanStatus("tp1", status)
-      expect(result.status).toBe(status)
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.status).toBe(status)
     })
 
     it("rejects invalid status", async () => {
-      await expect(updateTreatmentPlanStatus("tp1", "invalid")).rejects.toThrow("Status invalido")
+      const result = await updateTreatmentPlanStatus("tp1", "invalid")
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe("Status invalido")
     })
 
     it("sets completedAt when status is completed", async () => {

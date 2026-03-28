@@ -61,10 +61,13 @@ describe("consultation actions", () => {
 
       const result = await processConsultation(formData, "p1")
 
-      expect(result.recordingId).toBe("rec_c1")
-      expect(result.transcript).toBeDefined()
-      expect(result.summary).toBeDefined()
-      expect(result.audioPath).toBe("audio/test-file.webm")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.recordingId).toBe("rec_c1")
+        expect(result.transcript).toBeDefined()
+        expect(result.summary).toBeDefined()
+        expect(result.audioPath).toBe("audio/test-file.webm")
+      }
 
       // Verify pipeline
       expect(mockUploadAudio).toHaveBeenCalledTimes(1)
@@ -94,14 +97,16 @@ describe("consultation actions", () => {
       const formData = new FormData()
       formData.set("audio", createAudioFile(26 * 1024 * 1024))
 
-      await expect(processConsultation(formData, "p1")).rejects.toThrow(
-        ERR_AUDIO_TOO_LARGE
-      )
+      const result = await processConsultation(formData, "p1")
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_AUDIO_TOO_LARGE)
     })
 
     it("throws when no audio file provided", async () => {
       const formData = new FormData()
-      await expect(processConsultation(formData, "p1")).rejects.toThrow(ERR_NO_AUDIO)
+      const result = await processConsultation(formData, "p1")
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_NO_AUDIO)
     })
 
     it("saves error recording on transcription failure (preserves audio)", async () => {
@@ -246,8 +251,11 @@ describe("consultation actions", () => {
 
       const result = await confirmConsultation(confirmData)
 
-      expect(result.appointmentId).toBe("a_new")
-      expect(result.patientId).toBe("p1")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.appointmentId).toBe("a_new")
+        expect(result.patientId).toBe("p1")
+      }
 
       // Verify transaction
       expect(mockDb.$transaction).toHaveBeenCalledTimes(1)
@@ -274,13 +282,17 @@ describe("consultation actions", () => {
     it("double-confirm guard: rejects if recording already has appointmentId", async () => {
       mockDb.$queryRawUnsafe.mockResolvedValue([{ id: "rec_1", appointmentId: "a_existing" }])
 
-      await expect(confirmConsultation(confirmData)).rejects.toThrow(ERR_ALREADY_CONFIRMED)
+      const result = await confirmConsultation(confirmData)
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_ALREADY_CONFIRMED)
     })
 
     it("throws when recording not found", async () => {
       mockDb.$queryRawUnsafe.mockResolvedValue([])
 
-      await expect(confirmConsultation(confirmData)).rejects.toThrow(ERR_RECORDING_NOT_FOUND)
+      const result = await confirmConsultation(confirmData)
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_RECORDING_NOT_FOUND)
     })
 
     it("logs audit after successful confirmation", async () => {
@@ -316,7 +328,9 @@ describe("consultation actions", () => {
       // FOR UPDATE query returns empty (recording not in this workspace)
       mockDb.$queryRawUnsafe.mockResolvedValue([])
 
-      await expect(confirmConsultation(confirmData)).rejects.toThrow(ERR_RECORDING_NOT_FOUND)
+      const result = await confirmConsultation(confirmData)
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe(ERR_RECORDING_NOT_FOUND)
 
       // Should NOT create appointment
       expect(mockDb.appointment.create).not.toHaveBeenCalled()

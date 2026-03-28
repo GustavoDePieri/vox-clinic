@@ -14,7 +14,8 @@ export default function AcceptInvitePage() {
   const handleAccept = async () => {
     setLoading(true)
     try {
-      await acceptInvite(token)
+      const result = await acceptInvite(token)
+      if ('error' in result) { toast.error(result.error); setLoading(false); return }
       toast.success("Convite aceito! Bem-vindo a equipe.")
       router.push("/dashboard")
     } catch (err) {

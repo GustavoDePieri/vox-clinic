@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
 import { createClient } from "@supabase/supabase-js"
 import { env } from "@/lib/env"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_NO_FILE, ERR_FILE_TOO_LARGE, ERR_FILE_TYPE_NOT_ALLOWED, ERR_DOCUMENT_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_NO_FILE, ERR_FILE_TOO_LARGE, ERR_FILE_TYPE_NOT_ALLOWED, ERR_DOCUMENT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -53,7 +53,7 @@ export async function getPatientDocuments(patientId: string) {
   }))
 }
 
-export async function uploadPatientDocument(formData: FormData, patientId: string) {
+export const uploadPatientDocument = safeAction(async (formData: FormData, patientId: string) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const patient = await db.patient.findFirst({
@@ -114,7 +114,7 @@ export async function uploadPatientDocument(formData: FormData, patientId: strin
   })
 
   return { id: doc.id }
-}
+})
 
 export async function getDocumentSignedUrl(documentUrl: string) {
   const { workspaceId } = await getAuthContext()
@@ -134,7 +134,7 @@ export async function getDocumentSignedUrl(documentUrl: string) {
   return data.signedUrl
 }
 
-export async function deletePatientDocument(documentId: string) {
+export const deletePatientDocument = safeAction(async (documentId: string) => {
   const { userId, workspaceId } = await getAuthContext()
 
   const doc = await db.patientDocument.findFirst({
@@ -158,4 +158,4 @@ export async function deletePatientDocument(documentId: string) {
   })
 
   return { success: true }
-}
+})

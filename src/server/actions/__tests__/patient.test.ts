@@ -152,7 +152,9 @@ describe("patient actions", () => {
       const formData = new FormData()
       formData.set("name", "  ")
 
-      await expect(createPatient(formData)).rejects.toThrow("Nome e obrigatorio")
+      const result = await createPatient(formData)
+      expect('error' in result).toBe(true)
+      if ('error' in result) expect(result.error).toBe("Nome e obrigatorio")
     })
 
     it("parses customData JSON from FormData", async () => {
@@ -181,7 +183,8 @@ describe("patient actions", () => {
 
       const result = await updatePatient("p1", { name: "Maria Updated" })
 
-      expect(result.name).toBe("Maria Updated")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.name).toBe("Maria Updated")
       expect(mockDb.patient.update).toHaveBeenCalledWith({
         where: { id: "p1" },
         data: expect.objectContaining({ name: "Maria Updated" }),

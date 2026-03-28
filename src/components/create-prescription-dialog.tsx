@@ -97,6 +97,7 @@ function CreatePrescriptionModal({
           medications: validMeds,
           notes: notes.trim() || undefined,
         })
+        if ('error' in result) { toast.error(result.error); return }
         toast.success("Prescricao criada com sucesso")
         onClose()
         window.open(`/prescriptions/${result.id}`, "_blank")

@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { checkFeatureAccess } from "@/lib/plan-enforcement"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
@@ -17,7 +17,7 @@ async function getWorkspaceId() {
   return workspaceId
 }
 
-export async function getReportsData(period: "3m" | "6m" | "12m") {
+export const getReportsData = safeAction(async (period: "3m" | "6m" | "12m") => {
   const workspaceId = await getWorkspaceId()
 
   // Plan enforcement: check reports feature access
@@ -169,7 +169,7 @@ export async function getReportsData(period: "3m" | "6m" | "12m") {
     topPatientsByRevenue,
     nps: { score: npsScore, average: npsAvg, total: npsScores.length, promoters: npsPromoters, detractors: npsDetractors },
   }
-}
+})
 
 export async function getNpsSurveys(period: string = "6m") {
   const { userId } = await auth()

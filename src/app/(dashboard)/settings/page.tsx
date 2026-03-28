@@ -854,7 +854,8 @@ function TeamTab({ clinicName }: { clinicName: string }) {
     if (!inviteEmail.trim()) return
     setInviting(true)
     try {
-      await inviteTeamMember(inviteEmail.trim(), inviteRole)
+      const result = await inviteTeamMember(inviteEmail.trim(), inviteRole)
+      if ('error' in result) { toast.error(result.error); return }
       setInviteEmail(""); setInviteRole("member"); setShowInvite(false)
       loadTeam()
     } catch (err) {
@@ -864,14 +865,14 @@ function TeamTab({ clinicName }: { clinicName: string }) {
 
   async function handleCancelInvite(inviteId: string) {
     setActionLoading(inviteId)
-    try { await cancelInvite(inviteId); loadTeam() }
+    try { const r = await cancelInvite(inviteId); if ('error' in r) { toast.error(r.error); return }; loadTeam() }
     catch (err) { toast.error(friendlyError(err, "Erro ao cancelar convite")) }
     finally { setActionLoading(null) }
   }
 
   async function handleRoleChange(memberId: string, role: string) {
     setActionLoading(memberId)
-    try { await updateMemberRole(memberId, role); loadTeam() }
+    try { const r = await updateMemberRole(memberId, role); if ('error' in r) { toast.error(r.error); return }; loadTeam() }
     catch (err) { toast.error(friendlyError(err, "Erro ao alterar cargo")) }
     finally { setActionLoading(null) }
   }
@@ -879,7 +880,7 @@ function TeamTab({ clinicName }: { clinicName: string }) {
   async function handleRemove(memberId: string) {
     showConfirm("Remover membro", "Tem certeza que deseja remover este membro da equipe?", async () => {
       setActionLoading(memberId)
-      try { await removeMember(memberId); loadTeam() }
+      try { const r = await removeMember(memberId); if ('error' in r) { toast.error(r.error); return }; loadTeam() }
       catch (err) { toast.error(friendlyError(err, "Erro ao remover membro")) }
       finally { setActionLoading(null) }
     })
@@ -1085,7 +1086,8 @@ function AgendasTab() {
     if (!newName.trim()) return
     setActionLoading("create")
     try {
-      await createAgenda({ name: newName.trim(), color: newColor })
+      const result = await createAgenda({ name: newName.trim(), color: newColor })
+      if ('error' in result) { toast.error(result.error); return }
       setNewName("")
       setNewColor("#3B82F6")
       setShowNewForm(false)
@@ -1101,7 +1103,8 @@ function AgendasTab() {
   async function handleUpdate(id: string) {
     setActionLoading(id)
     try {
-      await updateAgenda(id, { name: editName.trim(), color: editColor })
+      const result = await updateAgenda(id, { name: editName.trim(), color: editColor })
+      if ('error' in result) { toast.error(result.error); return }
       setEditingId(null)
       await loadAgendas()
       toast.success("Agenda atualizada")
@@ -1115,7 +1118,8 @@ function AgendasTab() {
   async function handleToggleActive(id: string, isActive: boolean) {
     setActionLoading(id)
     try {
-      await updateAgenda(id, { isActive: !isActive })
+      const result = await updateAgenda(id, { isActive: !isActive })
+      if ('error' in result) { toast.error(result.error); return }
       await loadAgendas()
     } catch (err) {
       toast.error(friendlyError(err, "Erro ao alterar status"))
@@ -1128,7 +1132,8 @@ function AgendasTab() {
     showConfirm("Excluir agenda", "Tem certeza que deseja excluir esta agenda? Todas as consultas vinculadas serao desvinculadas.", async () => {
       setActionLoading(id)
       try {
-        await deleteAgenda(id)
+        const result = await deleteAgenda(id)
+        if ('error' in result) { toast.error(result.error); return }
         await loadAgendas()
         toast.success("Agenda excluida")
       } catch (err) {
@@ -1349,6 +1354,7 @@ function BookingTab() {
     setActionLoading(true)
     try {
       const result = await toggleBooking(enabled)
+      if ('error' in result) { toast.error(result.error); return }
       setConfig((prev) => prev ? { ...prev, ...result } : { ...result, maxDaysAhead: 30, startHour: 8, endHour: 18, welcomeMessage: null })
       toast.success(enabled ? "Agendamento online ativado" : "Agendamento online desativado")
     } catch (err) {
@@ -1363,6 +1369,7 @@ function BookingTab() {
       setActionLoading(true)
       try {
         const result = await regenerateBookingToken()
+        if ('error' in result) { toast.error(result.error); return }
         setConfig((prev) => prev ? { ...prev, token: result.token } : null)
         toast.success("Link regenerado")
       } catch (err) {
@@ -1377,6 +1384,7 @@ function BookingTab() {
     setActionLoading(true)
     try {
       const result = await updateBookingConfig(data)
+      if ('error' in result) { toast.error(result.error); return }
       setConfig((prev) => prev ? { ...prev, ...result } : null)
       toast.success("Configuracao salva")
     } catch (err) {

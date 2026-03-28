@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_RECEIVABLE_NOT_FOUND, ERR_PAYMENT_NOT_FOUND, ERR_PAYMENT_ALREADY_REGISTERED, ERR_PAYMENT_CANCELLED, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_RECEIVABLE_NOT_FOUND, ERR_PAYMENT_NOT_FOUND, ERR_PAYMENT_ALREADY_REGISTERED, ERR_PAYMENT_CANCELLED, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceContext() {
   const { userId } = await auth()
@@ -33,7 +33,7 @@ interface CreateChargeInput {
   notes?: string
 }
 
-export async function createCharge(input: CreateChargeInput) {
+export const createCharge = safeAction(async (input: CreateChargeInput) => {
   const { workspaceId, clerkId } = await getWorkspaceContext()
 
   const {
@@ -115,12 +115,13 @@ export async function createCharge(input: CreateChargeInput) {
       })
     }
 
-    return tx.charge.findUnique({
+    const created = await tx.charge.findUnique({
       where: { id: charge.id },
       include: { payments: { orderBy: { installmentNumber: "asc" } }, patient: { select: { id: true, name: true } } },
     })
+    return created!
   })
-}
+})
 
 // ─── recordPayment ───────────────────────────────────────────
 
@@ -131,7 +132,7 @@ interface RecordPaymentInput {
   notes?: string
 }
 
-export async function recordPayment(paymentId: string, input: RecordPaymentInput) {
+export const recordPayment = safeAction(async (paymentId: string, input: RecordPaymentInput) => {
   const { workspaceId } = await getWorkspaceContext()
 
   const { paidAmount, paymentMethod, paidAt, notes } = input
@@ -184,7 +185,7 @@ export async function recordPayment(paymentId: string, input: RecordPaymentInput
 
     return { success: true }
   })
-}
+})
 
 // ─── getCharges ──────────────────────────────────────────────
 
@@ -385,7 +386,7 @@ export async function getReceivablesSummary() {
 
 // ─── cancelCharge ────────────────────────────────────────────
 
-export async function cancelCharge(chargeId: string) {
+export const cancelCharge = safeAction(async (chargeId: string) => {
   const { workspaceId } = await getWorkspaceContext()
 
   return db.$transaction(async (tx) => {
@@ -416,4 +417,4 @@ export async function cancelCharge(chargeId: string) {
 
     return { success: true }
   })
-}
+})

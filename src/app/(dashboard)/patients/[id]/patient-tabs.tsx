@@ -1353,13 +1353,14 @@ function TratamentosTab({ patientId }: { patientId: string }) {
     if (!formName.trim() || !formSessions) return
     setFormSaving(true)
     try {
-      await createTreatmentPlan({
+      const result = await createTreatmentPlan({
         patientId,
         name: formName.trim(),
         procedures: [],
         totalSessions: parseInt(formSessions),
         notes: formNotes.trim() || undefined,
       })
+      if ('error' in result) { toast.error(result.error); return }
       setFormName(""); setFormSessions(""); setFormNotes("")
       setShowForm(false)
       loadPlans()
@@ -1374,7 +1375,8 @@ function TratamentosTab({ patientId }: { patientId: string }) {
   async function handleAddSession(planId: string) {
     setActionLoading(planId)
     try {
-      await addSessionToTreatment(planId)
+      const result = await addSessionToTreatment(planId)
+      if ('error' in result) { toast.error(result.error); return }
       loadPlans()
       toast.success("Sessão registrada")
     } catch (err) {
@@ -1387,7 +1389,8 @@ function TratamentosTab({ patientId }: { patientId: string }) {
   async function handleStatusChange(planId: string, status: string) {
     setActionLoading(planId)
     try {
-      await updateTreatmentPlanStatus(planId, status)
+      const result = await updateTreatmentPlanStatus(planId, status)
+      if ('error' in result) { toast.error(result.error); return }
       loadPlans()
       toast.success("Status do plano atualizado")
     } catch (err) {
@@ -1401,7 +1404,8 @@ function TratamentosTab({ patientId }: { patientId: string }) {
     showConfirm("Excluir plano de tratamento", "Tem certeza que deseja excluir este plano? Esta acao nao pode ser desfeita.", async () => {
       setActionLoading(planId)
       try {
-        await deleteTreatmentPlan(planId)
+        const result = await deleteTreatmentPlan(planId)
+        if ('error' in result) { toast.error(result.error); return }
         loadPlans()
         toast.success("Plano de tratamento excluído")
       } catch (err) {
@@ -1711,7 +1715,8 @@ function DocumentosTab({ patientId }: { patientId: string }) {
       for (const file of fileList) {
         const fd = new FormData()
         fd.append("file", file)
-        await uploadPatientDocument(fd, patientId)
+        const result = await uploadPatientDocument(fd, patientId)
+        if ('error' in result) { toast.error(result.error); return }
       }
       loadDocs()
       toast.success("Documento enviado com sucesso")
@@ -1736,7 +1741,8 @@ function DocumentosTab({ patientId }: { patientId: string }) {
     showConfirm("Excluir documento", "Tem certeza que deseja excluir este documento? Esta acao nao pode ser desfeita.", async () => {
       setDeleting(docId)
       try {
-        await deletePatientDocument(docId)
+        const result = await deletePatientDocument(docId)
+        if ('error' in result) { toast.error(result.error); return }
         loadDocs()
         toast.success("Documento excluído")
       } catch (err) {
@@ -1927,7 +1933,8 @@ function PrescricoesTab({ patientId }: { patientId: string }) {
     showConfirm("Excluir prescricao", "Tem certeza que deseja excluir esta prescricao? Esta acao nao pode ser desfeita.", async () => {
       setDeleting(id)
       try {
-        await deletePrescription(id)
+        const result = await deletePrescription(id)
+        if ('error' in result) { toast.error(result.error); return }
         loadData()
         toast.success("Prescricao excluida")
       } catch (err) {
@@ -1942,7 +1949,8 @@ function PrescricoesTab({ patientId }: { patientId: string }) {
     showConfirm("Excluir documento", "Tem certeza que deseja excluir este documento? Esta acao nao pode ser desfeita.", async () => {
       setDeleting(id)
       try {
-        await deleteCertificate(id)
+        const result = await deleteCertificate(id)
+        if ('error' in result) { toast.error(result.error); return }
         loadData()
         toast.success("Documento excluido")
       } catch (err) {

@@ -6,7 +6,7 @@ import { checkPatientLimit } from "@/lib/plan-enforcement"
 import { getSignedAudioUrl } from "@/lib/storage"
 import { logAudit } from "@/lib/audit"
 import { unstable_cache, revalidateTag } from "next/cache"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceContext() {
   const { userId } = await auth()
@@ -218,7 +218,7 @@ export async function getPatient(patientId: string) {
   }
 }
 
-export async function updatePatient(
+export const updatePatient = safeAction(async (
   patientId: string,
   data: {
     name?: string
@@ -237,7 +237,7 @@ export async function updatePatient(
     customData?: Record<string, unknown>
     alerts?: string[]
   }
-) {
+) => {
   const { workspaceId, clerkId } = await getWorkspaceContext()
 
   const existing = await db.patient.findFirst({
@@ -270,9 +270,9 @@ export async function updatePatient(
   revalidateTag("patient-search", "max")
 
   return updated
-}
+})
 
-export async function createPatient(formData: FormData) {
+export const createPatient = safeAction(async (formData: FormData) => {
   const { workspaceId, clerkId } = await getWorkspaceContext()
 
   // Plan enforcement: check patient limit
@@ -363,9 +363,9 @@ export async function createPatient(formData: FormData) {
   revalidateTag("dashboard", "max")
 
   return { patientId: patient.id }
-}
+})
 
-export async function deactivatePatient(patientId: string) {
+export const deactivatePatient = safeAction(async (patientId: string) => {
   const { workspaceId, clerkId } = await getWorkspaceContext()
 
   const existing = await db.patient.findFirst({
@@ -390,7 +390,7 @@ export async function deactivatePatient(patientId: string) {
   revalidateTag("dashboard", "max")
 
   return { success: true }
-}
+})
 
 export async function getAudioPlaybackUrl(audioPath: string) {
   const { workspaceId } = await getWorkspaceContext()
@@ -407,7 +407,7 @@ export async function getAudioPlaybackUrl(audioPath: string) {
   return getSignedAudioUrl(audioPath)
 }
 
-export async function mergePatients(keepId: string, mergeId: string) {
+export const mergePatients = safeAction(async (keepId: string, mergeId: string) => {
   const { workspaceId, clerkId } = await getWorkspaceContext()
 
   if (keepId === mergeId) throw new ActionError("Nao pode mesclar paciente consigo mesmo")
@@ -509,7 +509,7 @@ export async function mergePatients(keepId: string, mergeId: string) {
   revalidateTag("dashboard", "max")
 
   return { success: true }
-}
+})
 
 export async function getDistinctInsurances(): Promise<string[]> {
   const { userId } = await auth()

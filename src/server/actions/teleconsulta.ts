@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 import { createVideoRoom, createMeetingToken, deleteVideoRoom } from "@/lib/daily"
 import crypto from "crypto"
 import { logger } from "@/lib/logger"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND, ERR_TELECONSULTA_NOT_FOUND, ERR_TELECONSULTA_ROOM_FAILED, ERR_TELECONSULTA_ROOM_NOT_CONFIGURED, ERR_TELECONSULTA_NOT_READY, ERR_TELECONSULTA_EXPIRED, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND, ERR_TELECONSULTA_NOT_FOUND, ERR_TELECONSULTA_ROOM_FAILED, ERR_TELECONSULTA_ROOM_NOT_CONFIGURED, ERR_TELECONSULTA_NOT_READY, ERR_TELECONSULTA_EXPIRED, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -22,7 +22,7 @@ async function getAuthContext() {
   return { userId, user: user!, workspaceId }
 }
 
-export async function createTeleconsultaRoom(appointmentId: string) {
+export const createTeleconsultaRoom = safeAction(async (appointmentId: string) => {
   const { workspaceId, user } = await getAuthContext()
 
   const appointment = await db.appointment.findFirst({
@@ -93,7 +93,7 @@ export async function createTeleconsultaRoom(appointmentId: string) {
     ownerToken: ownerToken.token,
     videoToken,
   }
-}
+})
 
 export async function recordTeleconsultaConsent(videoToken: string) {
   const appointment = await db.appointment.findFirst({
@@ -113,7 +113,7 @@ export async function recordTeleconsultaConsent(videoToken: string) {
   })
 }
 
-export async function getPatientJoinInfo(videoToken: string) {
+export const getPatientJoinInfo = safeAction(async (videoToken: string) => {
   const appointment = await db.appointment.findFirst({
     where: { videoToken },
     include: {
@@ -162,9 +162,9 @@ export async function getPatientJoinInfo(videoToken: string) {
     professionalName,
     patientName,
   }
-}
+})
 
-export async function endTeleconsulta(appointmentId: string) {
+export const endTeleconsulta = safeAction(async (appointmentId: string) => {
   const { workspaceId } = await getAuthContext()
 
   const appointment = await db.appointment.findFirst({
@@ -187,7 +187,7 @@ export async function endTeleconsulta(appointmentId: string) {
   }
 
   return { success: true }
-}
+})
 
 export async function getTeleconsultaInfo(appointmentId: string) {
   const { workspaceId, user } = await getAuthContext()

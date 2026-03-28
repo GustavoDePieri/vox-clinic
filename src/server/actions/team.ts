@@ -6,7 +6,7 @@ import { logAudit } from "@/lib/audit"
 import { checkTeamMemberLimit } from "@/lib/plan-enforcement"
 import { sendEmail } from "@/lib/email"
 import { logger } from "@/lib/logger"
-import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_TEAM_PERMISSION, ERR_ALREADY_MEMBER, ERR_IS_OWNER, ERR_INVITE_PENDING, ERR_INVITE_NOT_FOUND, ERR_MEMBER_NOT_FOUND, ERR_ALREADY_IN_WORKSPACE, ERR_INVITE_USED, ERR_INVITE_EXPIRED, ERR_INVITE_WRONG_EMAIL, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_TEAM_PERMISSION, ERR_ALREADY_MEMBER, ERR_IS_OWNER, ERR_INVITE_PENDING, ERR_INVITE_NOT_FOUND, ERR_MEMBER_NOT_FOUND, ERR_ALREADY_IN_WORKSPACE, ERR_INVITE_USED, ERR_INVITE_EXPIRED, ERR_INVITE_WRONG_EMAIL, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
@@ -84,7 +84,7 @@ export async function getTeamMembers() {
   }
 }
 
-export async function inviteTeamMember(email: string, role: string = "member") {
+export const inviteTeamMember = safeAction(async (email: string, role: string = "member") => {
   const { userId, user, workspaceId } = await getAuthContext()
   await requireOwnerOrAdmin(workspaceId, userId)
 
@@ -157,9 +157,9 @@ export async function inviteTeamMember(email: string, role: string = "member") {
   })
 
   return { id: invite.id }
-}
+})
 
-export async function cancelInvite(inviteId: string) {
+export const cancelInvite = safeAction(async (inviteId: string) => {
   const { userId, workspaceId } = await getAuthContext()
   await requireOwnerOrAdmin(workspaceId, userId)
 
@@ -174,9 +174,9 @@ export async function cancelInvite(inviteId: string) {
   })
 
   return { success: true }
-}
+})
 
-export async function updateMemberRole(memberId: string, role: string) {
+export const updateMemberRole = safeAction(async (memberId: string, role: string) => {
   const { userId, workspaceId } = await getAuthContext()
   await requireOwnerOrAdmin(workspaceId, userId)
 
@@ -203,9 +203,9 @@ export async function updateMemberRole(memberId: string, role: string) {
   })
 
   return { success: true }
-}
+})
 
-export async function removeMember(memberId: string) {
+export const removeMember = safeAction(async (memberId: string) => {
   const { userId, workspaceId } = await getAuthContext()
   await requireOwnerOrAdmin(workspaceId, userId)
 
@@ -225,9 +225,9 @@ export async function removeMember(memberId: string) {
   })
 
   return { success: true }
-}
+})
 
-export async function acceptInvite(token: string) {
+export const acceptInvite = safeAction(async (token: string) => {
   const { userId } = await getAuthContext()
 
   const user = await db.user.findUnique({ where: { clerkId: userId } })
@@ -263,4 +263,4 @@ export async function acceptInvite(token: string) {
   })
 
   return result
-}
+})

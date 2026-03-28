@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 import { getStripe, PLAN_PRICE_IDS } from "@/lib/stripe"
 import { logger } from "@/lib/logger"
 import { getPlanLimits } from "@/lib/plan-limits"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_NO_SUBSCRIPTION, ActionError } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_NO_SUBSCRIPTION, ActionError, safeAction } from "@/lib/error-messages"
 
 async function getWorkspaceWithUser() {
   const { userId } = await auth()
@@ -27,7 +27,7 @@ async function getWorkspaceWithUser() {
   return { user: user!, workspace: ws }
 }
 
-export async function createCheckoutSession(planKey: "pro" | "enterprise") {
+export const createCheckoutSession = safeAction(async (planKey: "pro" | "enterprise") => {
   const { user, workspace } = await getWorkspaceWithUser()
 
   const priceId = PLAN_PRICE_IDS[planKey]
@@ -70,9 +70,9 @@ export async function createCheckoutSession(planKey: "pro" | "enterprise") {
   })
 
   return { url: session.url }
-}
+})
 
-export async function createPortalSession() {
+export const createPortalSession = safeAction(async () => {
   const { workspace } = await getWorkspaceWithUser()
 
   if (!workspace.stripeCustomerId) {
@@ -87,7 +87,7 @@ export async function createPortalSession() {
   })
 
   return { url: session.url }
-}
+})
 
 export async function getWorkspaceUsage() {
   const { workspace } = await getWorkspaceWithUser()

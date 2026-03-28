@@ -37,6 +37,7 @@ function AppointmentCardInner({
     setCopyingLink(true)
     try {
       const result = await createTeleconsultaRoom(appointment.id)
+      if ('error' in result) { toast.error(result.error); return }
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
       const link = `${baseUrl}/sala/${result.videoToken}`
       await navigator.clipboard.writeText(link)

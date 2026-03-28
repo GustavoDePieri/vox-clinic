@@ -105,21 +105,23 @@ describe("appointment actions", () => {
         procedures: ["Limpeza"],
       })
 
-      expect(result.id).toBe("a_new")
-      expect(result.status).toBe("scheduled")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.id).toBe("a_new")
+        expect(result.status).toBe("scheduled")
+      }
       expect(mockDb.$transaction).toHaveBeenCalled()
     })
 
-    it("rejects with CONFLICT: prefix when overlap found", async () => {
+    it("returns error with CONFLICT: prefix when overlap found", async () => {
       mockDb.patient.findFirst.mockResolvedValue({ id: "p1", workspaceId: WORKSPACE_ID })
       mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       mockDb.appointment.findMany.mockResolvedValue([
         { id: "a_existing", patient: { id: "p2", name: "Joao" }, date: new Date(), status: "scheduled" },
       ])
 
-      await expect(
-        scheduleAppointment({ patientId: "p1", date: "2024-06-15T10:00:00Z", agendaId: AGENDA_ID })
-      ).rejects.toThrow(/^CONFLICT:/)
+      const result = await scheduleAppointment({ patientId: "p1", date: "2024-06-15T10:00:00Z", agendaId: AGENDA_ID })
+      expect('error' in result && result.error).toMatch(/^CONFLICT:/)
     })
 
     it("allows override with forceSchedule:true", async () => {
@@ -139,7 +141,8 @@ describe("appointment actions", () => {
         forceSchedule: true,
       })
 
-      expect(result.id).toBe("a_forced")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.id).toBe("a_forced")
       // Should not check for conflicts
       expect(mockDb.appointment.findMany).not.toHaveBeenCalled()
     })
@@ -161,7 +164,8 @@ describe("appointment actions", () => {
 
       const result = await updateAppointmentStatus("a1", "completed")
 
-      expect(result.status).toBe("completed")
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.status).toBe("completed")
       expect(mockDb.appointment.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: "a1", workspaceId: WORKSPACE_ID } })
       )
@@ -172,11 +176,13 @@ describe("appointment actions", () => {
       mockDb.appointment.update.mockResolvedValue({ id: "a1", status })
 
       const result = await updateAppointmentStatus("a1", status)
-      expect(result.status).toBe(status)
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) expect(result.status).toBe(status)
     })
 
-    it("rejects invalid status", async () => {
-      await expect(updateAppointmentStatus("a1", "invalid_status")).rejects.toThrow("Status invalido")
+    it("returns error for invalid status", async () => {
+      const result = await updateAppointmentStatus("a1", "invalid_status")
+      expect('error' in result && result.error).toBe("Status invalido")
     })
 
     it("throws when appointment not in workspace", async () => {
@@ -216,21 +222,23 @@ describe("appointment actions", () => {
 
       const result = await rescheduleAppointment("a1", "2024-07-01T14:00:00Z")
 
-      expect(result.id).toBe("a1")
-      expect(result.date).toBe(newDate.toISOString())
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.id).toBe("a1")
+        expect(result.date).toBe(newDate.toISOString())
+      }
       expect(mockDb.$transaction).toHaveBeenCalled()
     })
 
-    it("rejects with CONFLICT: prefix when overlap found", async () => {
+    it("returns error with CONFLICT: prefix when overlap found", async () => {
       mockDb.appointment.findFirst.mockResolvedValueOnce({ id: "a1", workspaceId: WORKSPACE_ID, agendaId: AGENDA_ID })
       mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       mockDb.appointment.findMany.mockResolvedValue([
         { id: "a_existing", patient: { id: "p2", name: "Joao" }, date: new Date(), status: "scheduled" },
       ])
 
-      await expect(
-        rescheduleAppointment("a1", "2024-07-01T14:00:00Z")
-      ).rejects.toThrow(/^CONFLICT:/)
+      const result = await rescheduleAppointment("a1", "2024-07-01T14:00:00Z")
+      expect('error' in result && result.error).toMatch(/^CONFLICT:/)
     })
 
     it("allows override with forceSchedule=true", async () => {
@@ -241,8 +249,11 @@ describe("appointment actions", () => {
 
       const result = await rescheduleAppointment("a1", "2024-07-01T14:00:00Z", true)
 
-      expect(result.id).toBe("a1")
-      expect(result.date).toBe(newDate.toISOString())
+      expect('error' in result).toBe(false)
+      if (!('error' in result)) {
+        expect(result.id).toBe("a1")
+        expect(result.date).toBe(newDate.toISOString())
+      }
       // Should not check for conflicts when forceSchedule is true
       expect(mockDb.appointment.findMany).not.toHaveBeenCalled()
     })

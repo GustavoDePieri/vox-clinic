@@ -110,6 +110,7 @@ export function EmitNfseDialog({ open, onOpenChange, onSuccess }: EmitNfseDialog
         await updateAppointmentPrice(selected.id, price)
       }
       const nfse = await emitNfse(selected.id)
+      if ('error' in nfse) { toast.error(nfse.error); return }
       setResult({ numero: nfse.numero, status: nfse.status })
       setStep("success")
       onSuccess()
