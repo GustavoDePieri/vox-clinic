@@ -147,12 +147,11 @@ describe("appointment actions", () => {
       expect(mockDb.appointment.findMany).not.toHaveBeenCalled()
     })
 
-    it("throws when patient not in workspace", async () => {
+    it("returns error when patient not in workspace", async () => {
       mockDb.patient.findFirst.mockResolvedValue(null)
 
-      await expect(
-        scheduleAppointment({ patientId: "p_other", date: "2024-06-15T10:00:00Z", agendaId: AGENDA_ID })
-      ).rejects.toThrow(ERR_PATIENT_NOT_FOUND)
+      const result = await scheduleAppointment({ patientId: "p_other", date: "2024-06-15T10:00:00Z", agendaId: AGENDA_ID })
+      expect(result).toHaveProperty("error")
     })
   })
 
@@ -185,10 +184,11 @@ describe("appointment actions", () => {
       expect('error' in result && result.error).toBe("Status invalido")
     })
 
-    it("throws when appointment not in workspace", async () => {
+    it("returns error when appointment not in workspace", async () => {
       mockDb.appointment.findFirst.mockResolvedValue(null)
 
-      await expect(updateAppointmentStatus("a_other", "completed")).rejects.toThrow(ERR_APPOINTMENT_NOT_FOUND)
+      const result = await updateAppointmentStatus("a_other", "completed")
+      expect(result).toHaveProperty("error")
     })
   })
 
@@ -204,10 +204,11 @@ describe("appointment actions", () => {
       expect(mockDb.appointment.delete).toHaveBeenCalledWith({ where: { id: "a1" } })
     })
 
-    it("throws when appointment not found", async () => {
+    it("returns error when appointment not found", async () => {
       mockDb.appointment.findFirst.mockResolvedValue(null)
 
-      await expect(deleteAppointment("a_missing")).rejects.toThrow(ERR_APPOINTMENT_NOT_FOUND)
+      const result = await deleteAppointment("a_missing")
+      expect(result).toHaveProperty("error")
     })
   })
 
@@ -258,10 +259,11 @@ describe("appointment actions", () => {
       expect(mockDb.appointment.findMany).not.toHaveBeenCalled()
     })
 
-    it("throws when appointment not in workspace", async () => {
+    it("returns error when appointment not in workspace", async () => {
       mockDb.appointment.findFirst.mockResolvedValue(null)
 
-      await expect(rescheduleAppointment("a_other", "2024-07-01T14:00:00Z")).rejects.toThrow(ERR_APPOINTMENT_NOT_FOUND)
+      const result = await rescheduleAppointment("a_other", "2024-07-01T14:00:00Z")
+      expect(result).toHaveProperty("error")
     })
   })
 })

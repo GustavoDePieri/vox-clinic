@@ -27,6 +27,27 @@ vi.mock("@/lib/audio-preprocessing", () => ({
 }))
 vi.mock("@/lib/audit", () => ({ logAudit: mockLogAudit }))
 vi.mock("@/lib/consent", () => ({ recordConsent: mockRecordConsent }))
+// workspace-cache: bypass in-memory cache, always query the mock DB directly
+export const mockGetWorkspaceIdCached = vi.fn(async (clerkId: string) => {
+  // Delegate to mockDb so tests can control the result via mockDb.user.findUnique
+  const { mockDb } = await import("@/test/mocks/db")
+  const user = await mockDb.user.findUnique({ where: { clerkId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
+  return user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId ?? null
+})
+vi.mock("@/lib/workspace-cache", () => ({
+  getWorkspaceIdCached: mockGetWorkspaceIdCached,
+  invalidateWorkspaceCache: vi.fn(),
+}))
+vi.mock("@/lib/plan-enforcement", () => ({
+  checkPatientLimit: vi.fn().mockResolvedValue({ allowed: true }),
+  checkAppointmentLimit: vi.fn().mockResolvedValue({ allowed: true }),
+  checkAgendaLimit: vi.fn().mockResolvedValue({ allowed: true }),
+}))
+vi.mock("@/lib/inngest/client", () => ({
+  isInngestEnabled: vi.fn().mockReturnValue(false),
+  sendInngestEvent: vi.fn().mockResolvedValue(false),
+}))
+vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }))
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: vi.fn((fn: any) => fn) }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn((url: string) => { throw new RedirectError(url) }) }))
 

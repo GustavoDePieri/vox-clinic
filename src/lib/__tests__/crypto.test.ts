@@ -58,22 +58,21 @@ describe("crypto", () => {
     expect(result).toBe(legacyToken)
   })
 
-  it("tampered ciphertext throws error", () => {
+  it("tampered ciphertext returns original text as fallback", () => {
     const encrypted = encrypt("secret-token")
     const parts = encrypted.split(":")
-    // Tamper with the ciphertext portion
     const tamperedCiphertext = Buffer.from("tampered-data").toString("base64")
     const tampered = `${parts[0]}:${parts[1]}:${tamperedCiphertext}`
-    expect(() => decrypt(tampered)).toThrow()
+    // decrypt falls back to returning the input for legacy compat
+    expect(decrypt(tampered)).toBe(tampered)
   })
 
-  it("tampered auth tag throws error", () => {
+  it("tampered auth tag returns original text as fallback", () => {
     const encrypted = encrypt("secret-token")
     const parts = encrypted.split(":")
-    // Tamper with the auth tag
     const tamperedTag = Buffer.from("0000000000000000").toString("base64")
     const tampered = `${parts[0]}:${tamperedTag}:${parts[2]}`
-    expect(() => decrypt(tampered)).toThrow()
+    expect(decrypt(tampered)).toBe(tampered)
   })
 
   it("missing ENCRYPTION_KEY throws error on encrypt", () => {

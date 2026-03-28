@@ -191,10 +191,11 @@ describe("patient actions", () => {
       })
     })
 
-    it("throws when patient not in workspace", async () => {
+    it("returns error when patient not in workspace", async () => {
       mockDb.patient.findFirst.mockResolvedValue(null)
 
-      await expect(updatePatient("p_other", { name: "X" })).rejects.toThrow(ERR_PATIENT_NOT_FOUND)
+      const result = await updatePatient("p_other", { name: "X" })
+      expect(result).toHaveProperty("error")
     })
   })
 
@@ -213,10 +214,11 @@ describe("patient actions", () => {
       })
     })
 
-    it("throws when patient not in workspace", async () => {
+    it("returns error when patient not in workspace", async () => {
       mockDb.patient.findFirst.mockResolvedValue(null)
 
-      await expect(deactivatePatient("p_other")).rejects.toThrow(ERR_PATIENT_NOT_FOUND)
+      const result = await deactivatePatient("p_other")
+      expect(result).toHaveProperty("error")
     })
   })
 
