@@ -13,27 +13,28 @@ import { getDefaultAgendaIdForWorkspace } from "@/server/actions/agenda"
 import { readProcedures, readCustomFields, toJsonValue } from "@/lib/json-helpers"
 import { logger } from "@/lib/logger"
 import type { ExtractedPatientData } from "@/types"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED } from "@/lib/error-messages"
 
 export async function processVoiceRegistration(formData: FormData) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   // Load workspace if not available via ownership (member fallback)
   const workspace = user?.workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
-  if (!workspace) throw new Error("Workspace not configured")
+  if (!workspace) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const audioFile = formData.get("audio") as File | null
-  if (!audioFile) throw new Error("No audio file provided")
+  if (!audioFile) throw new Error(ERR_NO_AUDIO)
 
   if (audioFile.size > 25 * 1024 * 1024) {
-    throw new Error("Arquivo de audio excede o limite de 25MB")
+    throw new Error(ERR_AUDIO_TOO_LARGE)
   }
 
   const arrayBuffer = await audioFile.arrayBuffer()
@@ -111,7 +112,7 @@ export async function processVoiceRegistration(formData: FormData) {
             transcript: transcript ?? undefined,
             aiExtractedData: undefined,
             status: "error",
-            errorMessage: err instanceof Error ? err.message : "Erro desconhecido no processamento",
+            errorMessage: err instanceof Error ? err.message : ERR_PROCESSING_FAILED,
             workspaceId,
             fileSize: audioFile.size,
           },
@@ -139,14 +140,14 @@ interface ConfirmPatientData {
 
 export async function confirmPatientRegistration(data: ConfirmPatientData) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const agendaId = await getDefaultAgendaIdForWorkspace(workspaceId)
 
@@ -178,8 +179,8 @@ export async function confirmPatientRegistration(data: ConfirmPatientData) {
       workspaceId
     )
     const recording = rows[0]
-    if (!recording) throw new Error("Recording not found")
-    if (recording.appointmentId) throw new Error("Registro ja confirmado")
+    if (!recording) throw new Error(ERR_RECORDING_NOT_FOUND)
+    if (recording.appointmentId) throw new Error(ERR_ALREADY_CONFIRMED)
 
     const patient = await tx.patient.create({
       data: {
@@ -250,7 +251,7 @@ function normalizeCpf(doc: string): string {
 
 export async function checkDuplicatePatient(name: string, document?: string | null) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },

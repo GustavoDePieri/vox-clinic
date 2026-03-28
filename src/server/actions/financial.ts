@@ -4,17 +4,18 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { readProcedures, normalizeProcedureNames, toJsonValue } from "@/lib/json-helpers"
 import type { Procedure } from "@/types"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND } from "@/lib/error-messages"
 
 export async function getFinancialData(period: "month" | "year", date: string) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const baseDate = new Date(date)
 
@@ -109,20 +110,20 @@ export async function updateAppointmentPrice(appointmentId: string, price: numbe
   if (!Number.isFinite(price) || price < 0) throw new Error("Preco invalido")
 
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const appointment = await db.appointment.findUnique({
     where: { id: appointmentId },
   })
   if (!appointment || appointment.workspaceId !== workspaceId) {
-    throw new Error("Appointment not found")
+    throw new Error(ERR_APPOINTMENT_NOT_FOUND)
   }
 
   await db.appointment.update({
@@ -137,14 +138,14 @@ export async function updateProcedurePrice(procedureId: string, price: number) {
   if (!Number.isFinite(price) || price < 0) throw new Error("Preco invalido")
 
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const MAX_RETRIES = 3
 
@@ -172,14 +173,14 @@ export async function updateProcedurePrice(procedureId: string, price: number) {
 
 export async function getWorkspaceProcedures() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   if (user?.workspace) {
     return readProcedures(user.workspace.procedures)

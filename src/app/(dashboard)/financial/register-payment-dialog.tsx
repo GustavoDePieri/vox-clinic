@@ -21,6 +21,7 @@ import {
 import { Loader2 } from "lucide-react"
 import { recordPayment } from "@/server/actions/receivable"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 
 const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -99,7 +100,7 @@ export function RegisterPaymentDialog({ payment, open, onOpenChange, onSuccess }
         onOpenChange(false)
         onSuccess()
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Erro ao registrar pagamento")
+        toast.error(friendlyError(err, "Erro ao registrar pagamento"))
       }
     })
   }

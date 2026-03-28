@@ -36,6 +36,8 @@ import {
   Repeat,
 } from "lucide-react"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   getExpenses,
   getExpenseCategories,
@@ -88,6 +90,10 @@ export default function ExpensesTab() {
     amount: "",
     method: "pix",
   })
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({ open: false, title: "", description: "", onConfirm: () => {} })
+  const showConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, description, onConfirm })
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -123,18 +129,24 @@ export default function ExpensesTab() {
     setPage(1)
   }, [statusFilter, categoryFilter, startDate, endDate])
 
-  const handleDelete = async (id: string, hasRecurrence: boolean) => {
-    const deleteAll = hasRecurrence
-      ? confirm("Deseja excluir tambem as recorrencias futuras?")
-      : false
-
+  const executeDelete = async (id: string, deleteAll: boolean) => {
     try {
       await deleteExpense(id, deleteAll)
       toast.success("Despesa excluida")
       loadData()
-    } catch {
-      toast.error("Erro ao excluir despesa")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao excluir despesa"))
     }
+  }
+
+  const handleDelete = (id: string, hasRecurrence: boolean) => {
+    showConfirm(
+      "Excluir despesa",
+      hasRecurrence
+        ? "Deseja excluir tambem as recorrencias futuras desta despesa?"
+        : "Tem certeza que deseja excluir esta despesa? Esta acao nao pode ser desfeita.",
+      () => executeDelete(id, hasRecurrence),
+    )
   }
 
   const handlePay = async (id: string) => {
@@ -153,8 +165,8 @@ export default function ExpensesTab() {
       setPayingId(null)
       setPayForm({ amount: "", method: "pix" })
       loadData()
-    } catch {
-      toast.error("Erro ao registrar pagamento")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao registrar pagamento"))
     }
   }
 
@@ -238,6 +250,7 @@ export default function ExpensesTab() {
       {/* Expenses Table */}
       <Card className="rounded-2xl overflow-hidden">
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -409,6 +422,7 @@ export default function ExpensesTab() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -450,6 +464,13 @@ export default function ExpensesTab() {
         onOpenChange={setCreateOpen}
         categories={categories}
         onCreated={loadData}
+      />
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(prev => ({ ...prev, open: false })) }}
       />
     </div>
   )

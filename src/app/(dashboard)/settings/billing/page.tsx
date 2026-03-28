@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 import {
   getBillingInfo,
   createCheckoutSession,
@@ -150,7 +151,7 @@ export default function BillingPage() {
         toast.error("Erro ao criar sessao de pagamento.")
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao criar sessao de pagamento.")
+      toast.error(friendlyError(err, "Erro ao criar sessao de pagamento."))
     } finally {
       setActionLoading(null)
     }
@@ -166,7 +167,7 @@ export default function BillingPage() {
         toast.error("Erro ao abrir portal de assinatura.")
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao abrir portal.")
+      toast.error(friendlyError(err, "Erro ao abrir portal."))
     } finally {
       setActionLoading(null)
     }

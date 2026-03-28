@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { getNfseConfig, saveNfseConfig, testNfseConnection } from "@/server/actions/nfse-config"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 
 const BRAZILIAN_STATES = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA",
@@ -168,7 +169,7 @@ export function FiscalTab() {
       toast.success("Configuracao fiscal salva com sucesso!")
     } catch (err) {
       console.error("[FiscalTab] save failed:", err)
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar configuracao")
+      toast.error(friendlyError(err, "Erro ao salvar configuracao"))
     } finally {
       setSaving(false)
     }
@@ -180,7 +181,7 @@ export function FiscalTab() {
       const result = await testNfseConnection()
       toast.success(result.message)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao testar conexao")
+      toast.error(friendlyError(err, "Erro ao testar conexao"))
     } finally {
       setTesting(false)
     }

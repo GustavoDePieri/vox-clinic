@@ -40,6 +40,8 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { getWorkspace, updateWorkspace } from "@/server/actions/workspace"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import Link from "next/link"
 import {
   getTeamMembers,
@@ -135,7 +137,7 @@ export default function SettingsPage() {
         setInitialData(data)
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Erro ao carregar configuracoes")
+        setError(friendlyError(err, "Erro ao carregar configuracoes"))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -201,9 +203,9 @@ export default function SettingsPage() {
       toast.success("Configurações salvas com sucesso")
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro ao salvar configurações"
+      const msg = friendlyError(err, "Erro ao salvar configurações")
       setError(msg)
-      toast.error("Erro ao salvar configurações")
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -821,6 +823,10 @@ function TeamTab({ clinicName }: { clinicName: string }) {
   const [loading, setLoading] = useState(true)
   const [showInvite, setShowInvite] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({ open: false, title: "", description: "", onConfirm: () => {} })
+  const showConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, description, onConfirm })
+  }
   const [inviteRole, setInviteRole] = useState("member")
   const [inviting, setInviting] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -844,31 +850,32 @@ function TeamTab({ clinicName }: { clinicName: string }) {
       await inviteTeamMember(inviteEmail.trim(), inviteRole)
       setInviteEmail(""); setInviteRole("member"); setShowInvite(false)
       loadTeam()
-    } catch (err: any) {
-      alert(err.message || "Erro ao convidar")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao convidar"))
     } finally { setInviting(false) }
   }
 
   async function handleCancelInvite(inviteId: string) {
     setActionLoading(inviteId)
     try { await cancelInvite(inviteId); loadTeam() }
-    catch (err: any) { alert(err.message || "Erro") }
+    catch (err) { toast.error(friendlyError(err, "Erro ao cancelar convite")) }
     finally { setActionLoading(null) }
   }
 
   async function handleRoleChange(memberId: string, role: string) {
     setActionLoading(memberId)
     try { await updateMemberRole(memberId, role); loadTeam() }
-    catch (err: any) { alert(err.message || "Erro") }
+    catch (err) { toast.error(friendlyError(err, "Erro ao alterar cargo")) }
     finally { setActionLoading(null) }
   }
 
   async function handleRemove(memberId: string) {
-    if (!confirm("Remover este membro da equipe?")) return
-    setActionLoading(memberId)
-    try { await removeMember(memberId); loadTeam() }
-    catch (err: any) { alert(err.message || "Erro") }
-    finally { setActionLoading(null) }
+    showConfirm("Remover membro", "Tem certeza que deseja remover este membro da equipe?", async () => {
+      setActionLoading(memberId)
+      try { await removeMember(memberId); loadTeam() }
+      catch (err) { toast.error(friendlyError(err, "Erro ao remover membro")) }
+      finally { setActionLoading(null) }
+    })
   }
 
   if (loading) {
@@ -1019,6 +1026,13 @@ function TeamTab({ clinicName }: { clinicName: string }) {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(prev => ({ ...prev, open: false })) }}
+      />
     </div>
   )
 }
@@ -1042,6 +1056,10 @@ function AgendasTab() {
   const [editName, setEditName] = useState("")
   const [editColor, setEditColor] = useState("")
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({ open: false, title: "", description: "", onConfirm: () => {} })
+  const showConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, description, onConfirm })
+  }
 
   const loadAgendas = useCallback(async () => {
     try {
@@ -1066,8 +1084,8 @@ function AgendasTab() {
       setShowNewForm(false)
       await loadAgendas()
       toast.success("Agenda criada")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao criar agenda")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao criar agenda"))
     } finally {
       setActionLoading(null)
     }
@@ -1080,8 +1098,8 @@ function AgendasTab() {
       setEditingId(null)
       await loadAgendas()
       toast.success("Agenda atualizada")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao atualizar"))
     } finally {
       setActionLoading(null)
     }
@@ -1092,25 +1110,26 @@ function AgendasTab() {
     try {
       await updateAgenda(id, { isActive: !isActive })
       await loadAgendas()
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao alterar status")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao alterar status"))
     } finally {
       setActionLoading(null)
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Tem certeza que deseja excluir esta agenda?")) return
-    setActionLoading(id)
-    try {
-      await deleteAgenda(id)
-      await loadAgendas()
-      toast.success("Agenda excluida")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao excluir")
-    } finally {
-      setActionLoading(null)
-    }
+    showConfirm("Excluir agenda", "Tem certeza que deseja excluir esta agenda? Todas as consultas vinculadas serao desvinculadas.", async () => {
+      setActionLoading(id)
+      try {
+        await deleteAgenda(id)
+        await loadAgendas()
+        toast.success("Agenda excluida")
+      } catch (err) {
+        toast.error(friendlyError(err, "Erro ao excluir"))
+      } finally {
+        setActionLoading(null)
+      }
+    })
   }
 
   if (loading) {
@@ -1126,6 +1145,7 @@ function AgendasTab() {
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -1281,6 +1301,14 @@ function AgendasTab() {
         )}
       </CardContent>
     </Card>
+    <ConfirmDialog
+      open={confirmDialog.open}
+      onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+      title={confirmDialog.title}
+      description={confirmDialog.description}
+      onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(prev => ({ ...prev, open: false })) }}
+    />
+    </>
   )
 }
 
@@ -1292,6 +1320,10 @@ function BookingTab() {
     token: string; isActive: boolean; maxDaysAhead: number; startHour: number; endHour: number; welcomeMessage: string | null
   } | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({ open: false, title: "", description: "", onConfirm: () => {} })
+  const showConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, description, onConfirm })
+  }
 
   const loadConfig = useCallback(async () => {
     try {
@@ -1312,25 +1344,26 @@ function BookingTab() {
       const result = await toggleBooking(enabled)
       setConfig((prev) => prev ? { ...prev, ...result } : { ...result, maxDaysAhead: 30, startHour: 8, endHour: 18, welcomeMessage: null })
       toast.success(enabled ? "Agendamento online ativado" : "Agendamento online desativado")
-    } catch (err: any) {
-      toast.error(err.message || "Erro")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao processar"))
     } finally {
       setActionLoading(false)
     }
   }
 
   async function handleRegenerate() {
-    if (!confirm("Regenerar o link? O link anterior deixara de funcionar.")) return
-    setActionLoading(true)
-    try {
-      const result = await regenerateBookingToken()
-      setConfig((prev) => prev ? { ...prev, token: result.token } : null)
-      toast.success("Link regenerado")
-    } catch (err: any) {
-      toast.error(err.message || "Erro")
-    } finally {
-      setActionLoading(false)
-    }
+    showConfirm("Regenerar link", "Regenerar o link? O link anterior deixara de funcionar.", async () => {
+      setActionLoading(true)
+      try {
+        const result = await regenerateBookingToken()
+        setConfig((prev) => prev ? { ...prev, token: result.token } : null)
+        toast.success("Link regenerado")
+      } catch (err) {
+        toast.error(friendlyError(err, "Erro ao regenerar link"))
+      } finally {
+        setActionLoading(false)
+      }
+    })
   }
 
   async function handleSaveConfig(data: { maxDaysAhead?: number; startHour?: number; endHour?: number; welcomeMessage?: string | null }) {
@@ -1339,8 +1372,8 @@ function BookingTab() {
       const result = await updateBookingConfig(data)
       setConfig((prev) => prev ? { ...prev, ...result } : null)
       toast.success("Configuracao salva")
-    } catch (err: any) {
-      toast.error(err.message || "Erro")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao salvar configuracao"))
     } finally {
       setActionLoading(false)
     }
@@ -1360,6 +1393,7 @@ function BookingTab() {
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
@@ -1454,6 +1488,14 @@ function BookingTab() {
         )}
       </CardContent>
     </Card>
+    <ConfirmDialog
+      open={confirmDialog.open}
+      onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+      title={confirmDialog.title}
+      description={confirmDialog.description}
+      onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(prev => ({ ...prev, open: false })) }}
+    />
+    </>
   )
 }
 
@@ -1496,8 +1538,8 @@ function MessagingTab() {
       setTwilioSid("")
       setTwilioToken("")
       toast.success("Configurações de mensageria salvas")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar configurações de mensageria")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao salvar configurações de mensageria"))
     } finally {
       setSaving(false)
     }

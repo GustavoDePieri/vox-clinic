@@ -3,10 +3,11 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { checkAgendaLimit } from "@/lib/plan-enforcement"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_AGENDA_NOT_FOUND } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -14,7 +15,7 @@ async function getWorkspaceId() {
   })
 
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return workspaceId
 }
@@ -123,7 +124,7 @@ export async function updateAgenda(
   const existing = await db.agenda.findFirst({
     where: { id, workspaceId },
   })
-  if (!existing) throw new Error("Agenda nao encontrada")
+  if (!existing) throw new Error(ERR_AGENDA_NOT_FOUND)
 
   // Cannot deactivate default agenda
   if (existing.isDefault && data.isActive === false) {
@@ -155,7 +156,7 @@ export async function deleteAgenda(id: string) {
     where: { id, workspaceId },
     include: { _count: { select: { appointments: true, blockedSlots: true } } },
   })
-  if (!existing) throw new Error("Agenda nao encontrada")
+  if (!existing) throw new Error(ERR_AGENDA_NOT_FOUND)
 
   if (existing.isDefault) {
     throw new Error("Nao e possivel excluir a agenda padrao")

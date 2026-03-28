@@ -5,16 +5,17 @@ import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
 import { createClient } from "@supabase/supabase-js"
 import { env } from "@/lib/env"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_NO_FILE, ERR_FILE_TOO_LARGE, ERR_FILE_TYPE_NOT_ALLOWED, ERR_DOCUMENT_NOT_FOUND } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
   return { userId, workspaceId }
 }
 
@@ -34,7 +35,7 @@ export async function getPatientDocuments(patientId: string) {
   const patient = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
   })
-  if (!patient) throw new Error("Paciente nao encontrado")
+  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   const docs = await db.patientDocument.findMany({
     where: { patientId, workspaceId },
@@ -58,14 +59,14 @@ export async function uploadPatientDocument(formData: FormData, patientId: strin
   const patient = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
   })
-  if (!patient) throw new Error("Paciente nao encontrado")
+  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   const file = formData.get("file") as File
-  if (!file) throw new Error("Nenhum arquivo enviado")
+  if (!file) throw new Error(ERR_NO_FILE)
 
   // 10MB limit for documents
   if (file.size > 10 * 1024 * 1024) {
-    throw new Error("Arquivo muito grande. Maximo: 10MB")
+    throw new Error(ERR_FILE_TOO_LARGE)
   }
 
   const allowedTypes = [
@@ -75,7 +76,7 @@ export async function uploadPatientDocument(formData: FormData, patientId: strin
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ]
   if (!allowedTypes.includes(file.type)) {
-    throw new Error("Tipo de arquivo nao permitido. Use imagens, PDF ou documentos Word.")
+    throw new Error(ERR_FILE_TYPE_NOT_ALLOWED)
   }
 
   const buffer = Buffer.from(await file.arrayBuffer())
@@ -122,7 +123,7 @@ export async function getDocumentSignedUrl(documentUrl: string) {
   const doc = await db.patientDocument.findFirst({
     where: { url: documentUrl, workspaceId },
   })
-  if (!doc) throw new Error("Documento nao encontrado")
+  if (!doc) throw new Error(ERR_DOCUMENT_NOT_FOUND)
 
   const supabase = getSupabase()
   const { data, error } = await supabase.storage
@@ -139,7 +140,7 @@ export async function deletePatientDocument(documentId: string) {
   const doc = await db.patientDocument.findFirst({
     where: { id: documentId, workspaceId },
   })
-  if (!doc) throw new Error("Documento nao encontrado")
+  if (!doc) throw new Error(ERR_DOCUMENT_NOT_FOUND)
 
   // Delete from storage
   const supabase = getSupabase()

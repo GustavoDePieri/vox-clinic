@@ -1,11 +1,13 @@
 "use client"
 
 import { useActionState, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "sonner"
 import { createPatient } from "@/server/actions/patient"
 import type { CustomField } from "@/types"
 
@@ -53,24 +55,26 @@ function formatPhone(value: string): string {
 
 type FormState = { error?: string } | undefined
 
-async function submitForm(
-  _prevState: FormState,
-  formData: FormData
-): Promise<FormState> {
-  try {
-    await createPatient(formData)
-    return undefined
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao cadastrar paciente" }
-  }
-}
-
 export function ManualPatientForm({
   customFields,
 }: {
   customFields: CustomField[]
 }) {
-  const [state, formAction, isPending] = useActionState(submitForm, undefined)
+  const router = useRouter()
+
+  const [state, formAction, isPending] = useActionState(
+    async (_prevState: FormState, formData: FormData): Promise<FormState> => {
+      try {
+        const result = await createPatient(formData)
+        toast.success("Paciente cadastrado com sucesso!")
+        router.push(`/patients/${result.patientId}`)
+        return undefined
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : "Erro ao cadastrar paciente" }
+      }
+    },
+    undefined
+  )
 
   const [cpf, setCPF] = useState("")
   const [cpfError, setCPFError] = useState("")

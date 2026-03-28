@@ -4,10 +4,11 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { getStripe, PLAN_PRICE_IDS } from "@/lib/stripe"
 import { logger } from "@/lib/logger"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_NO_SUBSCRIPTION } from "@/lib/error-messages"
 
 async function getWorkspaceWithUser() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -16,11 +17,11 @@ async function getWorkspaceWithUser() {
 
   const workspace = user?.workspace
   const workspaceId = workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   // If workspace came from membership, fetch it
   const ws = workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
-  if (!ws) throw new Error("Workspace not found")
+  if (!ws) throw new Error(ERR_WORKSPACE_NOT_FOUND)
 
   return { user: user!, workspace: ws }
 }
@@ -74,7 +75,7 @@ export async function createPortalSession() {
   const { workspace } = await getWorkspaceWithUser()
 
   if (!workspace.stripeCustomerId) {
-    throw new Error("Nenhuma assinatura encontrada. Assine um plano primeiro.")
+    throw new Error(ERR_NO_SUBSCRIPTION)
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.voxclinic.com"

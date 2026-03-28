@@ -17,6 +17,7 @@ import {
   confirmPatientRegistration,
   checkDuplicatePatient,
 } from "@/server/actions/voice"
+import { friendlyError } from "@/lib/error-messages"
 import type { ExtractedPatientData } from "@/types"
 
 type PageState = "recording" | "processing" | "review"
@@ -73,7 +74,7 @@ export default function VoicePatientPage() {
 
       setState("review")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao processar audio")
+      setError(friendlyError(err, "Erro ao processar audio"))
       setState("recording")
     }
   }
@@ -95,7 +96,7 @@ export default function VoicePatientPage() {
       })
       router.push(`/patients/${result.patientId}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar paciente")
+      setError(friendlyError(err, "Erro ao salvar paciente"))
       setSaving(false)
     }
   }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Check, X, Plus, RefreshCw, Loader2 } from "lucide-react"
 
@@ -16,8 +16,10 @@ import { professions, questionsByProfession } from "./professions"
 import type { Question } from "./professions"
 import type { WorkspaceConfig, Procedure, CustomField, AnamnesisQuestion } from "@/types"
 import { getWorkspacePreview, generateWorkspace } from "@/server/actions/workspace"
+import { friendlyError } from "@/lib/error-messages"
 
 const TOTAL_STEPS = 4
+const ONBOARDING_STORAGE_KEY = "vox-onboarding-state"
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -31,6 +33,32 @@ export default function OnboardingPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [newProcedure, setNewProcedure] = useState("")
+
+  // Restore onboarding state from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(ONBOARDING_STORAGE_KEY)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.step) setStep(data.step)
+        if (data.selectedProfession) setSelectedProfession(data.selectedProfession)
+        if (data.answers) setAnswers(data.answers)
+        if (data.clinicName) setClinicName(data.clinicName)
+      }
+    } catch {}
+  }, [])
+
+  // Persist user inputs to sessionStorage whenever they change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({
+        step,
+        selectedProfession,
+        answers,
+        clinicName,
+      }))
+    } catch {}
+  }, [step, selectedProfession, answers, clinicName])
 
   const progressPercent = (step / TOTAL_STEPS) * 100
   const questions = selectedProfession
@@ -96,11 +124,10 @@ export default function OnboardingPage() {
         anamnesisTemplate: preview.anamnesisTemplate,
         categories: preview.categories,
       })
+      sessionStorage.removeItem(ONBOARDING_STORAGE_KEY)
       router.push("/dashboard")
     } catch (err) {
-      setSaveError(
-        err instanceof Error ? err.message : "Erro ao salvar workspace. Tente novamente."
-      )
+      setSaveError(friendlyError(err, "Erro ao salvar workspace. Tente novamente."))
       setIsSaving(false)
     }
   }

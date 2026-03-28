@@ -2,10 +2,11 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_RECEIVABLE_NOT_FOUND, ERR_PAYMENT_NOT_FOUND, ERR_PAYMENT_ALREADY_REGISTERED, ERR_PAYMENT_CANCELLED } from "@/lib/error-messages"
 
 async function getWorkspaceContext() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -13,7 +14,7 @@ async function getWorkspaceContext() {
   })
 
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return { workspaceId, clerkId: userId }
 }
@@ -57,12 +58,12 @@ export async function createCharge(input: CreateChargeInput) {
 
   // Validate patient belongs to this workspace
   const patient = await db.patient.findUnique({ where: { id: patientId } })
-  if (!patient || patient.workspaceId !== workspaceId) throw new Error("Paciente nao encontrado")
+  if (!patient || patient.workspaceId !== workspaceId) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   // Validate appointment belongs to this workspace if provided
   if (appointmentId) {
     const appointment = await db.appointment.findUnique({ where: { id: appointmentId } })
-    if (!appointment || appointment.workspaceId !== workspaceId) throw new Error("Consulta nao encontrada")
+    if (!appointment || appointment.workspaceId !== workspaceId) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
   }
 
   // Split into installments — first absorbs remainder
@@ -143,10 +144,10 @@ export async function recordPayment(paymentId: string, input: RecordPaymentInput
       include: { charge: true },
     })
 
-    if (!payment) throw new Error("Pagamento nao encontrado")
-    if (payment.workspaceId !== workspaceId) throw new Error("Unauthorized")
-    if (payment.status === "paid") throw new Error("Pagamento ja registrado")
-    if (payment.status === "cancelled") throw new Error("Pagamento cancelado")
+    if (!payment) throw new Error(ERR_PAYMENT_NOT_FOUND)
+    if (payment.workspaceId !== workspaceId) throw new Error(ERR_UNAUTHORIZED)
+    if (payment.status === "paid") throw new Error(ERR_PAYMENT_ALREADY_REGISTERED)
+    if (payment.status === "cancelled") throw new Error(ERR_PAYMENT_CANCELLED)
 
     await tx.payment.update({
       where: { id: paymentId },
@@ -277,7 +278,7 @@ export async function getCharge(chargeId: string) {
   })
 
   if (!charge || charge.workspaceId !== workspaceId) {
-    throw new Error("Cobranca nao encontrada")
+    throw new Error(ERR_RECEIVABLE_NOT_FOUND)
   }
 
   return charge
@@ -393,7 +394,7 @@ export async function cancelCharge(chargeId: string) {
     })
 
     if (!charge || charge.workspaceId !== workspaceId) {
-      throw new Error("Cobranca nao encontrada")
+      throw new Error(ERR_RECEIVABLE_NOT_FOUND)
     }
 
     if (charge.status === "cancelled") {

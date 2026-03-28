@@ -3,18 +3,19 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND, ERR_CERTIFICATE_NOT_FOUND } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
+  if (!user) throw new Error(ERR_USER_NOT_FOUND)
   const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return { userId, user, workspaceId }
 }
@@ -63,7 +64,7 @@ export async function createCertificate(data: {
   const patient = await db.patient.findFirst({
     where: { id: data.patientId, workspaceId },
   })
-  if (!patient) throw new Error("Paciente nao encontrado")
+  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   const content = generateCertificateContent(data.type, patient.name, patient.document, {
     days: data.days,
@@ -107,7 +108,7 @@ export async function getCertificate(id: string) {
       },
     },
   })
-  if (!certificate) throw new Error("Documento nao encontrado")
+  if (!certificate) throw new Error(ERR_CERTIFICATE_NOT_FOUND)
 
   return {
     id: certificate.id,
@@ -130,7 +131,7 @@ export async function getPatientCertificates(patientId: string) {
   const patient = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
   })
-  if (!patient) throw new Error("Paciente nao encontrado")
+  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   const certificates = await db.medicalCertificate.findMany({
     where: { patientId, workspaceId },
@@ -153,7 +154,7 @@ export async function deleteCertificate(id: string) {
   const certificate = await db.medicalCertificate.findFirst({
     where: { id, workspaceId },
   })
-  if (!certificate) throw new Error("Documento nao encontrado")
+  if (!certificate) throw new Error(ERR_CERTIFICATE_NOT_FOUND)
 
   await db.medicalCertificate.delete({ where: { id } })
 

@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { NfseClient } from "@/lib/nfse/client"
 import { logger } from "@/lib/logger"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED } from "@/lib/error-messages"
 
 function validateCpf(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "")
@@ -59,13 +60,13 @@ function validateCpfCnpj(value: string): boolean {
 
 export async function getNfseConfig() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const config = await db.nfseConfig.findUnique({
     where: { workspaceId },
@@ -106,13 +107,13 @@ export async function saveNfseConfig(data: {
   clinicCep: string
 }) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   // Validate all fields upfront and collect errors
   const errors: string[] = []
@@ -122,7 +123,7 @@ export async function saveNfseConfig(data: {
   if (!data.inscricaoMunicipal.trim()) errors.push("Inscricao Municipal e obrigatoria")
   if (!data.codigoServico.trim()) errors.push("Codigo de Servico e obrigatorio")
   if (!data.descricaoServico.trim()) errors.push("Descricao do Servico e obrigatoria")
-  if (data.aliquotaISS < 0 || data.aliquotaISS > 100) errors.push("Aliquota ISS invalida (0-100%)")
+  if (data.aliquotaISS < 0 || data.aliquotaISS > 1) errors.push("Aliquota ISS invalida (deve ser entre 0% e 100%)")
   if (!data.clientId.trim()) errors.push("Client ID e obrigatorio")
   const isMaskedSecret = data.clientSecret.startsWith('****')
   if (!isMaskedSecret && !data.clientSecret.trim()) errors.push("Client Secret e obrigatorio")
@@ -183,13 +184,13 @@ export async function saveNfseConfig(data: {
 
 export async function testNfseConnection() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const config = await db.nfseConfig.findUnique({
     where: { workspaceId },

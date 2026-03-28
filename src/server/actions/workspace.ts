@@ -7,26 +7,27 @@ import { logAudit } from "@/lib/audit"
 import type { Prisma } from "@prisma/client"
 import { readProcedures, readCustomFields, readAnamnesisTemplate, readCategories, toJsonValue } from "@/lib/json-helpers"
 import type { WorkspaceConfig, Procedure, CustomField, AnamnesisQuestion, Category } from "@/types"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED } from "@/lib/error-messages"
 
 async function getAuthenticatedUser() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
+  if (!user) throw new Error(ERR_USER_NOT_FOUND)
   return user
 }
 
 export async function getWorkspace() {
   const user = await getAuthenticatedUser()
   const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   // Load workspace if not available via ownership (member fallback)
   const workspace = user.workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
-  if (!workspace) throw new Error("Workspace not configured")
+  if (!workspace) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return {
     id: workspace.id,
@@ -49,7 +50,7 @@ export async function updateWorkspace(data: {
 }) {
   const user = await getAuthenticatedUser()
   const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const { clinicName, ...workspaceFields } = data
 
@@ -90,7 +91,7 @@ export async function generateWorkspace(
   }
 ) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   // Upsert user — in local dev the Clerk webhook may not reach localhost,
   // so we ensure the user record exists before creating the workspace.
@@ -166,7 +167,7 @@ export async function getWorkspacePreview(
   answers: Record<string, string>
 ): Promise<WorkspaceConfig> {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const config = await generateWorkspaceSuggestions(profession, answers)
   return {

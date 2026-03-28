@@ -2,12 +2,13 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { ERR_UNAUTHORIZED, ERR_ACCESS_DENIED, ERR_WORKSPACE_NOT_FOUND } from "@/lib/error-messages"
 
 async function requireSuperAdmin() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Nao autenticado")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId } })
-  if (!user || user.role !== "superadmin") throw new Error("Acesso negado")
+  if (!user || user.role !== "superadmin") throw new Error(ERR_ACCESS_DENIED)
   return user
 }
 
@@ -93,7 +94,7 @@ export async function getAdminWorkspaceDetail(workspaceId: string) {
     },
   })
 
-  if (!workspace) throw new Error("Workspace nao encontrado")
+  if (!workspace) throw new Error(ERR_WORKSPACE_NOT_FOUND)
 
   const [prescriptions, certificates] = await Promise.all([
     db.prescription.count({ where: { workspaceId } }),
@@ -116,7 +117,7 @@ export async function toggleWorkspaceStatus(workspaceId: string) {
   const workspace = await db.workspace.findUnique({
     where: { id: workspaceId },
   })
-  if (!workspace) throw new Error("Workspace nao encontrado")
+  if (!workspace) throw new Error(ERR_WORKSPACE_NOT_FOUND)
 
   const newStatus = workspace.planStatus === "active" ? "suspended" : "active"
   await db.workspace.update({

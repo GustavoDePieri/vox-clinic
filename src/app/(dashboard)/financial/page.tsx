@@ -136,7 +136,7 @@ export default function FinancialPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex rounded-xl bg-muted/50 p-0.5 w-fit">
+      <div className="flex rounded-xl bg-muted/50 p-0.5 w-fit overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.key}

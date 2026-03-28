@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { FileText, Loader2 } from "lucide-react"
 import { createCertificate } from "@/server/actions/certificate"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 import { useRouter } from "next/navigation"
 
 const typeOptions = [
@@ -88,7 +89,7 @@ function CreateCertificateModal({
         window.open(`/certificates/${result.id}`, "_blank")
         router.refresh()
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Erro ao criar documento")
+        toast.error(friendlyError(e, "Erro ao criar documento"))
       }
     })
   }

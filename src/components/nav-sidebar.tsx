@@ -35,6 +35,7 @@ export function NavSidebar({ clinicName }: { clinicName?: string | null }) {
       <Link
         key={item.href}
         href={item.href}
+        aria-current={isActive ? "page" : undefined}
         className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 ${
           item.accent && !isActive
             ? "bg-vox-primary/[0.07] text-vox-primary hover:bg-vox-primary/[0.12]"
@@ -58,7 +59,7 @@ export function NavSidebar({ clinicName }: { clinicName?: string | null }) {
   }
 
   return (
-    <aside className="hidden md:flex w-56 flex-col border-r border-border/40 bg-sidebar">
+    <aside aria-label="Navegacao principal" className="hidden md:flex w-56 flex-col border-r border-border/40 bg-sidebar">
       <nav className="flex flex-col gap-0.5 px-3 pt-5">
         <p className="px-3 pb-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
           Menu

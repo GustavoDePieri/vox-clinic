@@ -166,6 +166,7 @@ Decomposed from a monolithic page into modular sub-components:
 - `src/lib/schemas.ts` — Zod schemas: `ExtractedPatientDataSchema`, `WorkspaceConfigSchema`, `AppointmentSummarySchema`
 - `src/lib/storage.ts` — `uploadAudio`, `getSignedAudioUrl` (5min), `getAudioBuffer`
 - `src/lib/export-xlsx.ts` — `generateXlsx(data, sheetName)` and `generateXlsxMultiSheet(sheets)` for Excel export via `xlsx` library
+- `src/lib/error-messages.ts` — Centralized error constants (pt-BR) + `friendlyError(error, fallback?)` helper that translates technical errors to user-friendly messages. All server actions import constants from here; frontend catch blocks use `friendlyError()`
 
 ### Excel Export API Routes
 - `src/app/api/export/patients/route.ts` — GET, auth via Clerk, exports all active patients as .xlsx with columns: Nome, CPF, RG, Telefone, Email, Data Nascimento, Sexo, Convenio, Origem, Tags, Cadastrado em, Ultimo Atendimento
@@ -300,6 +301,7 @@ Workspace stores profession-specific config as JSON: `customFields`, `procedures
 - NPS survey: public token-based page at `/nps/[token]` with 0-10 score grid + comment.
 - Audio playback: signed URL player in patient recordings tab.
 - Error states shown to users (no silent catches). Toast/banner pattern.
+- Error messages: all user-facing errors are in pt-BR via centralized constants in `src/lib/error-messages.ts`. Frontend uses `friendlyError(err, fallback)` helper to translate technical errors. No `alert()` — all errors via Sonner toasts or inline Alert components.
 
 ## GitHub Project & Issue Tracking
 

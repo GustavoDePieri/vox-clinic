@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { getNfseList, cancelNfse, refreshNfseStatus } from "@/server/actions/nfse"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 import { EmitNfseDialog } from "./emit-nfse-dialog"
 
 const formatBRL = (centavos: number) =>
@@ -106,7 +107,7 @@ export function NfseTab() {
       toast.success("Status atualizado")
       loadData()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao atualizar status")
+      toast.error(friendlyError(err, "Erro ao atualizar status"))
     } finally {
       setRefreshingId(null)
     }
@@ -125,7 +126,7 @@ export function NfseTab() {
       setCancelMotivo("")
       loadData()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao cancelar NFS-e")
+      toast.error(friendlyError(err, "Erro ao cancelar NFS-e"))
     } finally {
       setCancellingId(null)
     }

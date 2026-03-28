@@ -3,17 +3,18 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { sendEmail } from "@/lib/email"
+import { ERR_UNAUTHORIZED, ERR_USER_NOT_FOUND, ERR_WORKSPACE_NOT_CONFIGURED, ERR_WORKSPACE_NOT_FOUND, ERR_APPOINTMENT_NOT_FOUND, ERR_PATIENT_NO_EMAIL, ERR_PATIENT_NO_PHONE, ERR_WHATSAPP_NOT_CONFIGURED, ERR_INVALID_CHANNEL } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
-  if (!user) throw new Error("User not found")
+  if (!user) throw new Error(ERR_USER_NOT_FOUND)
   const workspaceId = user.workspace?.id ?? user.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
   return { userId, user, workspaceId }
 }
 
@@ -28,7 +29,7 @@ export async function getMessagingConfig() {
   const { workspaceId } = await getAuthContext()
 
   const workspace = await db.workspace.findUnique({ where: { id: workspaceId } })
-  if (!workspace) throw new Error("Workspace not found")
+  if (!workspace) throw new Error(ERR_WORKSPACE_NOT_FOUND)
 
   // Messaging config stored in workspace categories JSON (reuse existing field)
   const config = (workspace.categories as any)?.messaging ?? {}
@@ -52,7 +53,7 @@ export async function updateMessagingConfig(data: {
   const { workspaceId } = await getAuthContext()
 
   const workspace = await db.workspace.findUnique({ where: { id: workspaceId } })
-  if (!workspace) throw new Error("Workspace not found")
+  if (!workspace) throw new Error(ERR_WORKSPACE_NOT_FOUND)
 
   const existing = (workspace.categories as any) ?? {}
   const messaging = { ...(existing.messaging ?? {}), ...data }
@@ -74,7 +75,7 @@ export async function sendAppointmentMessage({ appointmentId, channel }: SendRem
     where: { id: appointmentId, workspaceId },
     include: { patient: true },
   })
-  if (!appointment) throw new Error("Consulta nao encontrada")
+  if (!appointment) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   const patientName = appointment.patient.name
   const date = appointment.date.toLocaleDateString("pt-BR")
@@ -84,7 +85,7 @@ export async function sendAppointmentMessage({ appointmentId, channel }: SendRem
   const message = `Ola ${patientName}! Lembrete: sua consulta na ${clinicName} esta marcada para ${date} as ${time}. Caso precise reagendar, entre em contato.`
 
   if (channel === "email") {
-    if (!appointment.patient.email) throw new Error("Paciente nao tem email cadastrado")
+    if (!appointment.patient.email) throw new Error(ERR_PATIENT_NO_EMAIL)
     await sendEmail({
       to: appointment.patient.email,
       subject: `Lembrete de consulta — ${clinicName}`,
@@ -100,13 +101,13 @@ export async function sendAppointmentMessage({ appointmentId, channel }: SendRem
   }
 
   if (channel === "whatsapp") {
-    if (!appointment.patient.phone) throw new Error("Paciente nao tem telefone cadastrado")
+    if (!appointment.patient.phone) throw new Error(ERR_PATIENT_NO_PHONE)
 
     const waConfig = await db.whatsAppConfig.findFirst({
       where: { workspaceId, isActive: true },
     })
     if (!waConfig) {
-      throw new Error("WhatsApp nao configurado. Configure em Configuracoes > WhatsApp.")
+      throw new Error(ERR_WHATSAPP_NOT_CONFIGURED)
     }
 
     const { WhatsAppClient } = await import("@/lib/whatsapp/client")
@@ -123,11 +124,11 @@ export async function sendAppointmentMessage({ appointmentId, channel }: SendRem
     if (!config.smsEnabled) {
       throw new Error("SMS nao configurado. Configure as credenciais Twilio em Configuracoes > Mensagens.")
     }
-    if (!appointment.patient.phone) throw new Error("Paciente nao tem telefone cadastrado")
+    if (!appointment.patient.phone) throw new Error(ERR_PATIENT_NO_PHONE)
 
     // TODO: Implement Twilio SMS when user provides credentials
     throw new Error("Integracao SMS em desenvolvimento. Configure suas credenciais Twilio nas configuracoes.")
   }
 
-  throw new Error("Canal de mensagem invalido")
+  throw new Error(ERR_INVALID_CHANNEL)
 }

@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { getCharges, getReceivablesSummary, cancelCharge } from "@/server/actions/receivable"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 import { CreateChargeDialog } from "./create-charge-dialog"
 import { RegisterPaymentDialog } from "./register-payment-dialog"
 
@@ -101,7 +102,7 @@ export function ReceivablesTab() {
       toast.success("Cobranca cancelada")
       loadData()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao cancelar")
+      toast.error(friendlyError(err, "Erro ao cancelar"))
     } finally {
       setCancelling(null)
     }

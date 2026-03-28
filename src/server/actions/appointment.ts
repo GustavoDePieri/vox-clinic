@@ -5,10 +5,11 @@ import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
 import { revalidateTag } from "next/cache"
 import { checkAppointmentLimit } from "@/lib/plan-enforcement"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -16,7 +17,7 @@ async function getWorkspaceId() {
   })
 
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return workspaceId
 }
@@ -220,10 +221,10 @@ export async function scheduleAppointment(data: {
   type?: "presencial" | "teleconsulta"
 }) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   // Plan enforcement: check appointment limit
   const workspacePlan = user?.workspace?.plan ?? (await db.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } }))?.plan ?? "free"
@@ -328,10 +329,10 @@ function hashStringToInt(str: string): number {
 
 export async function updateAppointmentStatus(appointmentId: string, status: string) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const validStatuses = ["scheduled", "completed", "cancelled", "no_show"]
   if (!validStatuses.includes(status)) {
@@ -341,7 +342,7 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
   })
-  if (!existing) throw new Error("Consulta nao encontrada")
+  if (!existing) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   const updated = await db.appointment.update({
     where: { id: appointmentId },
@@ -363,15 +364,15 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
 
 export async function rescheduleAppointment(appointmentId: string, newDate: string, forceSchedule = false) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
   })
-  if (!existing) throw new Error("Consulta nao encontrada")
+  if (!existing) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   const targetDate = new Date(newDate)
 
@@ -425,15 +426,15 @@ export async function rescheduleAppointment(appointmentId: string, newDate: stri
 
 export async function deleteAppointment(appointmentId: string) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
   const user = await db.user.findUnique({ where: { clerkId: userId }, include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } } })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const existing = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
   })
-  if (!existing) throw new Error("Consulta nao encontrada")
+  if (!existing) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   await db.appointment.delete({
     where: { id: appointmentId },

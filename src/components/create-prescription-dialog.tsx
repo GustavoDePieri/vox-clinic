@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Pill, Plus, Trash2, Loader2 } from "lucide-react"
 import { createPrescription } from "@/server/actions/prescription"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 import { useRouter } from "next/navigation"
 
 interface Medication {
@@ -101,7 +102,7 @@ function CreatePrescriptionModal({
         window.open(`/prescriptions/${result.id}`, "_blank")
         router.refresh()
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Erro ao criar prescricao")
+        toast.error(friendlyError(e, "Erro ao criar prescricao"))
       }
     })
   }

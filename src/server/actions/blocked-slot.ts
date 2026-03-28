@@ -2,10 +2,11 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_AGENDA_NOT_FOUND, ERR_BLOCKED_SLOT_NOT_FOUND } from "@/lib/error-messages"
 
 async function getWorkspaceId() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -13,7 +14,7 @@ async function getWorkspaceId() {
   })
 
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return workspaceId
 }
@@ -120,7 +121,7 @@ export async function createBlockedSlot(data: {
   const agenda = await db.agenda.findFirst({
     where: { id: data.agendaId, workspaceId },
   })
-  if (!agenda) throw new Error("Agenda nao encontrada")
+  if (!agenda) throw new Error(ERR_AGENDA_NOT_FOUND)
 
   const startDate = new Date(data.startDate)
   const endDate = new Date(data.endDate)
@@ -159,7 +160,14 @@ export async function updateBlockedSlot(
   const existing = await db.blockedSlot.findFirst({
     where: { id, workspaceId },
   })
-  if (!existing) throw new Error("Bloqueio nao encontrado")
+  if (!existing) throw new Error(ERR_BLOCKED_SLOT_NOT_FOUND)
+
+  // Validate date range
+  const effectiveStart = data.startDate ? new Date(data.startDate) : existing.startDate
+  const effectiveEnd = data.endDate ? new Date(data.endDate) : existing.endDate
+  if (effectiveEnd <= effectiveStart) {
+    throw new Error("Data final deve ser posterior a data inicial")
+  }
 
   const updateData: any = {}
   if (data.title !== undefined) updateData.title = data.title.trim()
@@ -190,7 +198,7 @@ export async function deleteBlockedSlot(id: string) {
   const existing = await db.blockedSlot.findFirst({
     where: { id, workspaceId },
   })
-  if (!existing) throw new Error("Bloqueio nao encontrado")
+  if (!existing) throw new Error(ERR_BLOCKED_SLOT_NOT_FOUND)
 
   await db.blockedSlot.delete({ where: { id } })
 

@@ -23,6 +23,7 @@ import {
 import { emitNfse, searchAppointmentsForNfse } from "@/server/actions/nfse"
 import { updateAppointmentPrice } from "@/server/actions/financial"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 
 type AppointmentResult = Awaited<ReturnType<typeof searchAppointmentsForNfse>>[number]
 
@@ -113,7 +114,7 @@ export function EmitNfseDialog({ open, onOpenChange, onSuccess }: EmitNfseDialog
       setStep("success")
       onSuccess()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao emitir NFS-e")
+      toast.error(friendlyError(err, "Erro ao emitir NFS-e"))
     } finally {
       setEmitting(false)
     }

@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -57,6 +58,7 @@ import {
   deletePatientDocument,
 } from "@/server/actions/document"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 import Link from "next/link"
 
 type PatientData = {
@@ -186,6 +188,18 @@ const sourceLabels: Record<string, string> = {
 
 function ResumoTab({ patient, customFields }: { patient: PatientData; customFields?: CustomFieldDef[] }) {
   const [isEditing, setIsEditing] = useState(false)
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isEditing) {
+        e.preventDefault()
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [isEditing])
+
   const [showAllFields, setShowAllFields] = useState(false)
   const [name, setName] = useState(patient.name)
   const [phone, setPhone] = useState(patient.phone ?? "")
@@ -1200,6 +1214,10 @@ function TratamentosTab({ patientId }: { patientId: string }) {
   const [formSessions, setFormSessions] = useState("")
   const [formNotes, setFormNotes] = useState("")
   const [formSaving, setFormSaving] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({ open: false, title: "", description: "", onConfirm: () => {} })
+  const showConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, description, onConfirm })
+  }
 
   const loadPlans = React.useCallback(async () => {
     try {
@@ -1231,8 +1249,8 @@ function TratamentosTab({ patientId }: { patientId: string }) {
       setShowForm(false)
       loadPlans()
       toast.success("Plano de tratamento criado")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao criar plano")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao criar plano"))
     } finally {
       setFormSaving(false)
     }
@@ -1244,8 +1262,8 @@ function TratamentosTab({ patientId }: { patientId: string }) {
       await addSessionToTreatment(planId)
       loadPlans()
       toast.success("Sessão registrada")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao registrar sessão")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao registrar sessão"))
     } finally {
       setActionLoading(null)
     }
@@ -1257,25 +1275,26 @@ function TratamentosTab({ patientId }: { patientId: string }) {
       await updateTreatmentPlanStatus(planId, status)
       loadPlans()
       toast.success("Status do plano atualizado")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar status")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao atualizar status"))
     } finally {
       setActionLoading(null)
     }
   }
 
   async function handleDelete(planId: string) {
-    if (!confirm("Tem certeza que deseja excluir este plano de tratamento?")) return
-    setActionLoading(planId)
-    try {
-      await deleteTreatmentPlan(planId)
-      loadPlans()
-      toast.success("Plano de tratamento excluído")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao excluir plano")
-    } finally {
-      setActionLoading(null)
-    }
+    showConfirm("Excluir plano de tratamento", "Tem certeza que deseja excluir este plano? Esta acao nao pode ser desfeita.", async () => {
+      setActionLoading(planId)
+      try {
+        await deleteTreatmentPlan(planId)
+        loadPlans()
+        toast.success("Plano de tratamento excluído")
+      } catch (err) {
+        toast.error(friendlyError(err, "Erro ao excluir plano"))
+      } finally {
+        setActionLoading(null)
+      }
+    })
   }
 
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR")
@@ -1518,6 +1537,13 @@ function TratamentosTab({ patientId }: { patientId: string }) {
           })}
         </div>
       )}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(prev => ({ ...prev, open: false })) }}
+      />
     </div>
   )
 }
@@ -1540,6 +1566,10 @@ function DocumentosTab({ patientId }: { patientId: string }) {
   const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({ open: false, title: "", description: "", onConfirm: () => {} })
+  const showConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, description, onConfirm })
+  }
 
   const loadDocs = React.useCallback(async () => {
     try {
@@ -1554,17 +1584,24 @@ function DocumentosTab({ patientId }: { patientId: string }) {
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files || files.length === 0) return
+    const fileList = Array.from(files)
+    for (const file of fileList) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Arquivo excede o limite de 10MB. Escolha um arquivo menor.")
+        return
+      }
+    }
     setUploading(true)
     try {
-      for (const file of Array.from(files)) {
+      for (const file of fileList) {
         const fd = new FormData()
         fd.append("file", file)
         await uploadPatientDocument(fd, patientId)
       }
       loadDocs()
       toast.success("Documento enviado com sucesso")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao fazer upload")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao fazer upload"))
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
@@ -1576,22 +1613,23 @@ function DocumentosTab({ patientId }: { patientId: string }) {
       const url = await getDocumentSignedUrl(doc.url)
       window.open(url, "_blank")
     } catch {
-      alert("Erro ao abrir documento")
+      toast.error("Erro ao abrir documento")
     }
   }
 
   async function handleDelete(docId: string) {
-    if (!confirm("Excluir este documento?")) return
-    setDeleting(docId)
-    try {
-      await deletePatientDocument(docId)
-      loadDocs()
-      toast.success("Documento excluído")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao excluir documento")
-    } finally {
-      setDeleting(null)
-    }
+    showConfirm("Excluir documento", "Tem certeza que deseja excluir este documento? Esta acao nao pode ser desfeita.", async () => {
+      setDeleting(docId)
+      try {
+        await deletePatientDocument(docId)
+        loadDocs()
+        toast.success("Documento excluído")
+      } catch (err) {
+        toast.error(friendlyError(err, "Erro ao excluir documento"))
+      } finally {
+        setDeleting(null)
+      }
+    })
   }
 
   function formatSize(bytes: number | null) {
@@ -1705,6 +1743,13 @@ function DocumentosTab({ patientId }: { patientId: string }) {
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(prev => ({ ...prev, open: false })) }}
+      />
     </div>
   )
 }

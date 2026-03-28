@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { searchPatients, getRecentPatients } from "@/server/actions/patient"
 import { processConsultation } from "@/server/actions/consultation"
+import { friendlyError } from "@/lib/error-messages"
 import { Breadcrumb } from "@/components/breadcrumb"
 
 type Patient = {
@@ -91,7 +92,7 @@ export default function NewAppointmentPage() {
         const result = await processConsultation(fd, selectedPatient.id)
         router.push(`/appointments/review?recordingId=${result.recordingId}&patientId=${selectedPatient.id}`)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao processar consulta")
+        setError(friendlyError(err, "Erro ao processar consulta"))
         setStep("recording")
       }
     },

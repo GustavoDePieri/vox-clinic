@@ -22,6 +22,7 @@ import { Loader2, Search } from "lucide-react"
 import { searchPatients } from "@/server/actions/patient"
 import { createCharge } from "@/server/actions/receivable"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 
 const formatBRL = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -133,7 +134,7 @@ export function CreateChargeDialog({ open, onOpenChange, onSuccess, defaultPatie
         onOpenChange(false)
         onSuccess()
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Erro ao criar cobranca")
+        toast.error(friendlyError(err, "Erro ao criar cobranca"))
       }
     })
   }

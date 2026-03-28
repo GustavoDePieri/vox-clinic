@@ -3,17 +3,18 @@
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { logAudit } from "@/lib/audit"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND } from "@/lib/error-messages"
 
 export async function exportPatientData(patientId: string) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
     include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
   })
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   const patient = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
@@ -45,7 +46,7 @@ export async function exportPatientData(patientId: string) {
     },
   })
 
-  if (!patient) throw new Error("Paciente nao encontrado")
+  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   const auditLogs = await db.auditLog.findMany({
     where: {

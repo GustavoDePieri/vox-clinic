@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
+import { friendlyError } from "@/lib/error-messages"
 import {
   getAppointmentsByDateRange,
   scheduleAppointment,
@@ -229,13 +230,13 @@ export default function CalendarPage() {
       }
       setShowScheduleForm(false)
       reloadData()
-    } catch (err: any) {
-      const msg = err.message || "Erro ao agendar consulta"
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ""
       if (msg.startsWith("CONFLICT:")) {
         setConflictMessage(msg.replace("CONFLICT:", ""))
         conflictResolveRef.current = () => handleSchedule(data, true)
       } else {
-        toast.error(msg)
+        toast.error(friendlyError(err, "Erro ao agendar consulta"))
       }
     }
   }
@@ -245,13 +246,13 @@ export default function CalendarPage() {
       await rescheduleAppointment(appointmentId, newDate, forceSchedule)
       reloadData()
       toast.success("Consulta reagendada")
-    } catch (err: any) {
-      const msg = err.message || "Erro ao reagendar consulta"
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ""
       if (msg.startsWith("CONFLICT:")) {
         setConflictMessage(msg.replace("CONFLICT:", ""))
         conflictResolveRef.current = () => handleReschedule(appointmentId, newDate, true)
       } else {
-        toast.error(msg)
+        toast.error(friendlyError(err, "Erro ao reagendar consulta"))
       }
     }
   }
@@ -261,8 +262,8 @@ export default function CalendarPage() {
       await updateAppointmentStatus(appointmentId, status)
       reloadData()
       toast.success("Status atualizado")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar status")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao atualizar status"))
     }
   }
 
@@ -272,8 +273,8 @@ export default function CalendarPage() {
       await deleteAppointment(deleteTarget)
       reloadData()
       toast.success("Consulta excluída")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao excluir consulta")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao excluir consulta"))
     } finally {
       setDeleteTarget(null)
     }
@@ -284,8 +285,8 @@ export default function CalendarPage() {
       await deleteBlockedSlot(id)
       reloadData()
       toast.success("Bloqueio removido")
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao remover bloqueio")
+    } catch (err) {
+      toast.error(friendlyError(err, "Erro ao remover bloqueio"))
     }
   }
 
@@ -413,8 +414,8 @@ export default function CalendarPage() {
               setShowBlockForm(false)
               reloadData()
               toast.success("Horario bloqueado")
-            } catch (err: any) {
-              toast.error(err.message || "Erro ao bloquear horario")
+            } catch (err) {
+              toast.error(friendlyError(err, "Erro ao bloquear horario"))
             }
           }}
           onCancel={() => setShowBlockForm(false)}

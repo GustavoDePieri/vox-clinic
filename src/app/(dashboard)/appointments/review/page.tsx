@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { getRecordingForReview, confirmConsultation } from "@/server/actions/consultation"
+import { friendlyError } from "@/lib/error-messages"
 import { Breadcrumb } from "@/components/breadcrumb"
 import type { AppointmentSummary, ConsultationMedication, PatientInfoUpdates } from "@/types"
 
@@ -86,7 +87,7 @@ export default function AppointmentReviewPage() {
         }
       })
       .catch((err) => {
-        setLoadError(err instanceof Error ? err.message : "Erro ao carregar dados da gravacao")
+        setLoadError(friendlyError(err, "Erro ao carregar dados da gravacao"))
       })
       .finally(() => setLoadingData(false))
   }, [recordingId])
@@ -115,7 +116,7 @@ export default function AppointmentReviewPage() {
       })
       router.push(`/patients/${result.patientId}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar consulta")
+      setError(friendlyError(err, "Erro ao salvar consulta"))
       setSaving(false)
     }
   }

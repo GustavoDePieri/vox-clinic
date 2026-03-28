@@ -5,10 +5,11 @@ import { db } from "@/lib/db"
 import { createVideoRoom, createMeetingToken, deleteVideoRoom } from "@/lib/daily"
 import crypto from "crypto"
 import { logger } from "@/lib/logger"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_APPOINTMENT_NOT_FOUND, ERR_TELECONSULTA_NOT_FOUND, ERR_TELECONSULTA_ROOM_FAILED, ERR_TELECONSULTA_ROOM_NOT_CONFIGURED, ERR_TELECONSULTA_NOT_READY, ERR_TELECONSULTA_EXPIRED } from "@/lib/error-messages"
 
 async function getAuthContext() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -16,7 +17,7 @@ async function getAuthContext() {
   })
 
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return { userId, user: user!, workspaceId }
 }
@@ -28,7 +29,7 @@ export async function createTeleconsultaRoom(appointmentId: string) {
     where: { id: appointmentId, workspaceId },
     include: { patient: { select: { name: true } } },
   })
-  if (!appointment) throw new Error("Consulta nao encontrada")
+  if (!appointment) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   // If room already exists, return existing info
   if (appointment.videoRoomName && appointment.videoRoomUrl && appointment.videoToken) {
@@ -67,7 +68,7 @@ export async function createTeleconsultaRoom(appointmentId: string) {
     // Re-fetch the existing room info
     const existing = await db.appointment.findUnique({ where: { id: appointmentId } })
     if (!existing?.videoRoomName || !existing?.videoRoomUrl || !existing?.videoToken) {
-      throw new Error("Erro ao criar sala de teleconsulta")
+      throw new Error(ERR_TELECONSULTA_ROOM_FAILED)
     }
     const existingOwnerToken = await createMeetingToken(existing.videoRoomName, {
       isOwner: true,
@@ -99,7 +100,7 @@ export async function recordTeleconsultaConsent(videoToken: string) {
     where: { videoToken },
     select: { id: true, workspaceId: true, patientId: true },
   })
-  if (!appointment) throw new Error("Appointment not found")
+  if (!appointment) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   await db.consentRecord.create({
     data: {
@@ -125,9 +126,9 @@ export async function getPatientJoinInfo(videoToken: string) {
     },
   })
 
-  if (!appointment) throw new Error("Teleconsulta nao encontrada")
+  if (!appointment) throw new Error(ERR_TELECONSULTA_NOT_FOUND)
   if (!appointment.videoRoomName || !appointment.videoRoomUrl) {
-    throw new Error("Sala de video nao configurada")
+    throw new Error(ERR_TELECONSULTA_ROOM_NOT_CONFIGURED)
   }
 
   // Allow joining from 30 min before until 3 hours after appointment time
@@ -136,10 +137,10 @@ export async function getPatientJoinInfo(videoToken: string) {
   const latestJoin = new Date(appointment.date.getTime() + 3 * 60 * 60 * 1000)
 
   if (now < earliestJoin) {
-    throw new Error("A teleconsulta ainda nao esta disponivel. Tente novamente mais perto do horario agendado.")
+    throw new Error(ERR_TELECONSULTA_NOT_READY)
   }
   if (now > latestJoin) {
-    throw new Error("O horario desta teleconsulta ja expirou.")
+    throw new Error(ERR_TELECONSULTA_EXPIRED)
   }
 
   const expiresAt = new Date(appointment.date.getTime() + 3 * 60 * 60 * 1000)
@@ -169,7 +170,7 @@ export async function endTeleconsulta(appointmentId: string) {
   const appointment = await db.appointment.findFirst({
     where: { id: appointmentId, workspaceId },
   })
-  if (!appointment) throw new Error("Consulta nao encontrada")
+  if (!appointment) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   await db.appointment.update({
     where: { id: appointmentId },
@@ -197,7 +198,7 @@ export async function getTeleconsultaInfo(appointmentId: string) {
       patient: { select: { id: true, name: true } },
     },
   })
-  if (!appointment) throw new Error("Consulta nao encontrada")
+  if (!appointment) throw new Error(ERR_APPOINTMENT_NOT_FOUND)
 
   let ownerToken: string | null = null
   if (appointment.videoRoomName) {

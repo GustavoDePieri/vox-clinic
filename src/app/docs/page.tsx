@@ -73,7 +73,7 @@ function CategorySection({ icon, title, description, count, children }: { icon: 
 }
 
 const FEATURES_SUMMARY = {
-  total: 80,
+  total: 81,
   categories: 11,
 }
 
@@ -251,7 +251,7 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 10. INFRAESTRUTURA ── */}
-        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiencia do usuario." count={9}>
+        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiencia do usuario." count={10}>
           <FeatureCard title="Design Responsivo" description="Mobile-first com sidebar no desktop e bottom nav no mobile. Funciona em celular, tablet e desktop." />
           <FeatureCard title="PWA Ready" description="Manifest.json e service worker para instalacao como app. Icones configurados para iOS e Android." />
           <FeatureCard title="Performance" description="Next.js 16 com Turbopack. Server components, cache com unstable_cache. Carregamento rapido com skeletons." />
@@ -261,6 +261,7 @@ export default function DocsPage() {
           <FeatureCard title="Health Check" description="Endpoint /api/health para monitoramento de disponibilidade e integracao com ferramentas de uptime." />
           <FeatureCard title="Validacao de Ambiente" description="Todas as variaveis de ambiente validadas via Zod no startup. App falha rapido se configuracao incorreta." />
           <FeatureCard title="Indicador de Horario Atual" description="Linha vermelha nas visoes semanal e diaria mostrando a hora atual (useRef, sem re-renders no pai), com auto-scroll para o horario do dia." />
+          <FeatureCard title="Mensagens de Erro Amigaveis" description="Todas as mensagens de erro em portugues, claras e orientativas. Erros tecnicos traduzidos automaticamente para linguagem acessivel via helper centralizado (friendlyError)." />
         </CategorySection>
 
         {/* ── 11. TELEMEDICINA ── */}

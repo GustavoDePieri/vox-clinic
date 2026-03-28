@@ -2,15 +2,15 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
-import { redirect } from "next/navigation"
 import { checkPatientLimit } from "@/lib/plan-enforcement"
 import { getSignedAudioUrl } from "@/lib/storage"
 import { logAudit } from "@/lib/audit"
 import { unstable_cache, revalidateTag } from "next/cache"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_PATIENT_NOT_FOUND } from "@/lib/error-messages"
 
 async function getWorkspaceContext() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) throw new Error(ERR_UNAUTHORIZED)
 
   const user = await db.user.findUnique({
     where: { clerkId: userId },
@@ -18,7 +18,7 @@ async function getWorkspaceContext() {
   })
 
   const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error("Workspace not configured")
+  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
 
   return { workspaceId, clerkId: userId }
 }
@@ -181,7 +181,7 @@ export async function getPatient(patientId: string) {
     },
   })
 
-  if (!patient) throw new Error("Paciente nao encontrado")
+  if (!patient) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   return {
     id: patient.id,
@@ -239,7 +239,7 @@ export async function updatePatient(
   const existing = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
   })
-  if (!existing) throw new Error("Paciente nao encontrado")
+  if (!existing) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   const { customData, alerts, medicalHistory, address, tags, ...rest } = data
 
@@ -333,7 +333,7 @@ export async function createPatient(formData: FormData) {
   revalidateTag("patient-search", "max")
   revalidateTag("dashboard", "max")
 
-  redirect(`/patients/${patient.id}`)
+  return { patientId: patient.id }
 }
 
 export async function deactivatePatient(patientId: string) {
@@ -342,7 +342,7 @@ export async function deactivatePatient(patientId: string) {
   const existing = await db.patient.findFirst({
     where: { id: patientId, workspaceId },
   })
-  if (!existing) throw new Error("Paciente nao encontrado")
+  if (!existing) throw new Error(ERR_PATIENT_NOT_FOUND)
 
   await db.patient.update({
     where: { id: patientId },

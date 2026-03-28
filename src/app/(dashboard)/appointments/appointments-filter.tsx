@@ -8,6 +8,7 @@ const filters = [
   { value: "scheduled", label: "Agendados" },
   { value: "completed", label: "Concluidos" },
   { value: "cancelled", label: "Cancelados" },
+  { value: "no_show", label: "Faltou" },
 ]
 
 export function AppointmentsFilter({ currentStatus }: { currentStatus: string }) {
