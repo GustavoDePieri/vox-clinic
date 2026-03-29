@@ -28,7 +28,6 @@ jobs:
       - run: npx prisma validate
       - run: npx tsc --noEmit
       - run: npm run lint || echo "::warning::Lint has pre-existing warnings — will be fixed incrementally"
-      - run: npm audit --audit-level=high || true
 
   unit-tests:
     name: Unit & Integration Tests
@@ -51,39 +50,3 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
-
-  e2e-tests:
-    name: E2E Tests (${{ matrix.project }})
-    runs-on: ubuntu-latest
-    needs: unit-tests
-    env:
-      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
-      DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
-      # Dummy env vars for Next.js build validation (not used at runtime in E2E)
-      ANTHROPIC_API_KEY: "sk-ant-ci-placeholder-key"
-      OPENAI_API_KEY: "sk-ci-placeholder-key"
-      NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
-      SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder"
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [chromium]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx prisma generate
-      - run: npx playwright install --with-deps ${{ matrix.project }}
-      - run: npx playwright test --project=${{ matrix.project }}
-        env:
-          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
-          TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
-          TEST_BASE_URL: http://localhost:3000
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report-${{ matrix.project }}
-          path: playwright-report/

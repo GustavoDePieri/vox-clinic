@@ -99,8 +99,8 @@ accordion, alert-dialog, alert, avatar, badge, button, card, dialog, dropdown-me
 ### Animacao/Visual — Landing (17)
 animated-beam, animated-gradient-text, avatar-circles, bento-grid, blur-fade, border-beam, globe, magic-card, marquee, number-ticker, particles, ripple, safari, shine-border, typing-animation, word-rotate
 
-### Landing Page (13 secoes)
-landing-page, nav-bar, hero-section, social-proof-bar, features-bento-section, ai-showcase-section, how-it-works-section, professions-section, security-section, testimonials-section, pricing-section, faq-section, final-cta-section
+### Landing Page (11 secoes)
+landing-page, nav-bar, hero-section, social-proof-bar, how-it-works-section, features-bento-section, security-section, testimonials-section, pricing-section, faq-section, final-cta-section
 
 ### Tour (2)
 tour-provider, tour-steps
