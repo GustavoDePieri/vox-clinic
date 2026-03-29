@@ -10,71 +10,65 @@ import {
 
 const faqs = [
   {
-    question: "O VoxClinic funciona com minha especialidade?",
+    question: "Funciona para a minha especialidade?",
     answer:
-      "Sim! O VoxClinic se adapta automaticamente a sua profissão durante o onboarding. Já atendemos dentistas, médicos, nutricionistas, esteticistas e advogados, com vocabulário e campos específicos para cada área.",
-  },
-  {
-    question: "Preciso de internet para gravar?",
-    answer:
-      "Sim, a gravação e o processamento ocorrem online para garantir a melhor qualidade de transcrição. O áudio é enviado diretamente para processamento, sem armazenamento local.",
+      "Sim. No onboarding, o VoxClinic gera templates customizados para sua profissão — médicos, dentistas, nutricionistas, fisioterapeutas, psicólogos e mais. A IA se adapta ao vocabulário e campos da sua área.",
   },
   {
     question: "Meus dados ficam seguros?",
     answer:
-      "Absolutamente. Todos os dados são armazenados em infraestrutura brasileira (sa-east-1), com consentimento LGPD obrigatório, auditoria completa e URLs de áudio com expiração de 5 minutos.",
+      "Criptografia AES-256, servidores exclusivamente no Brasil (sa-east-1), LGPD compliant (consentimento, auditoria, DPO, exclusão), conforme CFM 1.821/2007.",
   },
   {
-    question: "Posso experimentar antes de pagar?",
+    question: "E se a IA errar?",
     answer:
-      "Sim! O plano Grátis permite até 50 consultas por mês sem necessidade de cartão de crédito. Você pode usar o tempo que precisar antes de decidir fazer upgrade.",
+      "O profissional sempre revisa e confirma antes de qualquer dado ser salvo. A IA nunca grava nada automaticamente — ela extrai e sugere, você decide.",
   },
   {
-    question: "Como funciona a transcrição por voz?",
+    question: "Posso migrar dados de outro sistema?",
     answer:
-      "Utilizamos a API Whisper da OpenAI com vocabulário médico em português. O áudio é transcrito automaticamente, e a IA extrai dados estruturados como nome do paciente, procedimentos e observações.",
+      "Sim. Import via CSV e Excel com mapeamento automático de colunas. O assistente de migração guia o processo passo a passo.",
   },
   {
-    question: "Posso importar meus pacientes existentes?",
+    question: "Tem app para celular?",
     answer:
-      "Sim! O VoxClinic suporta importação via CSV com mapeamento automático de colunas. Você pode migrar sua base de pacientes em poucos minutos.",
+      "O VoxClinic é um PWA responsivo — funciona como app nativo no celular via navegador. Grave consultas, acesse prontuários e gerencie a agenda de qualquer dispositivo.",
   },
   {
-    question: "O VoxClinic substitui meu prontuário eletrônico?",
+    question: "Posso cancelar a qualquer momento?",
     answer:
-      "O VoxClinic é um CRM inteligente com funcionalidades de prontuário. Para clínicas que já possuem um sistema de prontuário eletrônico, ele funciona como complemento focado em produtividade.",
-  },
-  {
-    question: "Como funciona o suporte?",
-    answer:
-      "Oferecemos suporte via email para todos os planos. Planos Profissional e Clínica contam com suporte prioritário e tempo de resposta reduzido.",
+      "Sim, sem multa. Cancele quando quiser nas configurações da conta. Todos os dados podem ser exportados antes do cancelamento.",
   },
 ]
 
 export function FAQSection() {
   return (
-    <section
-      id="faq"
-      className="max-w-3xl mx-auto px-4 md:px-6 lg:px-8 py-20 md:py-28"
-    >
-      <BlurFade inView>
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          Perguntas frequentes
-        </h2>
-      </BlurFade>
+    <section id="faq" className="py-24 md:py-32 border-t border-white/[0.06]">
+      <div className="max-w-2xl mx-auto px-6">
+        <BlurFade inView>
+          <div className="text-center mb-12">
+            <p className="text-[12px] font-medium text-vox-primary tracking-widest uppercase mb-3">FAQ</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+              Perguntas frequentes
+            </h2>
+          </div>
+        </BlurFade>
 
-      <BlurFade inView delay={0.15}>
         <Accordion defaultValue={[]}>
           {faqs.map((faq, i) => (
-            <AccordionItem key={i} value={String(i)}>
-              <AccordionTrigger>{faq.question}</AccordionTrigger>
-              <AccordionContent>
-                <p className="text-muted-foreground">{faq.answer}</p>
-              </AccordionContent>
-            </AccordionItem>
+            <BlurFade key={i} inView delay={0.05 + i * 0.05}>
+              <AccordionItem value={String(i)} className="border-white/[0.06]">
+                <AccordionTrigger className="text-[14px] text-white [&_[data-slot=accordion-trigger-icon]]:text-zinc-600">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-[13px] text-zinc-500 leading-relaxed">{faq.answer}</p>
+                </AccordionContent>
+              </AccordionItem>
+            </BlurFade>
           ))}
         </Accordion>
-      </BlurFade>
+      </div>
     </section>
   )
 }

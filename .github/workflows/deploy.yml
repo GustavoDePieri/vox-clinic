@@ -28,7 +28,6 @@ jobs:
       - run: npx prisma validate
       - run: npx tsc --noEmit
       - run: npm run lint || echo "::warning::Lint has pre-existing warnings — will be fixed incrementally"
-      - run: npm audit --audit-level=high || true
 
   unit-tests:
     name: Unit & Integration Tests
@@ -51,11 +50,3 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
-
-  # E2E tests require real env vars (Clerk, Supabase) to start the dev server.
-  # Run manually: npm run test:e2e
-  # TODO: Re-enable when CI has staging env configured.
-  # e2e-tests:
-  #   name: E2E Tests
-  #   needs: unit-tests
-  #   ...

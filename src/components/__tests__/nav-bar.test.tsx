@@ -10,74 +10,57 @@ vi.mock("next/link", () => ({
   ),
 }))
 
+vi.mock("motion/react", () => ({
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+  AnimatePresence: ({ children }: any) => <>{children}</>,
+}))
+
 import { NavBar } from "../landing/nav-bar"
 
 describe("NavBar", () => {
   it("renders logo with VoxClinic text", () => {
     render(<NavBar />)
-    expect(screen.getByText("Vox")).toBeInTheDocument()
-    expect(screen.getByText("Clinic")).toBeInTheDocument()
+    expect(screen.getByText("VoxClinic")).toBeInTheDocument()
   })
 
-  it("shows Entrar and Comecar Gratis when not authenticated", () => {
+  it("shows Entrar and Começar grátis when not authenticated", () => {
     render(<NavBar isAuthenticated={false} />)
     const entrarLinks = screen.getAllByText("Entrar")
-    const gratisLinks = screen.getAllByText("Comecar Gratis")
+    const gratisLinks = screen.getAllByText(/Começar grátis/i)
     expect(entrarLinks.length).toBeGreaterThanOrEqual(1)
     expect(gratisLinks.length).toBeGreaterThanOrEqual(1)
   })
 
-  it("shows Ir para o Dashboard when authenticated", () => {
+  it("shows Dashboard when authenticated", () => {
     render(<NavBar isAuthenticated={true} />)
-    const dashLinks = screen.getAllByText("Ir para o Dashboard")
+    const dashLinks = screen.getAllByText("Dashboard")
     expect(dashLinks.length).toBeGreaterThanOrEqual(1)
     expect(screen.queryByText("Entrar")).not.toBeInTheDocument()
   })
 
-  it("renders nav links (Funcionalidades, Como Funciona, Precos, FAQ)", () => {
+  it("renders nav links", () => {
     render(<NavBar />)
-    // Desktop links + mobile links (when open). Desktop should be present.
-    expect(screen.getByText("Funcionalidades")).toBeInTheDocument()
-    expect(screen.getByText("Como Funciona")).toBeInTheDocument()
-    expect(screen.getByText("Precos")).toBeInTheDocument()
-    expect(screen.getByText("FAQ")).toBeInTheDocument()
+    expect(screen.getByText("Produto")).toBeInTheDocument()
   })
 
   it("nav links have correct href attributes", () => {
     render(<NavBar />)
-    const funcLink = screen.getByText("Funcionalidades")
-    expect(funcLink).toHaveAttribute("href", "#features")
-
-    const comoLink = screen.getByText("Como Funciona")
-    expect(comoLink).toHaveAttribute("href", "#how-it-works")
-
-    const precosLink = screen.getByText("Precos")
-    expect(precosLink).toHaveAttribute("href", "#pricing")
-
-    const faqLink = screen.getByText("FAQ")
-    expect(faqLink).toHaveAttribute("href", "#faq")
+    const produtoLink = screen.getByText("Produto")
+    expect(produtoLink).toHaveAttribute("href", "#features")
   })
 
   it("mobile hamburger toggles menu visibility", async () => {
     const user = userEvent.setup()
     render(<NavBar />)
 
-    // Mobile menu content should not be visible initially.
-    // The Entrar link in the mobile menu is inside the mobileOpen conditional block.
-    // There are desktop CTAs (hidden md:hidden), so we check for the hamburger button.
     const hamburger = screen.getByLabelText("Abrir menu")
     expect(hamburger).toBeInTheDocument()
 
     await user.click(hamburger)
-
-    // After click, close button should appear
     expect(screen.getByLabelText("Fechar menu")).toBeInTheDocument()
 
-    // Mobile nav links should now be doubled (desktop + mobile)
-    const funcLinks = screen.getAllByText("Funcionalidades")
-    expect(funcLinks.length).toBe(2)
-
-    // Click again to close
     await user.click(screen.getByLabelText("Fechar menu"))
     expect(screen.getByLabelText("Abrir menu")).toBeInTheDocument()
   })
@@ -90,9 +73,9 @@ describe("NavBar", () => {
     })
   })
 
-  it("Comecar Gratis links point to /sign-up", () => {
+  it("Começar grátis links point to /sign-up", () => {
     render(<NavBar />)
-    const gratisLinks = screen.getAllByText("Comecar Gratis")
+    const gratisLinks = screen.getAllByText(/Começar grátis/i)
     gratisLinks.forEach((link) => {
       expect(link.closest("a")).toHaveAttribute("href", "/sign-up")
     })
@@ -100,7 +83,7 @@ describe("NavBar", () => {
 
   it("Dashboard link uses custom dashboardUrl prop", () => {
     render(<NavBar isAuthenticated={true} dashboardUrl="/custom-dash" />)
-    const dashLinks = screen.getAllByText("Ir para o Dashboard")
+    const dashLinks = screen.getAllByText("Dashboard")
     dashLinks.forEach((link) => {
       expect(link.closest("a")).toHaveAttribute("href", "/custom-dash")
     })

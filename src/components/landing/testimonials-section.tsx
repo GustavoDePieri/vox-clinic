@@ -1,44 +1,38 @@
 "use client"
 
-import { Marquee } from "@/components/ui/marquee"
 import { BlurFade } from "@/components/ui/blur-fade"
+import { Marquee } from "@/components/ui/marquee"
 
 const testimonials = [
   {
-    quote:
-      "Economizo 40 minutos por dia com a transcrição automática. Mudou minha rotina.",
-    name: "Dra. Ana Beatriz",
-    profession: "Dentista",
+    quote: "Economizo 40 minutos por dia só com a transcrição automática. Minha rotina mudou completamente.",
+    name: "Dra. Ana Beatriz Ferreira",
+    role: "Dermatologista",
   },
   {
-    quote:
-      "O onboarding criou meu workspace perfeito em 2 minutos. Impressionante.",
-    name: "Dr. Carlos Mendes",
-    profession: "Nutricionista",
+    quote: "O agendamento online reduziu as faltas em 60%. Os lembretes por WhatsApp são um diferencial enorme.",
+    name: "Dr. Carlos Eduardo Mendes",
+    role: "Nutricionista",
   },
   {
-    quote:
-      "Finalmente um sistema que entende vocabulário médico em português.",
-    name: "Dra. Juliana Costa",
-    profession: "Médica",
+    quote: "Finalmente um sistema que entende vocabulário médico em português. A IA extrai CID e medicações sem eu digitar nada.",
+    name: "Dra. Juliana Costa Ribeiro",
+    role: "Clínica Geral",
   },
   {
-    quote:
-      "A agenda com detecção de conflitos me salvou de várias confusões.",
-    name: "Dr. Rafael Lima",
-    profession: "Esteticista",
+    quote: "A prescrição digital com assinatura ICP-Brasil simplificou muito meu fluxo. Antes eu perdia tempo com papel e carimbo.",
+    name: "Dr. Rafael Lima Santos",
+    role: "Ortopedista",
   },
   {
-    quote:
-      "Meus pacientes adoram receber lembretes pelo WhatsApp.",
+    quote: "Migrei de outro sistema em uma tarde. O import por CSV trouxe 2.000 pacientes sem perder dados.",
     name: "Dra. Fernanda Oliveira",
-    profession: "Dentista",
+    role: "Dentista",
   },
   {
-    quote:
-      "Os relatórios me ajudam a entender melhor o fluxo da clínica.",
-    name: "Dr. Pedro Santos",
-    profession: "Advogado",
+    quote: "O financeiro integrado me dá uma visão clara de receita, inadimplência e comissões. Não preciso mais de planilha.",
+    name: "Dr. Pedro Henrique Santos",
+    role: "Fisioterapeuta",
   },
 ]
 
@@ -46,30 +40,25 @@ function getInitials(name: string) {
   return name
     .replace(/^(Dra?\.\s*)/, "")
     .split(" ")
+    .slice(0, 2)
     .map((w) => w[0])
     .join("")
     .toUpperCase()
 }
 
-function TestimonialCard({
-  quote,
-  name,
-  profession,
-}: {
-  quote: string
-  name: string
-  profession: string
-}) {
+function TestimonialCard({ quote, name, role }: { quote: string; name: string; role: string }) {
   return (
-    <div className="w-[300px] shrink-0 rounded-2xl border border-border/40 bg-card p-5 mx-2">
-      <p className="text-sm text-muted-foreground mb-4">&ldquo;{quote}&rdquo;</p>
+    <div className="w-[300px] shrink-0 rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <p className="text-[13px] text-zinc-400 leading-relaxed line-clamp-3 mb-4">
+        &ldquo;{quote}&rdquo;
+      </p>
       <div className="flex items-center gap-3">
-        <div className="size-10 rounded-full bg-vox-primary/10 flex items-center justify-center text-vox-primary font-bold text-sm">
+        <div className="flex size-8 items-center justify-center rounded-full bg-white/[0.04] text-[11px] font-medium text-zinc-400">
           {getInitials(name)}
         </div>
         <div>
-          <p className="text-sm font-medium">{name}</p>
-          <p className="text-xs text-muted-foreground">{profession}</p>
+          <p className="text-[13px] font-medium text-zinc-200">{name}</p>
+          <p className="text-[11px] text-zinc-600">{role}</p>
         </div>
       </div>
     </div>
@@ -77,28 +66,29 @@ function TestimonialCard({
 }
 
 const firstRow = testimonials.slice(0, 3)
-const secondRow = testimonials.slice(3)
+const secondRow = testimonials.slice(3, 6)
 
 export function TestimonialsSection() {
   return (
-    <section className="py-20 md:py-28 overflow-hidden">
-      <BlurFade inView>
-        <h2 className="text-3xl md:text-4xl font-bold text-center max-w-5xl mx-auto px-4 mb-12">
-          O que dizem nossos usuários
-        </h2>
-      </BlurFade>
+    <section className="py-24 md:py-32 overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6 mb-14">
+        <BlurFade inView>
+          <div className="text-center">
+            <p className="text-[12px] font-medium text-vox-primary tracking-widest uppercase mb-3">Depoimentos</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+              Profissionais que economizam horas por semana
+            </h2>
+          </div>
+        </BlurFade>
+      </div>
 
-      <div className="relative">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent z-10" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent z-10" />
-
-        <Marquee pauseOnHover className="mb-4">
+      <div className="space-y-3">
+        <Marquee pauseOnHover className="[--duration:40s]">
           {firstRow.map((t) => (
             <TestimonialCard key={t.name} {...t} />
           ))}
         </Marquee>
-
-        <Marquee reverse pauseOnHover>
+        <Marquee pauseOnHover reverse className="[--duration:40s]">
           {secondRow.map((t) => (
             <TestimonialCard key={t.name} {...t} />
           ))}

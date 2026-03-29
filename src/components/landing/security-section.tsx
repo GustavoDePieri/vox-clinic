@@ -1,102 +1,71 @@
 "use client"
 
-import { Shield, Lock, FileSearch, Timer, Database, Eye, KeyRound } from "lucide-react"
+import { Shield, Globe, FileCheck, Building2, PenTool, Cloud } from "lucide-react"
 import { BlurFade } from "@/components/ui/blur-fade"
 
-const trustPoints = [
+const securityCards = [
   {
     icon: Shield,
-    text: "Dados armazenados no Brasil (sa-east-1)",
+    title: "AES-256",
+    description: "Criptografia em repouso e em trânsito",
   },
   {
-    icon: Lock,
-    text: "Consentimento LGPD obrigatório antes de gravar",
+    icon: Globe,
+    title: "Dados no Brasil",
+    description: "Servidores em São Paulo (sa-east-1)",
   },
   {
-    icon: FileSearch,
-    text: "Auditoria completa de todas as ações",
+    icon: FileCheck,
+    title: "LGPD",
+    description: "Consentimento, auditoria, DPO, exclusão",
   },
   {
-    icon: Timer,
-    text: "URLs de áudio com expiração de 5 minutos",
+    icon: Building2,
+    title: "CFM 1.821",
+    description: "Prontuário conforme Conselho Federal de Medicina",
+  },
+  {
+    icon: PenTool,
+    title: "ICP-Brasil",
+    description: "Prescrições com assinatura digital válida",
+  },
+  {
+    icon: Cloud,
+    title: "Backup 20 anos",
+    description: "Backup diário com retenção conforme CFM",
   },
 ]
 
-function SecurityVisual() {
-  const orbitItems = [
-    { icon: Lock, label: "LGPD", angle: 0 },
-    { icon: Database, label: "sa-east-1", angle: 72 },
-    { icon: Eye, label: "Auditoria", angle: 144 },
-    { icon: KeyRound, label: "Criptografia", angle: 216 },
-    { icon: Timer, label: "URLs 5min", angle: 288 },
-  ]
-
-  return (
-    <div className="relative aspect-square max-w-[360px] mx-auto">
-      {/* Outer ring */}
-      <div className="absolute inset-0 rounded-full border-2 border-dashed border-vox-primary/20 animate-[spin_30s_linear_infinite]" />
-      {/* Inner ring */}
-      <div className="absolute inset-8 rounded-full border border-vox-primary/10" />
-      {/* Center shield */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-vox-primary/20 to-vox-primary/5 shadow-lg shadow-vox-primary/10">
-          <Shield className="size-10 text-vox-primary" />
-        </div>
-      </div>
-      {/* Orbiting items */}
-      {orbitItems.map((item) => {
-        const rad = (item.angle * Math.PI) / 180
-        const radius = 44 // percentage from center
-        const x = 50 + radius * Math.cos(rad)
-        const y = 50 + radius * Math.sin(rad)
-        return (
-          <div
-            key={item.label}
-            className="absolute flex flex-col items-center gap-1"
-            style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)" }}
-          >
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-border/60 shadow-sm">
-              <item.icon className="size-4 text-vox-primary" />
-            </div>
-            <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">{item.label}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 export function SecuritySection() {
   return (
-    <section className="py-20 md:py-28">
-      <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <BlurFade inView>
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold">
-                Segurança e conformidade LGPD
-              </h2>
-              <p className="mt-3 text-muted-foreground">
-                Seus dados e os dos seus pacientes protegidos por design
-              </p>
+    <section id="seguranca" className="py-24 md:py-32 border-y border-white/[0.06]">
+      <div className="max-w-6xl mx-auto px-6">
+        <BlurFade inView delay={0.05}>
+          <div className="text-center mb-14">
+            <p className="text-[12px] font-medium text-vox-primary tracking-widest uppercase mb-3">Segurança & Compliance</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+              Infraestrutura enterprise-grade
+            </h2>
+            <p className="mt-3 text-[15px] text-zinc-500 max-w-lg mx-auto">
+              Padrões internacionais de segurança. Dados sempre no Brasil.
+            </p>
+          </div>
+        </BlurFade>
 
-              <div className="mt-8 space-y-1">
-                {trustPoints.map((point) => (
-                  <div
-                    key={point.text}
-                    className="flex items-start gap-3 py-3"
-                  >
-                    <point.icon className="size-5 text-vox-primary shrink-0 mt-0.5" />
-                    <p className="text-sm">{point.text}</p>
-                  </div>
-                ))}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.06] rounded-2xl overflow-hidden border border-white/[0.06]">
+          {securityCards.map((card, i) => (
+            <BlurFade key={card.title} inView delay={0.05 * (i + 1)}>
+              <div className="bg-[#09090b] p-6 h-full">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] mb-4">
+                  <card.icon className="size-4 text-vox-primary" />
+                </div>
+                <h3 className="text-[14px] font-semibold text-white mb-1">{card.title}</h3>
+                <p className="text-[13px] text-zinc-500 leading-relaxed">
+                  {card.description}
+                </p>
               </div>
-            </div>
-          </BlurFade>
-
-          <BlurFade inView delay={0.2}>
-            <SecurityVisual />
-          </BlurFade>
+            </BlurFade>
+          ))}
         </div>
       </div>
     </section>

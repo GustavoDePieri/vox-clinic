@@ -476,8 +476,8 @@ export function FormulariosSection() {
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <DialogClose>
-              <Button variant="outline">Cancelar</Button>
+            <DialogClose render={<Button variant="outline" />}>
+              Cancelar
             </DialogClose>
             <Button
               className="bg-vox-primary text-white hover:bg-vox-primary/90"

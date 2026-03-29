@@ -5,8 +5,6 @@ import { HeroSection } from "./hero-section"
 import { SocialProofBar } from "./social-proof-bar"
 import { HowItWorksSection } from "./how-it-works-section"
 import { FeaturesBentoSection } from "./features-bento-section"
-import { AIShowcaseSection } from "./ai-showcase-section"
-import { ProfessionsSection } from "./professions-section"
 import { SecuritySection } from "./security-section"
 import { TestimonialsSection } from "./testimonials-section"
 import { PricingSection } from "./pricing-section"
@@ -20,15 +18,13 @@ interface LandingPageProps {
 
 export function LandingPage({ isAuthenticated = false, dashboardUrl = "/dashboard" }: LandingPageProps) {
   return (
-    <div className="min-h-screen scroll-smooth">
+    <div className="relative min-h-screen scroll-smooth bg-[#09090b] text-white antialiased">
       <NavBar isAuthenticated={isAuthenticated} dashboardUrl={dashboardUrl} />
       <main>
         <HeroSection isAuthenticated={isAuthenticated} dashboardUrl={dashboardUrl} />
         <SocialProofBar />
         <HowItWorksSection />
         <FeaturesBentoSection />
-        <AIShowcaseSection />
-        <ProfessionsSection />
         <SecuritySection />
         <TestimonialsSection />
         <PricingSection />
