@@ -13,8 +13,11 @@ import { getDefaultAgendaIdForWorkspace } from "@/server/actions/agenda"
 import { readProcedures, toJsonValue, readMedicalHistory } from "@/lib/json-helpers"
 import { logger } from "@/lib/logger"
 import { sendInngestEvent, isInngestEnabled } from "@/lib/inngest/client"
+import { requireWorkspaceRole } from "@/lib/auth-context"
 import type { AppointmentSummary } from "@/types"
-import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ActionError, safeAction } from "@/lib/error-messages"
+import { ERR_UNAUTHORIZED, ERR_WORKSPACE_NOT_CONFIGURED, ERR_NO_AUDIO, ERR_AUDIO_TOO_LARGE, ERR_RECORDING_NOT_FOUND, ERR_ALREADY_CONFIRMED, ERR_PROCESSING_FAILED, ERR_RECORDING_RATE_LIMIT, ERR_RECORDING_PLAN_LIMIT, ActionError, safeAction } from "@/lib/error-messages"
+import { rateLimit } from "@/lib/rate-limit"
+import { checkRecordingLimit } from "@/lib/plan-enforcement"
 
 export const processConsultation = safeAction(async (formData: FormData, patientId: string) => {
   const { userId } = await auth()
@@ -31,6 +34,14 @@ export const processConsultation = safeAction(async (formData: FormData, patient
   const workspace = user?.workspace ?? await db.workspace.findUnique({ where: { id: workspaceId } })
   if (!workspace) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
 
+  // Rate limit: max 5 recordings per minute per user
+  const rl = rateLimit(`consultation:${userId}`, 60_000, 5)
+  if (!rl.allowed) throw new ActionError(ERR_RECORDING_RATE_LIMIT)
+
+  // Plan enforcement: check monthly recording limit
+  const planCheck = await checkRecordingLimit(workspaceId, workspace.plan)
+  if (!planCheck.allowed) throw new ActionError(ERR_RECORDING_PLAN_LIMIT)
+
   const audioFile = formData.get("audio") as File | null
   if (!audioFile) throw new ActionError(ERR_NO_AUDIO)
 
@@ -41,13 +52,14 @@ export const processConsultation = safeAction(async (formData: FormData, patient
   const arrayBuffer = await audioFile.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
-  // --- Inngest path: send event and return immediately ---
+  // --- Inngest path: upload audio first, then send lightweight event ---
   if (isInngestEnabled()) {
-    // Create a placeholder recording with "processing" status
+    const audioPath = await uploadAudio(buffer, audioFile.name || "consultation.webm")
+
     const recording = await db.recording.create({
       data: {
         workspaceId,
-        audioUrl: "__processing__",
+        audioUrl: audioPath,
         status: "processing",
         patientId,
         fileSize: audioFile.size,
@@ -59,7 +71,8 @@ export const processConsultation = safeAction(async (formData: FormData, patient
       userId,
       patientId,
       type: "consultation",
-      audioBuffer: buffer.toString("base64"),
+      recordingId: recording.id,
+      audioPath,
       filename: audioFile.name || "consultation.webm",
       fileSize: audioFile.size,
     })
@@ -161,23 +174,15 @@ export const processConsultation = safeAction(async (formData: FormData, patient
 })
 
 export async function getRecordingForReview(recordingId: string) {
-  const { userId } = await auth()
-  if (!userId) throw new Error(ERR_UNAUTHORIZED)
-
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
-  })
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new Error(ERR_WORKSPACE_NOT_CONFIGURED)
+  const ctx = await requireWorkspaceRole()
 
   const recording = await db.recording.findFirst({
-    where: { id: recordingId, workspaceId },
+    where: { id: recordingId, workspaceId: ctx.workspaceId },
   })
   if (!recording) throw new Error(ERR_RECORDING_NOT_FOUND)
 
   // Fire-and-forget audit log — non-blocking (CFM 1.821/2007 read access tracking)
-  logAudit({ workspaceId, userId, action: "recording.accessed", entityType: "Recording", entityId: recording.id }).catch(() => {})
+  logAudit({ workspaceId: ctx.workspaceId, userId: ctx.clerkId, action: "recording.accessed", entityType: "Recording", entityId: recording.id }).catch(() => {})
 
   return {
     recordingId: recording.id,
@@ -197,15 +202,8 @@ export const confirmConsultation = safeAction(async (data: {
   price?: number
   cidCodes?: { code: string; description: string }[]
 }) => {
-  const { userId } = await auth()
-  if (!userId) throw new ActionError(ERR_UNAUTHORIZED)
-
-  const user = await db.user.findUnique({
-    where: { clerkId: userId },
-    include: { workspace: true, memberships: { select: { workspaceId: true }, take: 1 } },
-  })
-  const workspaceId = user?.workspace?.id ?? user?.memberships?.[0]?.workspaceId
-  if (!workspaceId) throw new ActionError(ERR_WORKSPACE_NOT_CONFIGURED)
+  const ctx = await requireWorkspaceRole()
+  const workspaceId = ctx.workspaceId
 
   const agendaId = await getDefaultAgendaIdForWorkspace(workspaceId)
 
@@ -321,7 +319,7 @@ export const confirmConsultation = safeAction(async (data: {
   // Log audit for appointment creation
   await logAudit({
     workspaceId,
-    userId,
+    userId: ctx.clerkId,
     action: "appointment.created",
     entityType: "Appointment",
     entityId: result.appointment.id,

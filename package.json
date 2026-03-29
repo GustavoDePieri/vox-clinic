@@ -19,7 +19,8 @@
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:ci": "vitest run --coverage && playwright test --project=chromium",
     "db:seed-meds": "npx tsx prisma/seed-medications.ts",
-    "db:seed-interactions": "npx tsx prisma/seed-interactions.ts"
+    "db:seed-interactions": "npx tsx prisma/seed-interactions.ts",
+    "db:seed-mock": "npx tsx prisma/seed-mock-data.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
@@ -33,6 +34,7 @@
     "@sentry/nextjs": "^10.46.0",
     "@supabase/supabase-js": "^2.100.0",
     "@types/fluent-ffmpeg": "^2.1.28",
+    "@upstash/redis": "^1.37.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cobe": "^2.0.1",

@@ -92,6 +92,8 @@ export const ERR_RECORDING_NOT_FOUND = "Gravação não encontrada. Ela pode ter
 export const ERR_ALREADY_CONFIRMED = "Este registro já foi confirmado anteriormente."
 export const ERR_PROCESSING_FAILED = "Ocorreu um erro ao processar o áudio. Tente novamente."
 export const ERR_MIC_PERMISSION = "Permissão de microfone negada. Habilite o microfone nas configurações do navegador."
+export const ERR_RECORDING_RATE_LIMIT = "Muitas gravações em sequência. Aguarde um momento antes de tentar novamente."
+export const ERR_RECORDING_PLAN_LIMIT = "Limite de gravações do mês atingido no plano atual. Faça upgrade para continuar."
 
 // ============================================================
 // PACIENTE

@@ -3,19 +3,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 // Mock modules that trigger env validation (workspace-cache → cache → redis → env.ts)
 vi.mock("@/lib/redis", () => ({ redis: null }))
 vi.mock("@/lib/cache", () => ({ cached: vi.fn((_k: string, _t: number, fn: () => unknown) => fn()), invalidate: vi.fn() }))
-vi.mock("@/lib/workspace-cache", () => ({
-  getWorkspaceIdCached: vi.fn().mockResolvedValue("ws_test_123"),
-  invalidateWorkspaceCache: vi.fn(),
-}))
-vi.mock("@/lib/plan-enforcement", () => ({
-  checkAgendaLimit: vi.fn().mockResolvedValue({ allowed: true }),
-  checkAppointmentLimit: vi.fn().mockResolvedValue({ allowed: true }),
-}))
-vi.mock("@/lib/inngest/client", () => ({
-  isInngestEnabled: vi.fn().mockReturnValue(false),
-  sendInngestEvent: vi.fn().mockResolvedValue(false),
-}))
-vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }))
 
 import { mockDb } from "@/test/mocks/db"
 import { mockAuth } from "@/test/mocks/auth"
@@ -27,6 +14,7 @@ import {
   mockPreprocessAudio,
   mockLogAudit,
   mockRecordConsent,
+  mockRequireWorkspaceRole,
 } from "@/test/mocks/services"
 
 import {
@@ -49,6 +37,7 @@ const mockUser = {
   clerkId: CLERK_ID,
   workspace: {
     id: WORKSPACE_ID,
+    plan: "free",
     procedures: [{ name: "Limpeza" }, { name: "Restauracao" }],
     customFields: [],
   },
@@ -65,6 +54,12 @@ describe("consultation actions", () => {
     mockAuth.mockResolvedValue({ userId: CLERK_ID })
     mockDb.user.findUnique.mockResolvedValue(mockUser)
     mockDb.agenda.findFirst.mockResolvedValue({ id: "agenda_default", workspaceId: WORKSPACE_ID, isDefault: true })
+    mockRequireWorkspaceRole.mockResolvedValue({
+      userId: "user_1",
+      clerkId: CLERK_ID,
+      workspaceId: WORKSPACE_ID,
+      role: "owner",
+    })
   })
 
   // ─── processConsultation ─────────────────────────────────────
@@ -355,10 +350,9 @@ describe("consultation actions", () => {
     })
 
     it("returns error when not authenticated", async () => {
-      mockAuth.mockResolvedValue({ userId: null })
+      mockRequireWorkspaceRole.mockRejectedValue(new Error(ERR_UNAUTHORIZED))
 
-      const result = await confirmConsultation(confirmData)
-      expect(result).toHaveProperty("error", ERR_UNAUTHORIZED)
+      await expect(confirmConsultation(confirmData)).rejects.toThrow(ERR_UNAUTHORIZED)
     })
 
     it("rejects when recording already has appointmentId (double-confirm guard via findFirst)", async () => {

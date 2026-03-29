@@ -12,7 +12,8 @@ export type InngestEvents = {
       userId: string
       patientId?: string
       type: "registration" | "consultation"
-      audioBuffer: string
+      recordingId: string
+      audioPath: string
       filename: string
       fileSize: number
     }

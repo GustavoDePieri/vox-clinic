@@ -18,6 +18,11 @@ export async function logAudit(params: {
       entityId: params.entityId,
       workspaceId: params.workspaceId,
     }, err)
+    // Report to Sentry so failed audit writes are visible in monitoring
+    import("@sentry/nextjs").then(Sentry => Sentry.captureException(err, {
+      tags: { component: "audit" },
+      extra: { action: params.action, entityType: params.entityType, entityId: params.entityId },
+    })).catch(() => {})
     // Don't re-throw — audit is non-critical
   }
 }

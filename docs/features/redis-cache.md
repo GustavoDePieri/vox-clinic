@@ -1,6 +1,8 @@
 # Upstash Redis Caching — Feature Document
 
-> Serverless Redis for caching frequently-read, rarely-changed data. Replace in-memory Map caches that reset on every cold start.
+> **Status: IMPLEMENTADO (2026-03-29)** — Core implementado: `src/lib/redis.ts` (Upstash client com graceful null), `src/lib/cache.ts` (cached/invalidate/invalidatePrefix com fallback). Consumers já wired: workspace-cache, dashboard, workspace config, appointment invalidation. Dep: `@upstash/redis ^1.37.0`. Ativar com env vars `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`.
+
+Serverless Redis for caching frequently-read, rarely-changed data. Replace in-memory Map caches that reset on every cold start.
 
 ## 1. Overview
 
