@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
+import { Prisma } from "@prisma/client"
 import { checkPatientLimit } from "@/lib/plan-enforcement"
 import { getSignedAudioUrl } from "@/lib/storage"
 import { logAudit } from "@/lib/audit"
@@ -341,33 +342,41 @@ export const createPatient = safeAction(async (formData: FormData) => {
   }
 
   // Transaction with plan limit check inside to prevent concurrent requests bypassing limits
-  const patient = await db.$transaction(async (tx) => {
-    // Plan enforcement inside transaction to serialize concurrent creates
-    const workspace = await tx.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
-    if (workspace) {
-      const planCheck = await checkPatientLimit(workspaceId, workspace.plan, tx)
-      if (!planCheck.allowed) throw new ActionError(planCheck.reason!)
-    }
+  let patient
+  try {
+    patient = await db.$transaction(async (tx) => {
+      // Plan enforcement inside transaction to serialize concurrent creates
+      const workspace = await tx.workspace.findUnique({ where: { id: workspaceId }, select: { plan: true } })
+      if (workspace) {
+        const planCheck = await checkPatientLimit(workspaceId, workspace.plan, tx)
+        if (!planCheck.allowed) throw new ActionError(planCheck.reason!)
+      }
 
-    return tx.patient.create({
-      data: {
-        workspaceId,
-        name: name.trim(),
-        document: document?.trim() || null,
-        rg: rg?.trim() || null,
-        phone: phone?.trim() || null,
-        email: email?.trim() || null,
-        birthDate: birthDate ? new Date(birthDate) : null,
-        gender: gender || null,
-        address,
-        insurance: insurance?.trim() || null,
-        guardian: guardian?.trim() || null,
-        source: source?.trim() || null,
-        customData,
-        alerts: [],
-      },
+      return tx.patient.create({
+        data: {
+          workspaceId,
+          name: name.trim(),
+          document: document?.trim() || null,
+          rg: rg?.trim() || null,
+          phone: phone?.trim() || null,
+          email: email?.trim() || null,
+          birthDate: birthDate ? new Date(birthDate) : null,
+          gender: gender || null,
+          address,
+          insurance: insurance?.trim() || null,
+          guardian: guardian?.trim() || null,
+          source: source?.trim() || null,
+          customData,
+          alerts: [],
+        },
+      })
     })
-  })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new ActionError("Já existe um paciente com este documento (CPF) neste consultório.")
+    }
+    throw err
+  }
 
   await logAudit({
     workspaceId,
