@@ -7,8 +7,10 @@ import * as Sentry from "@sentry/nextjs"
 Sentry.init({
   dsn: "https://b8a3eaf36af7bc5be6761af838e87c60@o4511123744489472.ingest.us.sentry.io/4511123746455552",
 
-  // Performance monitoring: sample 100% in dev, 10% in production
-  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+  // Only send events in production
+  enabled: process.env.NODE_ENV === "production",
+
+  tracesSampleRate: 0.1,
 
   // Session replay: capture 1% of sessions, 100% on error
   replaysSessionSampleRate: 0.01,
