@@ -254,10 +254,10 @@ function WeekViewInner({
                       key={cellId}
                       id={cellId}
                       ghostMinute={overCellId === cellId ? ghostMinute : null}
-                      className={`h-[72px] border-b border-l border-border/[0.06] px-1 py-1 transition-colors hover:bg-muted/20 ${isToday(d) ? "bg-vox-primary/[0.015]" : ""} ${hourBlocked.length > 0 ? "bg-muted/30" : ""}`}
+                      className={`h-[72px] border-b border-l border-border/[0.06] px-1 py-1 transition-colors hover:bg-muted/20 overflow-hidden min-w-0 ${isToday(d) ? "bg-vox-primary/[0.015]" : ""} ${hourBlocked.length > 0 ? "bg-muted/30" : ""}`}
                     >
                       {/* data attribute for pointer position calculation */}
-                      <div data-cell-id={cellId} className="absolute inset-0" />
+                      <div data-cell-id={cellId} className="absolute inset-0 pointer-events-none" />
                       {hourBlocked.length > 0 && dayAppts.length === 0 && (
                         <div className="relative z-[1] flex items-center gap-1 truncate rounded-lg px-2 py-1.5 text-[10px] font-medium leading-tight bg-muted/40 border-l-[3px] border-muted-foreground/20 text-muted-foreground/70">
                           <Ban className="size-2.5 shrink-0 opacity-50" />
