@@ -18,7 +18,7 @@ import { Ban } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import type { AppointmentItem } from "../types"
 import type { BlockedSlotItem } from "@/server/actions/blocked-slot"
-import { HOURS, DAY_NAMES, STATUS_CONFIG, formatTime, isToday, buildAppointmentIndex, getBlockedSlotsForHour } from "../helpers"
+import { HOURS, DAY_NAMES, STATUS_CONFIG, formatTime, isToday, buildAppointmentIndex, getBlockedSlotsForHour, calculateOverlapLayout, agendaColorBg } from "../helpers"
 import { NowLine } from "./now-line"
 import { AppointmentPopover } from "./appointment-popover"
 
@@ -264,31 +264,52 @@ function WeekViewInner({
                           {hourBlocked[0].title}
                         </div>
                       )}
-                      {dayAppts.map((a) => (
-                        <DraggableAppointment key={a.id} appointment={a}>
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedAppointment({
-                                appointment: a,
-                                position: { top: e.clientY, left: e.clientX },
-                              })
-                            }}
-                            className="relative z-[1] block rounded-lg px-2 py-1.5 text-[11px] font-medium leading-tight mb-0.5 cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:scale-[1.02] border-l-[3px] bg-vox-primary/10 text-vox-primary backdrop-blur-sm"
-                            style={{ borderLeftColor: a.agenda?.color || "#14B8A6" }}
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold tabular-nums text-[10px] opacity-70">{formatTime(a.date)}</span>
-                              <span className="truncate">{a.patient.name}</span>
-                            </div>
-                            {a.procedures.length > 0 && (
-                              <div className="text-[9px] opacity-60 truncate mt-0.5">
-                                {(a.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name).join(", ")}
-                              </div>
-                            )}
+                      {(() => {
+                        const overlapLayout = calculateOverlapLayout(dayAppts)
+                        return (
+                          <div className="relative z-[1]" style={{ minHeight: dayAppts.length > 0 ? "3rem" : undefined }}>
+                            {dayAppts.map((a) => {
+                              const pos = overlapLayout.get(a.id) || { column: 0, totalColumns: 1 }
+                              const agendaColor = a.agenda?.color || "#14B8A6"
+                              return (
+                                <DraggableAppointment key={a.id} appointment={a}>
+                                  <div
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setSelectedAppointment({
+                                        appointment: a,
+                                        position: { top: e.clientY, left: e.clientX },
+                                      })
+                                    }}
+                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium leading-tight cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:scale-[1.02] border-l-[3px] backdrop-blur-sm ${pos.totalColumns > 1 ? "absolute top-0" : ""}`}
+                                    style={{
+                                      borderLeftColor: agendaColor,
+                                      backgroundColor: agendaColorBg(a.agenda?.color, 0.1),
+                                      color: agendaColor,
+                                      ...(pos.totalColumns > 1
+                                        ? {
+                                            left: `${(pos.column / pos.totalColumns) * 100}%`,
+                                            width: `${(1 / pos.totalColumns) * 100}%`,
+                                          }
+                                        : { marginBottom: "2px" }),
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold tabular-nums text-[10px] opacity-70">{formatTime(a.date)}</span>
+                                      <span className="truncate">{a.patient.name}</span>
+                                    </div>
+                                    {a.procedures.length > 0 && (
+                                      <div className="text-[9px] opacity-60 truncate mt-0.5">
+                                        {(a.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name).join(", ")}
+                                      </div>
+                                    )}
+                                  </div>
+                                </DraggableAppointment>
+                              )
+                            })}
                           </div>
-                        </DraggableAppointment>
-                      ))}
+                        )
+                      })()}
                     </DroppableCell>
                   )
                 })}

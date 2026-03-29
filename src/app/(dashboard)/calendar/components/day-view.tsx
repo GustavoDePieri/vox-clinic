@@ -5,7 +5,7 @@ import { Ban, Repeat, Trash2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import type { AppointmentItem } from "../types"
 import type { BlockedSlotItem } from "@/server/actions/blocked-slot"
-import { HOURS, buildAppointmentIndex, getBlockedSlotsForHour } from "../helpers"
+import { HOURS, buildAppointmentIndex, getBlockedSlotsForHour, calculateOverlapLayout, agendaColorBg } from "../helpers"
 import { AppointmentCard } from "./appointment-card"
 import { NowLineDay } from "./now-line-day"
 
@@ -55,15 +55,35 @@ function DayViewInner({
                     </button>
                   </div>
                 ))}
-                {hourAppts.map((a) => (
-                  <AppointmentCard
-                    key={a.id}
-                    appointment={a}
-                    onStatusChange={onStatusChange}
-                    onDelete={onDelete}
-                    compact
-                  />
-                ))}
+                {(() => {
+                  const overlapLayout = calculateOverlapLayout(hourAppts)
+                  return (
+                    <div className="relative" style={{ minHeight: hourAppts.length > 1 ? "3rem" : undefined }}>
+                      {hourAppts.map((a) => {
+                        const pos = overlapLayout.get(a.id) || { column: 0, totalColumns: 1 }
+                        return (
+                          <div
+                            key={a.id}
+                            className={pos.totalColumns > 1 ? "absolute top-0" : ""}
+                            style={pos.totalColumns > 1 ? {
+                              left: `${(pos.column / pos.totalColumns) * 100}%`,
+                              width: `${(1 / pos.totalColumns) * 100}%`,
+                              paddingRight: "2px",
+                            } : undefined}
+                          >
+                            <AppointmentCard
+                              appointment={a}
+                              onStatusChange={onStatusChange}
+                              onDelete={onDelete}
+                              compact
+                              agendaColor={a.agenda?.color}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           )

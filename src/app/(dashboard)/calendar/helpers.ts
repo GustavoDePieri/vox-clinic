@@ -112,6 +112,70 @@ export function getBlockedSlotsForHour(blockedSlots: BlockedSlotItem[], date: Da
   })
 }
 
+// Convert hex color to rgba with given opacity (for agenda-colored backgrounds)
+export function agendaColorBg(hex: string | undefined, opacity = 0.1): string {
+  if (!hex || hex.length < 7) return `rgba(20, 184, 166, ${opacity})` // default teal
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`
+}
+
+// Default appointment duration in ms (30 min)
+const DEFAULT_DURATION_MS = 30 * 60 * 1000
+
+function getAppointmentEndMs(a: AppointmentItem): number {
+  return new Date(a.date).getTime() + DEFAULT_DURATION_MS
+}
+
+export interface OverlapPosition {
+  column: number
+  totalColumns: number
+}
+
+// Calculate side-by-side layout for overlapping appointments within an hour bucket.
+// Returns a Map from appointment id to its column position and total columns in its group.
+export function calculateOverlapLayout(appointments: AppointmentItem[]): Map<string, OverlapPosition> {
+  const layout = new Map<string, OverlapPosition>()
+  if (appointments.length === 0) return layout
+
+  // Sort by start time, then by id for stable ordering
+  const sorted = [...appointments].sort((a, b) => {
+    const diff = new Date(a.date).getTime() - new Date(b.date).getTime()
+    return diff !== 0 ? diff : a.id.localeCompare(b.id)
+  })
+
+  // Group overlapping appointments
+  const groups: AppointmentItem[][] = []
+  for (const appt of sorted) {
+    const apptStart = new Date(appt.date).getTime()
+
+    let placed = false
+    for (const group of groups) {
+      // Check if this appointment overlaps with any in the group
+      const groupEnd = Math.max(...group.map(getAppointmentEndMs))
+      if (apptStart < groupEnd) {
+        group.push(appt)
+        placed = true
+        break
+      }
+    }
+    if (!placed) {
+      groups.push([appt])
+    }
+  }
+
+  // Assign columns within each group
+  for (const group of groups) {
+    const totalColumns = group.length
+    group.forEach((appt, idx) => {
+      layout.set(appt.id, { column: idx, totalColumns })
+    })
+  }
+
+  return layout
+}
+
 // Get blocked slots for a full date
 export function getBlockedSlotsForDate(blockedSlots: BlockedSlotItem[], date: Date): BlockedSlotItem[] {
   return blockedSlots.filter((s) => {

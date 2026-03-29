@@ -66,17 +66,31 @@ function MonthViewInner({
                   {day}
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  {dayBlocked.slice(0, 1).map((s, i) => (
-                    <div key={`block-${s.id}-${i}`} className="hidden sm:flex items-center gap-1 truncate text-[10px] px-1.5 py-0.5 rounded-md bg-muted/60 text-muted-foreground">
-                      <Ban className="size-2.5 shrink-0" />
-                      {s.title}
-                    </div>
-                  ))}
-                  {dayAppts.slice(0, dayBlocked.length > 0 ? 1 : 2).map((a) => (
-                    <div key={a.id} className={`hidden sm:block truncate text-[10px] px-1.5 py-0.5 rounded-md ${STATUS_CONFIG[a.status]?.className ?? "bg-muted"}`}>
-                      {formatTime(a.date)} {a.patient.name.split(" ")[0]}
-                    </div>
-                  ))}
+                  {(() => {
+                    const allItems: ({ type: "blocked"; item: typeof dayBlocked[0] } | { type: "appt"; item: typeof dayAppts[0] })[] = [
+                      ...dayBlocked.map((s) => ({ type: "blocked" as const, item: s })),
+                      ...dayAppts.map((a) => ({ type: "appt" as const, item: a })),
+                    ]
+                    const visible = allItems.slice(0, 3)
+                    const remaining = allItems.length - visible.length
+                    return (
+                      <>
+                        {visible.map((entry, i) =>
+                          entry.type === "blocked" ? (
+                            <div key={`block-${entry.item.id}-${i}`} className="hidden sm:flex items-center gap-1 truncate text-[10px] px-1.5 py-0.5 rounded-md bg-muted/60 text-muted-foreground">
+                              <Ban className="size-2.5 shrink-0" />
+                              {entry.item.title}
+                            </div>
+                          ) : (
+                            <div key={entry.item.id} className={`hidden sm:block truncate text-[10px] px-1.5 py-0.5 rounded-md ${STATUS_CONFIG[entry.item.status]?.className ?? "bg-muted"}`}>
+                              {formatTime(entry.item.date)} {entry.item.patient.name.split(" ")[0]}
+                            </div>
+                          )
+                        )}
+                        {remaining > 0 && <span className="hidden sm:block text-[10px] text-muted-foreground px-1.5">+{remaining} mais</span>}
+                      </>
+                    )
+                  })()}
                   {(dayAppts.length > 0 || dayBlocked.length > 0) && (
                     <div className="flex gap-0.5 sm:hidden mt-0.5">
                       {dayBlocked.length > 0 && <div className="size-1.5 rounded-full bg-muted-foreground/40" />}
@@ -86,7 +100,6 @@ function MonthViewInner({
                       {dayAppts.length > 3 && <span className="text-[9px] text-muted-foreground">+{dayAppts.length - 3}</span>}
                     </div>
                   )}
-                  {(dayAppts.length + dayBlocked.length) > 2 && <span className="hidden sm:block text-[10px] text-muted-foreground px-1.5">+{dayAppts.length + dayBlocked.length - 2} mais</span>}
                 </div>
               </button>
             )

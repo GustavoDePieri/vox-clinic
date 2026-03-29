@@ -85,7 +85,13 @@ export default function CalendarPage() {
 
   // Agendas
   const [agendas, setAgendas] = useState<AgendaItem[]>([])
-  const [selectedAgendaIds, setSelectedAgendaIds] = useState<string[]>([])
+  const [selectedAgendaIds, setSelectedAgendaIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return []
+    try {
+      const saved = localStorage.getItem("vox-calendar-agendas")
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
   const defaultAgendaId = agendas.find((a) => a.isDefault)?.id || agendas[0]?.id || ""
 
   // Waitlist
@@ -116,6 +122,22 @@ export default function CalendarPage() {
     }
     return [new Date(year, month, 1), new Date(year, month + 1, 0, 23, 59, 59, 999)]
   }, [view, currentDate, year, month])
+
+  // Persist agenda filter to localStorage
+  useEffect(() => {
+    localStorage.setItem("vox-calendar-agendas", JSON.stringify(selectedAgendaIds))
+  }, [selectedAgendaIds])
+
+  // Validate restored agenda IDs against loaded agendas
+  useEffect(() => {
+    if (agendas.length === 0) return
+    setSelectedAgendaIds((prev) => {
+      if (prev.length === 0) return prev
+      const valid = prev.filter((id) => agendas.some((a) => a.id === id))
+      if (valid.length === prev.length) return prev
+      return valid
+    })
+  }, [agendas])
 
   const loadAgendas = useCallback(async () => {
     try {
