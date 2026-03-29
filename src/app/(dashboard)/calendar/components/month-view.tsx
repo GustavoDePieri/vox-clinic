@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import type { AppointmentItem } from "../types"
 import type { BlockedSlotItem } from "@/server/actions/blocked-slot"
-import { DAY_NAMES, MONTH_NAMES, STATUS_CONFIG, STATUS_DOT, formatTime, isToday, getMonthGrid, getBlockedSlotsForDate, buildDayIndex } from "../helpers"
+import { DAY_NAMES, MONTH_NAMES, STATUS_DOT, formatTime, isToday, getMonthGrid, getBlockedSlotsForDate, buildDayIndex, agendaColorBg } from "../helpers"
 import { AppointmentCard } from "./appointment-card"
 import { BlockedSlotPopover } from "./blocked-slot-popover"
+
+const MAX_VISIBLE_ITEMS = 4
 
 function MonthViewInner({
   year,
@@ -54,74 +56,105 @@ function MonthViewInner({
   return (
     <>
       <Card className="rounded-2xl border border-border/40 overflow-hidden">
+        {/* Day headers */}
         <div className="grid grid-cols-7 border-b border-border/40">
           {DAY_NAMES.map((d) => (
             <div key={d} className="py-2.5 text-center text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{d}</div>
           ))}
         </div>
+
+        {/* Grid cells */}
         <div className="grid grid-cols-7">
           {cells.map((day, i) => {
-            if (day === null) return <div key={`empty-${i}`} className="min-h-[80px] sm:min-h-[100px] border-b border-r border-border/20 bg-muted/20" />
+            if (day === null) return <div key={`empty-${i}`} className="min-h-[80px] sm:min-h-[110px] border-b border-r border-border/20 bg-muted/10" />
+
             const dayDate = new Date(year, month, day)
             const dayAppts = getApptsForDay(day)
             const dayBlocked = getBlockedSlotsForDate(blockedSlots, dayDate)
             const today = isToday(dayDate)
             const isSelected = selectedDay === day
+            const totalItems = dayBlocked.length + dayAppts.length
+
+            const allItems: ({ type: "blocked"; item: typeof dayBlocked[0] } | { type: "appt"; item: typeof dayAppts[0] })[] = [
+              ...dayBlocked.map((s) => ({ type: "blocked" as const, item: s })),
+              ...dayAppts.map((a) => ({ type: "appt" as const, item: a })),
+            ]
+            const visible = allItems.slice(0, MAX_VISIBLE_ITEMS)
+            const remaining = allItems.length - visible.length
+
             return (
               <button
                 key={`day-${day}`}
                 onClick={() => onSelectDay(selectedDay === day ? null : day)}
-                className={`min-h-[80px] sm:min-h-[100px] border-b border-r border-border/20 p-1.5 text-left transition-all hover:bg-muted/40 ${isSelected ? "bg-vox-primary/5 ring-1 ring-vox-primary/30" : ""}`}
+                className={`min-h-[80px] sm:min-h-[110px] border-b border-r border-border/20 p-1.5 text-left transition-all hover:bg-muted/30 cursor-pointer ${isSelected ? "bg-vox-primary/5 ring-1 ring-inset ring-vox-primary/30" : ""}`}
               >
-                <div className={`flex items-center justify-center size-7 rounded-full text-xs font-medium mb-1 ${today ? "bg-vox-primary text-white" : "text-foreground"}`}>
-                  {day}
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  {(() => {
-                    const allItems: ({ type: "blocked"; item: typeof dayBlocked[0] } | { type: "appt"; item: typeof dayAppts[0] })[] = [
-                      ...dayBlocked.map((s) => ({ type: "blocked" as const, item: s })),
-                      ...dayAppts.map((a) => ({ type: "appt" as const, item: a })),
-                    ]
-                    const visible = allItems.slice(0, 3)
-                    const remaining = allItems.length - visible.length
-                    return (
-                      <>
-                        {visible.map((entry, i) =>
-                          entry.type === "blocked" ? (
-                            <div
-                              key={`block-${entry.item.id}-${i}`}
-                              className="hidden sm:flex items-center gap-1 truncate text-[10px] px-1.5 py-0.5 rounded-md bg-muted/60 text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
-                              onClick={(e) => handleBlockedSlotClick(e, entry.item)}
-                            >
-                              <Ban className="size-2.5 shrink-0" />
-                              {entry.item.title}
-                            </div>
-                          ) : (
-                            <div key={entry.item.id} className={`hidden sm:block truncate text-[10px] px-1.5 py-0.5 rounded-md ${STATUS_CONFIG[entry.item.status]?.className ?? "bg-muted"}`}>
-                              {formatTime(entry.item.date)} {entry.item.patient.name.split(" ")[0]}
-                            </div>
-                          )
-                        )}
-                        {remaining > 0 && <span className="hidden sm:block text-[10px] text-muted-foreground px-1.5">+{remaining} mais</span>}
-                      </>
-                    )
-                  })()}
-                  {(dayAppts.length > 0 || dayBlocked.length > 0) && (
-                    <div className="flex gap-0.5 sm:hidden mt-0.5">
-                      {dayBlocked.length > 0 && <div className="size-1.5 rounded-full bg-muted-foreground/40" />}
-                      {dayAppts.slice(0, 3).map((a) => (
-                        <div key={a.id} className={`size-1.5 rounded-full ${STATUS_DOT[a.status] ?? "bg-muted-foreground"}`} />
-                      ))}
-                      {dayAppts.length > 3 && <span className="text-[9px] text-muted-foreground">+{dayAppts.length - 3}</span>}
-                    </div>
+                {/* Day number + count badge */}
+                <div className="flex items-center gap-1 mb-1">
+                  <div className={`flex items-center justify-center size-7 rounded-full text-xs font-semibold ${today ? "bg-vox-primary text-white shadow-sm shadow-vox-primary/25" : "text-foreground"}`}>
+                    {day}
+                  </div>
+                  {dayAppts.length > 0 && (
+                    <span className={`hidden sm:inline-flex text-[9px] font-semibold tabular-nums ${today ? "text-vox-primary" : "text-muted-foreground"}`}>
+                      {dayAppts.length}
+                    </span>
                   )}
                 </div>
+
+                {/* Desktop: appointment pills */}
+                <div className="hidden sm:flex flex-col gap-px">
+                  {visible.map((entry, idx) =>
+                    entry.type === "blocked" ? (
+                      <div
+                        key={`block-${entry.item.id}-${idx}`}
+                        className="flex items-center gap-1 truncate text-[10px] px-1.5 py-[3px] rounded-md bg-muted/60 border border-border/30 text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={(e) => handleBlockedSlotClick(e, entry.item)}
+                      >
+                        <Ban className="size-2 shrink-0 opacity-60" />
+                        <span className="truncate">{entry.item.title}</span>
+                      </div>
+                    ) : (
+                      <div
+                        key={entry.item.id}
+                        className="truncate text-[10px] px-1.5 py-[3px] rounded-md border-l-2 font-medium"
+                        style={{
+                          borderLeftColor: entry.item.agenda?.color || "#14B8A6",
+                          backgroundColor: agendaColorBg(entry.item.agenda?.color, 0.15),
+                          color: entry.item.agenda?.color || "#14B8A6",
+                        }}
+                      >
+                        <span className="opacity-70 tabular-nums">{formatTime(entry.item.date)}</span>{" "}
+                        {entry.item.patient.name}
+                      </div>
+                    )
+                  )}
+                  {remaining > 0 && (
+                    <span className="text-[10px] font-medium text-vox-primary px-1.5">
+                      +{remaining} mais
+                    </span>
+                  )}
+                </div>
+
+                {/* Mobile: dot indicators */}
+                {totalItems > 0 && (
+                  <div className="flex gap-0.5 sm:hidden mt-0.5 flex-wrap">
+                    {dayBlocked.length > 0 && <div className="size-1.5 rounded-full bg-muted-foreground/40" />}
+                    {dayAppts.slice(0, 4).map((a) => (
+                      <div
+                        key={a.id}
+                        className="size-1.5 rounded-full"
+                        style={{ backgroundColor: a.agenda?.color || "#14B8A6" }}
+                      />
+                    ))}
+                    {dayAppts.length > 4 && <span className="text-[8px] text-muted-foreground leading-none">+{dayAppts.length - 4}</span>}
+                  </div>
+                )}
               </button>
             )
           })}
         </div>
       </Card>
 
+      {/* Selected day detail panel */}
       {selectedDay !== null && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground">{selectedDay} de {MONTH_NAMES[month]} de {year}</h2>

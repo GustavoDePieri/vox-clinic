@@ -7,6 +7,7 @@ import {
   Users,
   Mic,
   CalendarDays,
+  ClipboardList,
   MessageCircle,
   DollarSign,
   BarChart3,
@@ -30,10 +31,11 @@ const mainNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: null, tourId: "nav-dashboard" },
   { href: "/patients", label: "Pacientes", icon: Users, permission: "patients.list", tourId: "nav-pacientes" },
   { href: "/calendar", label: "Agenda", icon: CalendarDays, permission: "appointments.view", tourId: "nav-agenda" },
+  { href: "/appointments", label: "Atendimentos", icon: ClipboardList, permission: "appointments.view", tourId: "nav-atendimentos" },
   { href: "/mensagens", label: "Mensagens", icon: MessageCircle, permission: "messaging.view", tourId: "nav-mensagens" },
   { href: "/financial", label: "Financeiro", icon: DollarSign, permission: "financial.view", tourId: "nav-financeiro" },
-  { href: "/reports", label: "Relatorios", icon: BarChart3, permission: "reports.view", tourId: "nav-relatorios" },
-  { href: "/settings", label: "Configuracoes", icon: Settings, permission: "settings.view", tourId: "nav-configuracoes" },
+  { href: "/reports", label: "Relatórios", icon: BarChart3, permission: "reports.view", tourId: "nav-relatorios" },
+  { href: "/settings", label: "Configurações", icon: Settings, permission: "settings.view", tourId: "nav-configuracoes" },
 ]
 
 const actionNav: NavItem[] = [
@@ -82,7 +84,7 @@ export function NavSidebar({ clinicName, role = "owner" }: { clinicName?: string
   const visibleActionNav = actionNav.filter(isVisible)
 
   return (
-    <aside data-testid="nav-sidebar" aria-label="Navegacao principal" className="hidden md:flex w-56 flex-col border-r border-border/40 bg-sidebar">
+    <aside data-testid="nav-sidebar" aria-label="Navegação principal" className="hidden md:flex w-56 flex-col border-r border-border/40 bg-sidebar overflow-y-auto">
       <nav className="flex flex-col gap-0.5 px-3 pt-5">
         <p className="px-3 pb-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
           Menu
@@ -93,7 +95,7 @@ export function NavSidebar({ clinicName, role = "owner" }: { clinicName?: string
       {visibleActionNav.length > 0 && (
         <nav className="flex flex-col gap-0.5 px-3 pt-5">
           <p className="px-3 pb-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-            Acoes
+            Ações
           </p>
           {visibleActionNav.map(renderLink)}
         </nav>

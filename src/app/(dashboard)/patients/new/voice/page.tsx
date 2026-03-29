@@ -2,7 +2,22 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Mic, AlertTriangle, UserCheck, RotateCcw, Check, Loader2 } from "lucide-react"
+import Link from "next/link"
+import {
+  Mic,
+  AlertTriangle,
+  UserCheck,
+  RotateCcw,
+  Check,
+  Loader2,
+  ArrowLeft,
+  User,
+  Phone,
+  FileText,
+  Stethoscope,
+  ShieldAlert,
+  Lightbulb,
+} from "lucide-react"
 import { RecordButton } from "@/components/record-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -145,23 +160,80 @@ export default function VoicePatientPage() {
   // Recording state
   if (state === "recording") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">Novo Paciente por Voz</h1>
-          <p className="text-muted-foreground max-w-md">
-            Fale os dados do paciente: nome, telefone, CPF, procedimentos desejados e observacoes relevantes.
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Back link + title */}
+        <div>
+          <Link
+            href="/patients"
+            className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors mb-3"
+          >
+            <ArrowLeft className="size-3.5" />
+            Pacientes
+          </Link>
+          <h1 className="text-xl font-semibold tracking-tight">Novo Paciente por Voz</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">
+            Grave um áudio descrevendo o paciente. A IA extrai os dados automaticamente.
           </p>
         </div>
 
-        <RecordButton onRecordingComplete={handleRecordingComplete} size="lg" />
+        {/* Main recording area */}
+        <Card className="relative overflow-hidden">
+          <div className="pointer-events-none absolute -right-16 -top-16 size-40 rounded-full bg-vox-primary/[0.06] blur-3xl hidden sm:block" />
+          <CardContent className="flex flex-col items-center py-10 relative">
+            <RecordButton onRecordingComplete={handleRecordingComplete} size="lg" />
+            <p className="text-sm text-muted-foreground mt-4">
+              Toque para gravar, toque novamente para parar
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="text-center text-sm text-muted-foreground max-w-sm space-y-1">
-          <p>Toque para iniciar a gravacao</p>
-          <p>Toque novamente para parar</p>
+        {/* What to say — structured hints */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Lightbulb className="size-4 text-vox-primary" />
+              O que falar?
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { icon: User, label: "Nome completo", example: "Maria da Silva", required: true },
+                { icon: Phone, label: "Telefone", example: "(11) 99999-0000" },
+                { icon: FileText, label: "CPF", example: "123.456.789-00" },
+                { icon: Stethoscope, label: "Procedimentos", example: "Limpeza, clareamento" },
+                { icon: ShieldAlert, label: "Alergias / Alertas", example: "Alergia a penicilina" },
+                { icon: Mic, label: "Observações gerais", example: "Primeira consulta, indicação..." },
+              ].map((item) => (
+                <div key={item.label} className="flex items-start gap-2.5 rounded-xl bg-muted/30 px-3 py-2.5">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-vox-primary/[0.08] shrink-0 mt-0.5">
+                    <item.icon className="size-3.5 text-vox-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold">
+                      {item.label}
+                      {item.required && <span className="text-vox-primary ml-1">*</span>}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground italic truncate">
+                      &ldquo;{item.example}&rdquo;
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Example phrase */}
+        <div className="rounded-xl bg-vox-primary/[0.04] border border-vox-primary/10 px-4 py-3">
+          <p className="text-[12px] font-semibold text-vox-primary mb-1">Exemplo de fala:</p>
+          <p className="text-[12px] text-muted-foreground italic leading-relaxed">
+            &ldquo;Paciente Maria da Silva, telefone 11 99999-0000, CPF 123.456.789-00. Veio para avaliação e limpeza. Tem alergia a dipirona. É a primeira consulta dela.&rdquo;
+          </p>
         </div>
 
         {error && (
-          <Alert variant="destructive" className="max-w-md">
+          <Alert variant="destructive">
             <AlertTriangle className="size-4" />
             <AlertTitle>Erro</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
@@ -174,19 +246,40 @@ export default function VoicePatientPage() {
   // Processing state
   if (state === "processing") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
-        <Loader2 className="size-12 animate-spin text-vox-primary" />
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold">Processando audio...</h2>
-          <p className="text-muted-foreground">Transcrevendo e extraindo dados do paciente</p>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Processando áudio...</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">Transcrevendo e extraindo dados do paciente</p>
         </div>
-        <div className="w-full max-w-md space-y-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
+
+        <Card>
+          <CardContent className="py-10">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex size-16 items-center justify-center rounded-2xl bg-vox-primary/10">
+                <Loader2 className="size-7 animate-spin text-vox-primary" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium">Analisando com IA</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">Isso pode levar alguns segundos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Skeleton preview of what's coming */}
+        <Card>
+          <CardHeader className="pb-2">
+            <Skeleton className="h-5 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }

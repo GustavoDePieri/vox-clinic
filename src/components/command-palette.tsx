@@ -32,9 +32,10 @@ const pages = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, keywords: "painel inicio home" },
   { id: "patients", label: "Pacientes", href: "/patients", icon: Users, keywords: "lista pacientes" },
   { id: "calendar", label: "Agenda", href: "/calendar", icon: CalendarDays, keywords: "calendario consultas agendamento" },
+  { id: "appointments", label: "Atendimentos", href: "/appointments", icon: CalendarDays, keywords: "atendimentos consultas historico lista" },
   { id: "financial", label: "Financeiro", href: "/financial", icon: DollarSign, keywords: "receita faturamento valor" },
-  { id: "reports", label: "Relatorios", href: "/reports", icon: BarChart3, keywords: "relatorios analytics graficos" },
-  { id: "settings", label: "Configuracoes", href: "/settings", icon: Settings, keywords: "config preferencias workspace" },
+  { id: "reports", label: "Relatórios", href: "/reports", icon: BarChart3, keywords: "relatorios analytics graficos" },
+  { id: "settings", label: "Configurações", href: "/settings", icon: Settings, keywords: "config preferencias workspace" },
   { id: "billing", label: "Plano e Assinatura", href: "/settings/billing", icon: CreditCard, keywords: "plano billing assinatura upgrade stripe pagamento" },
 ]
 
@@ -188,8 +189,8 @@ export function CommandPalette() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Buscar pacientes, paginas, acoes..."
-              className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground/60"
+              placeholder="Buscar pacientes, páginas, ações..."
+              className="flex-1 bg-transparent text-[13px] outline-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
               autoComplete="off"
               spellCheck={false}
             />
@@ -252,7 +253,7 @@ export function CommandPalette() {
             {showPages && (
               <div className="mb-1">
                 <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-                  Paginas
+                  Páginas
                 </p>
                 {filteredPages.map((page) => {
                   itemIndex++
@@ -282,7 +283,7 @@ export function CommandPalette() {
             {showActions && (
               <div>
                 <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-                  Acoes
+                  Ações
                 </p>
                 {filteredActions.map((action) => {
                   itemIndex++
@@ -311,7 +312,7 @@ export function CommandPalette() {
             {/* Empty state - no query */}
             {!query && (
               <p className="py-4 text-center text-xs text-muted-foreground/60">
-                Digite para buscar pacientes, paginas ou acoes
+                Digite para buscar pacientes, páginas ou ações
               </p>
             )}
           </div>

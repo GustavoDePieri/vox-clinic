@@ -166,6 +166,8 @@ export default function CalendarPage() {
     }
   }, [])
 
+  const initialLoadDone = useRef(false)
+
   const loadData = useCallback(async (skipCache = false) => {
     const [start, end] = getDateRange()
     const filterIds = selectedAgendaIds.length > 0 ? selectedAgendaIds : undefined
@@ -177,11 +179,16 @@ export default function CalendarPage() {
         setAppointments(cached.appointments)
         setBlockedSlots(cached.blockedSlots)
         setLoading(false)
+        initialLoadDone.current = true
         return
       }
     }
 
-    setLoading(true)
+    // Show loading spinner on initial load or navigation to uncached period
+    // skipCache=true means background refresh (drag/status) — no spinner
+    if (!skipCache) {
+      setLoading(true)
+    }
     try {
       const [apptData, slotData] = await Promise.all([
         getAppointmentsByDateRange(start.toISOString(), end.toISOString(), filterIds),
@@ -195,17 +202,17 @@ export default function CalendarPage() {
       setBlockedSlots([])
     } finally {
       setLoading(false)
+      initialLoadDone.current = true
     }
   }, [getDateRange, selectedAgendaIds])
 
   useEffect(() => { loadAgendas(); loadWaitlistCount(); loadWorkspaceProcedures() }, [loadAgendas, loadWaitlistCount, loadWorkspaceProcedures])
   useEffect(() => { loadData() }, [loadData])
 
-  function reloadData() {
+  /** Background refresh without loading spinner */
+  function refreshInBackground() {
     dataCache.clear()
-    loadAgendas()
     loadData(true)
-    loadWaitlistCount()
   }
 
   // ── Navigation ──
@@ -296,72 +303,125 @@ export default function CalendarPage() {
         toast.success(data.type === "teleconsulta" ? "Teleconsulta agendada" : "Consulta agendada")
       }
       setShowScheduleForm(false)
-      reloadData()
+      // Background refresh — no loading spinner
+      refreshInBackground()
+      loadWaitlistCount()
     } catch (err) {
       toast.error(friendlyError(err, "Erro ao agendar consulta"))
     }
   }
 
   async function handleReschedule(appointmentId: string, newDate: string, forceSchedule = false) {
+    // Optimistic update: move the appointment in local state immediately
+    const previousAppointments = appointments
+    setAppointments((prev) =>
+      prev.map((a) => a.id === appointmentId ? { ...a, date: newDate } : a)
+    )
+
     try {
       const result = await rescheduleAppointment(appointmentId, newDate, forceSchedule)
       if ('error' in result && result.error) {
+        // Revert optimistic update on error
+        setAppointments(previousAppointments)
         if (result.error.startsWith("CONFLICT:")) {
           setConflictMessage(result.error.replace("CONFLICT:", ""))
           conflictResolveRef.current = () => handleReschedule(appointmentId, newDate, true)
         } else { toast.error(result.error) }
         return
       }
-      reloadData()
+      // Background refresh to sync with server (no loading spinner)
+      refreshInBackground()
       toast.success("Consulta reagendada")
     } catch (err) {
+      // Revert optimistic update on failure
+      setAppointments(previousAppointments)
       toast.error(friendlyError(err, "Erro ao reagendar consulta"))
     }
   }
 
   async function handleStatusChange(appointmentId: string, status: string) {
+    // Optimistic update
+    const previousAppointments = appointments
+    setAppointments((prev) =>
+      prev.map((a) => a.id === appointmentId ? { ...a, status } : a)
+    )
+
     try {
       const result = await updateAppointmentStatus(appointmentId, status)
-      if ('error' in result) { toast.error(result.error); return }
-      reloadData()
+      if ('error' in result) {
+        setAppointments(previousAppointments)
+        toast.error(result.error)
+        return
+      }
+      refreshInBackground()
       toast.success("Status atualizado")
     } catch (err) {
+      setAppointments(previousAppointments)
       toast.error(friendlyError(err, "Erro ao atualizar status"))
     }
   }
 
   async function confirmDelete() {
     if (!deleteTarget) return
+    // Optimistic: remove from local state immediately
+    const previousAppointments = appointments
+    const targetId = deleteTarget
+    setAppointments((prev) => prev.filter((a) => a.id !== targetId))
+    setDeleteTarget(null)
+
     try {
-      const result = await deleteAppointment(deleteTarget)
-      if ('error' in result) { toast.error(result.error); return }
-      reloadData()
+      const result = await deleteAppointment(targetId)
+      if ('error' in result) {
+        setAppointments(previousAppointments)
+        toast.error(result.error)
+        return
+      }
+      refreshInBackground()
       toast.success("Consulta excluída")
     } catch (err) {
+      setAppointments(previousAppointments)
       toast.error(friendlyError(err, "Erro ao excluir consulta"))
-    } finally {
-      setDeleteTarget(null)
     }
   }
 
   async function handleDeleteBlockedSlot(id: string) {
+    // Optimistic: remove from local state
+    const previousSlots = blockedSlots
+    setBlockedSlots((prev) => prev.filter((s) => s.id !== id))
+
     try {
       const result = await deleteBlockedSlot(id)
-      if ('error' in result) { toast.error(result.error); return }
-      reloadData()
+      if ('error' in result) {
+        setBlockedSlots(previousSlots)
+        toast.error(result.error)
+        return
+      }
+      refreshInBackground()
       toast.success("Bloqueio removido")
     } catch (err) {
+      setBlockedSlots(previousSlots)
       toast.error(friendlyError(err, "Erro ao remover bloqueio"))
     }
   }
 
   async function handleUpdateBlockedSlot(id: string, data: { title?: string; startDate?: string; endDate?: string; allDay?: boolean; recurring?: string | null }) {
+    // Optimistic: update in local state
+    const previousSlots = blockedSlots
+    setBlockedSlots((prev) =>
+      prev.map((s) => s.id === id ? { ...s, ...data } : s)
+    )
+
     try {
       const result = await updateBlockedSlot(id, data)
-      if ('error' in result) { toast.error(result.error); return }
-      reloadData()
+      if ('error' in result) {
+        setBlockedSlots(previousSlots)
+        toast.error(result.error)
+        return
+      }
+      refreshInBackground()
       toast.success("Bloqueio atualizado")
     } catch (err) {
+      setBlockedSlots(previousSlots)
       toast.error(friendlyError(err, "Erro ao atualizar bloqueio"))
     }
   }
@@ -373,13 +433,13 @@ export default function CalendarPage() {
       {/* ─── Header ─── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={navigatePrev} className="flex size-11 items-center justify-center rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground">
+          <button onClick={navigatePrev} aria-label="Período anterior" className="flex size-11 items-center justify-center rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-vox-primary/50">
             <ChevronLeft className="size-4" />
           </button>
           <h1 className="text-base font-semibold tracking-tight min-w-[200px] text-center">
             {getTitle()}
           </h1>
-          <button onClick={navigateNext} className="flex size-11 items-center justify-center rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground">
+          <button onClick={navigateNext} aria-label="Próximo período" className="flex size-11 items-center justify-center rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-vox-primary/50">
             <ChevronRight className="size-4" />
           </button>
           <Button variant="outline" size="sm" onClick={goToday} className="ml-1 text-[11px] h-7 px-2.5">
@@ -391,15 +451,17 @@ export default function CalendarPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl bg-muted/50 p-0.5">
+          <div className="flex rounded-xl bg-muted/50 p-0.5" role="group" aria-label="Modo de visualização">
             {([
               { key: "day" as const, label: "Dia", icon: Sun },
               { key: "week" as const, label: "Semana", icon: CalendarIcon },
-              { key: "month" as const, label: "Mes", icon: CalendarDays },
+              { key: "month" as const, label: "Mês", icon: CalendarDays },
               { key: "list" as const, label: "Lista", icon: List },
             ] as const).map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
+                aria-pressed={view === key}
+                aria-label={`Visualização por ${label}`}
                 onClick={() => {
                   setView(key)
                   if ((key === "month" || key === "list") && (view === "week" || view === "day")) {
@@ -410,7 +472,7 @@ export default function CalendarPage() {
                     setCurrentDate(new Date(year, month, selectedDay ?? new Date().getDate()))
                   }
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-vox-primary/50 ${
                   view === key ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -503,7 +565,8 @@ export default function CalendarPage() {
               const result = await createBlockedSlot(data)
               if ('error' in result) { toast.error(result.error); return }
               setShowBlockForm(false)
-              reloadData()
+              dataCache.clear()
+              loadData(true)
               toast.success("Horário bloqueado")
             } catch (err) {
               toast.error(friendlyError(err, "Erro ao bloquear horario"))
@@ -514,7 +577,7 @@ export default function CalendarPage() {
       )}
 
       {/* ─── Loading ─── */}
-      {loading && (
+      {loading && !initialLoadDone.current && (
         <div data-testid="loading-calendar" className="flex flex-col items-center justify-center py-16 gap-3">
           <Loader2 className="size-5 animate-spin text-vox-primary" />
           <p className="text-xs text-muted-foreground">Carregando agenda...</p>
@@ -522,69 +585,82 @@ export default function CalendarPage() {
       )}
 
       {/* ─── Views ─── */}
-      {!loading && view === "week" && (
-        <WeekView
-          weekDays={weekDays}
-          appointments={appointments}
-          blockedSlots={blockedSlots}
-          onReschedule={handleReschedule}
-          onStatusChange={handleStatusChange}
-          onDelete={(id) => setDeleteTarget(id)}
-          onDeleteBlockedSlot={handleDeleteBlockedSlot}
-          onUpdateBlockedSlot={handleUpdateBlockedSlot}
-        />
-      )}
+      {/* Views stay mounted during navigation reloads — only hidden on initial load */}
+      <div className={`relative ${loading && !initialLoadDone.current ? "hidden" : ""}`}>
+        {/* Subtle inline loading indicator for navigation between periods */}
+        {loading && initialLoadDone.current && (
+          <div className="absolute inset-x-0 top-0 z-30 flex justify-center py-2 pointer-events-none">
+            <div className="flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-sm border border-border/50 px-3 py-1.5 shadow-sm">
+              <Loader2 className="size-3 animate-spin text-vox-primary" />
+              <span className="text-[11px] text-muted-foreground font-medium">Atualizando...</span>
+            </div>
+          </div>
+        )}
 
-      {!loading && view === "day" && (
-        <DayView
-          currentDate={currentDate}
-          appointments={appointments}
-          blockedSlots={blockedSlots}
-          onStatusChange={handleStatusChange}
-          onDelete={(id) => setDeleteTarget(id)}
-          onDeleteBlockedSlot={handleDeleteBlockedSlot}
-          onUpdateBlockedSlot={handleUpdateBlockedSlot}
-        />
-      )}
+        {view === "week" && (
+          <WeekView
+            weekDays={weekDays}
+            appointments={appointments}
+            blockedSlots={blockedSlots}
+            onReschedule={handleReschedule}
+            onStatusChange={handleStatusChange}
+            onDelete={(id) => setDeleteTarget(id)}
+            onDeleteBlockedSlot={handleDeleteBlockedSlot}
+            onUpdateBlockedSlot={handleUpdateBlockedSlot}
+          />
+        )}
 
-      {!loading && view === "month" && (
-        <MonthView
-          year={year}
-          month={month}
-          appointments={appointments}
-          blockedSlots={blockedSlots}
-          selectedDay={selectedDay}
-          onSelectDay={setSelectedDay}
-          onStatusChange={handleStatusChange}
-          onDelete={(id) => setDeleteTarget(id)}
-          onDeleteBlockedSlot={handleDeleteBlockedSlot}
-          onUpdateBlockedSlot={handleUpdateBlockedSlot}
-          onScheduleForDay={(day) => {
-            setScheduleDefaultDate(`${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
-            setShowScheduleForm(true)
-          }}
-        />
-      )}
+        {view === "day" && (
+          <DayView
+            currentDate={currentDate}
+            appointments={appointments}
+            blockedSlots={blockedSlots}
+            onStatusChange={handleStatusChange}
+            onDelete={(id) => setDeleteTarget(id)}
+            onDeleteBlockedSlot={handleDeleteBlockedSlot}
+            onUpdateBlockedSlot={handleUpdateBlockedSlot}
+          />
+        )}
 
-      {!loading && view === "list" && (
-        <ListView
-          appointments={appointments}
-          onStatusChange={handleStatusChange}
-          onDelete={(id) => setDeleteTarget(id)}
-          onShowSchedule={() => setShowScheduleForm(true)}
-        />
-      )}
+        {view === "month" && (
+          <MonthView
+            year={year}
+            month={month}
+            appointments={appointments}
+            blockedSlots={blockedSlots}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+            onStatusChange={handleStatusChange}
+            onDelete={(id) => setDeleteTarget(id)}
+            onDeleteBlockedSlot={handleDeleteBlockedSlot}
+            onUpdateBlockedSlot={handleUpdateBlockedSlot}
+            onScheduleForDay={(day) => {
+              setScheduleDefaultDate(`${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`)
+              setShowScheduleForm(true)
+            }}
+          />
+        )}
+
+        {view === "list" && (
+          <ListView
+            appointments={appointments}
+            onStatusChange={handleStatusChange}
+            onDelete={(id) => setDeleteTarget(id)}
+            onShowSchedule={() => setShowScheduleForm(true)}
+          />
+        )}
+      </div>
 
       {!loading && appointments.length === 0 && blockedSlots.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-16 text-center">
           <div className="mx-auto mb-1 flex size-14 items-center justify-center rounded-2xl bg-muted/50">
             <CalendarDays className="size-6 text-muted-foreground/40" />
           </div>
-          <p className="text-sm font-medium text-muted-foreground">Sem consultas neste periodo</p>
-          <p className="text-xs text-muted-foreground/70">Agende uma consulta para comecar</p>
+          <p className="text-sm font-medium text-muted-foreground">Sem consultas neste período</p>
+          <p className="text-xs text-muted-foreground/70">Agende uma consulta para começar</p>
           <button
             onClick={() => { setScheduleDefaultDate(""); setShowScheduleForm(true) }}
-            className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-vox-primary hover:text-vox-primary/80 rounded-lg px-3 py-1.5 hover:bg-vox-primary/5 transition-colors"
+            className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-vox-primary hover:text-vox-primary/80 rounded-lg px-3 py-1.5 hover:bg-vox-primary/5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-vox-primary/50 focus-visible:ring-offset-2"
           >
             <Plus className="size-3" />
             Agendar consulta
