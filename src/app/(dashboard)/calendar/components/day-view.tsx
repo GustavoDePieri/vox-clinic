@@ -55,15 +55,21 @@ function DayViewInner({
                     </button>
                   </div>
                 ))}
-                {hourAppts.map((a) => (
-                  <AppointmentCard
-                    key={a.id}
-                    appointment={a}
-                    onStatusChange={onStatusChange}
-                    onDelete={onDelete}
-                    compact
-                  />
-                ))}
+                {/* Side-by-side layout for concurrent appointments */}
+                {hourAppts.length > 0 && (
+                  <div className="flex gap-1">
+                    {hourAppts.map((a) => (
+                      <div key={a.id} className="flex-1 min-w-0">
+                        <AppointmentCard
+                          appointment={a}
+                          onStatusChange={onStatusChange}
+                          onDelete={onDelete}
+                          compact
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )

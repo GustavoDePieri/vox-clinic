@@ -264,31 +264,39 @@ function WeekViewInner({
                           {hourBlocked[0].title}
                         </div>
                       )}
-                      {dayAppts.map((a) => (
-                        <DraggableAppointment key={a.id} appointment={a}>
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedAppointment({
-                                appointment: a,
-                                position: { top: e.clientY, left: e.clientX },
-                              })
-                            }}
-                            className="relative z-[1] block rounded-lg px-2 py-1.5 text-[11px] font-medium leading-tight mb-0.5 cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:scale-[1.02] border-l-[3px] bg-vox-primary/10 text-vox-primary backdrop-blur-sm"
-                            style={{ borderLeftColor: a.agenda?.color || "#14B8A6" }}
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold tabular-nums text-[10px] opacity-70">{formatTime(a.date)}</span>
-                              <span className="truncate">{a.patient.name}</span>
-                            </div>
-                            {a.procedures.length > 0 && (
-                              <div className="text-[9px] opacity-60 truncate mt-0.5">
-                                {(a.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name).join(", ")}
+                      {dayAppts.map((a, index) => {
+                        const total = dayAppts.length
+                        const widthPct = total > 1 ? (100 / total) : 100
+                        const leftPct = total > 1 ? (index * 100 / total) : 0
+                        return (
+                          <DraggableAppointment key={a.id} appointment={a}>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedAppointment({
+                                  appointment: a,
+                                  position: { top: e.clientY, left: e.clientX },
+                                })
+                              }}
+                              className={`z-[1] rounded-lg px-1.5 py-1.5 text-[11px] font-medium leading-tight cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:z-10 border-l-[3px] bg-vox-primary/10 text-vox-primary backdrop-blur-sm ${total > 1 ? "absolute" : "relative"}`}
+                              style={{
+                                borderLeftColor: a.agenda?.color || "#14B8A6",
+                                ...(total > 1 ? { left: `${leftPct}%`, width: `${widthPct}%`, top: 2, bottom: 2 } : {}),
+                              }}
+                            >
+                              <div className="flex items-center gap-1 overflow-hidden">
+                                <span className="font-bold tabular-nums text-[10px] opacity-70 shrink-0">{formatTime(a.date)}</span>
+                                <span className="truncate">{a.patient.name}</span>
                               </div>
-                            )}
-                          </div>
-                        </DraggableAppointment>
-                      ))}
+                              {total <= 2 && a.procedures.length > 0 && (
+                                <div className="text-[9px] opacity-60 truncate mt-0.5">
+                                  {(a.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name).join(", ")}
+                                </div>
+                              )}
+                            </div>
+                          </DraggableAppointment>
+                        )
+                      })}
                     </DroppableCell>
                   )
                 })}
