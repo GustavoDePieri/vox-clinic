@@ -67,14 +67,11 @@ function AppointmentPopoverInner({
       <div className="fixed inset-0 z-40" onClick={onClose} />
       {/* Popover */}
       <div
-        className="fixed z-50 w-72 rounded-2xl border border-border/60 shadow-xl animate-in fade-in-0 zoom-in-95 duration-150 border-l-[3px]"
+        className="fixed z-50 w-72 rounded-2xl border border-border/60 bg-popover shadow-xl animate-in fade-in-0 zoom-in-95 duration-150 border-l-[3px]"
         style={{
           top: Math.min(position.top, window.innerHeight - 320),
           left: Math.min(position.left, window.innerWidth - 300),
           borderLeftColor: appointment.agenda?.color || "transparent",
-          backgroundColor: appointment.agenda?.color
-            ? agendaColorBg(appointment.agenda.color, 0.05)
-            : undefined,
         }}
       >
         <div className="p-4 space-y-3">
