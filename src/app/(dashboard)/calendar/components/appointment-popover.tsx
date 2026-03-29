@@ -6,7 +6,7 @@ import { Clock, Check, XCircle, AlertTriangle, X, ExternalLink, User, Video, Loa
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import type { AppointmentItem } from "../types"
-import { formatTime, STATUS_CONFIG } from "../helpers"
+import { formatTime, STATUS_CONFIG, agendaColorBg } from "../helpers"
 import { createTeleconsultaRoom } from "@/server/actions/teleconsulta"
 
 function StatusBadge({ status }: { status: string }) {
@@ -67,10 +67,14 @@ function AppointmentPopoverInner({
       <div className="fixed inset-0 z-40" onClick={onClose} />
       {/* Popover */}
       <div
-        className="fixed z-50 w-72 rounded-2xl border border-border/60 bg-background shadow-xl animate-in fade-in-0 zoom-in-95 duration-150"
+        className="fixed z-50 w-72 rounded-2xl border border-border/60 shadow-xl animate-in fade-in-0 zoom-in-95 duration-150 border-l-[3px]"
         style={{
           top: Math.min(position.top, window.innerHeight - 320),
           left: Math.min(position.left, window.innerWidth - 300),
+          borderLeftColor: appointment.agenda?.color || "transparent",
+          backgroundColor: appointment.agenda?.color
+            ? agendaColorBg(appointment.agenda.color, 0.05)
+            : undefined,
         }}
       >
         <div className="p-4 space-y-3">

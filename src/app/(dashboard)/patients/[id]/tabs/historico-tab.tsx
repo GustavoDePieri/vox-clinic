@@ -162,7 +162,7 @@ export default function HistoricoTab({
                           )}
                           {apt.price != null && apt.price > 0 && (
                             <span className="text-sm font-medium text-vox-primary">
-                              R$ {apt.price.toFixed(2).replace(".", ",")}
+                              R$ {(apt.price / 100).toFixed(2).replace(".", ",")}
                             </span>
                           )}
                           {formsByAppointment[apt.id] && formsByAppointment[apt.id].length > 0 && (
@@ -289,7 +289,7 @@ export default function HistoricoTab({
                         <div className="space-y-1">
                           <p className="text-xs font-medium text-muted-foreground">Valor</p>
                           <p className="text-sm font-medium text-vox-primary">
-                            R$ {apt.price.toFixed(2).replace(".", ",")}
+                            R$ {(apt.price / 100).toFixed(2).replace(".", ",")}
                           </p>
                         </div>
                       )}

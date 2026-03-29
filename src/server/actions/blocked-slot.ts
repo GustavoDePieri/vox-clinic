@@ -68,6 +68,9 @@ export async function getBlockedSlots(startDate: string, endDate: string, agenda
   }))
 
   // Expand recurring weekly slots into all occurrences within the range
+  const MAX_PER_SLOT = 52
+  const MAX_TOTAL = 200
+
   for (const slot of recurringSlots) {
     const slotStart = new Date(slot.startDate)
     const slotEnd = new Date(slot.endDate)
@@ -75,9 +78,12 @@ export async function getBlockedSlots(startDate: string, endDate: string, agenda
 
     // Find the first occurrence on or after rangeStart
     const diffMs = rangeStart.getTime() - slotStart.getTime()
-    let weeksOffset = Math.max(0, Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)))
+    const weeksOffset = Math.max(0, Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)))
 
-    for (let i = 0; i < 200; i++) { // safety limit
+    let slotCount = 0
+    for (let i = 0; i < MAX_PER_SLOT; i++) {
+      if (results.length >= MAX_TOTAL) break
+
       const occurrenceStart = new Date(slotStart.getTime() + (weeksOffset + i) * 7 * 24 * 60 * 60 * 1000)
       const occurrenceEnd = new Date(occurrenceStart.getTime() + durationMs)
 
@@ -94,8 +100,11 @@ export async function getBlockedSlots(startDate: string, endDate: string, agenda
           isExpanded: true,
           agendaId: slot.agendaId,
         })
+        slotCount++
       }
     }
+
+    if (results.length >= MAX_TOTAL) break
   }
 
   return results.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())

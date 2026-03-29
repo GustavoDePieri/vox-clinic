@@ -18,7 +18,7 @@ import { Ban } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import type { AppointmentItem } from "../types"
 import type { BlockedSlotItem } from "@/server/actions/blocked-slot"
-import { HOURS, DAY_NAMES, STATUS_CONFIG, formatTime, isToday, buildAppointmentIndex, getBlockedSlotsForHour } from "../helpers"
+import { HOURS, DAY_NAMES, STATUS_CONFIG, formatTime, isToday, buildAppointmentIndex, getBlockedSlotsForHour, calculateOverlapLayout, agendaColorBg } from "../helpers"
 import { NowLine } from "./now-line"
 import { AppointmentPopover } from "./appointment-popover"
 
@@ -209,9 +209,9 @@ function WeekViewInner({
       onDragEnd={handleDragEnd}
     >
       <Card className="rounded-2xl border border-border/40 overflow-hidden shadow-[0_1px_3px_0_rgb(0_0_0/0.04)]">
-        <div ref={weekGridRef} className="overflow-y-auto overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 max-h-[calc(100vh-220px)]" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent", scrollbarGutter: "stable" }}>
-          {/* Day headers */}
-          <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-border/30 min-w-[700px] bg-muted/20 sticky top-0 z-20 backdrop-blur-sm">
+        <div ref={weekGridRef} className="overflow-y-auto overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 max-h-[calc(100vh-220px)]" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}>
+          {/* Day headers — must match grid-cols and min-w of time grid exactly */}
+          <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-border/30 min-w-[700px] bg-muted/20 sticky top-0 z-20 backdrop-blur-sm bg-background/95">
             <div className="py-3" />
             {weekDays.map((d) => {
               const today = isToday(d)
@@ -254,49 +254,66 @@ function WeekViewInner({
                       key={cellId}
                       id={cellId}
                       ghostMinute={overCellId === cellId ? ghostMinute : null}
-                      className={`h-[72px] border-b border-l border-border/[0.06] px-1 py-1 transition-colors hover:bg-muted/20 ${isToday(d) ? "bg-vox-primary/[0.015]" : ""} ${hourBlocked.length > 0 ? "bg-muted/30" : ""}`}
+                      className={`h-[72px] border-b border-l border-border/[0.06] px-1 py-1 transition-colors hover:bg-muted/20 overflow-hidden min-w-0 ${isToday(d) ? "bg-vox-primary/[0.015]" : ""} ${hourBlocked.length > 0 ? "bg-muted/30" : ""}`}
                     >
                       {/* data attribute for pointer position calculation */}
-                      <div data-cell-id={cellId} className="absolute inset-0" />
+                      <div data-cell-id={cellId} className="absolute inset-0 pointer-events-none" />
                       {hourBlocked.length > 0 && dayAppts.length === 0 && (
                         <div className="relative z-[1] flex items-center gap-1 truncate rounded-lg px-2 py-1.5 text-[10px] font-medium leading-tight bg-muted/40 border-l-[3px] border-muted-foreground/20 text-muted-foreground/70">
                           <Ban className="size-2.5 shrink-0 opacity-50" />
                           {hourBlocked[0].title}
                         </div>
                       )}
-                      {dayAppts.map((a, index) => {
-                        const total = dayAppts.length
-                        const widthPct = total > 1 ? (100 / total) : 100
-                        const leftPct = total > 1 ? (index * 100 / total) : 0
+                      {dayAppts.length > 0 && (() => {
+                        const overlapLayout = calculateOverlapLayout(dayAppts)
+                        const hasOverlap = dayAppts.some((a) => {
+                          const pos = overlapLayout.get(a.id)
+                          return pos && pos.totalColumns > 1
+                        })
                         return (
-                          <DraggableAppointment key={a.id} appointment={a}>
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedAppointment({
-                                  appointment: a,
-                                  position: { top: e.clientY, left: e.clientX },
-                                })
-                              }}
-                              className={`z-[1] rounded-lg px-1.5 py-1.5 text-[11px] font-medium leading-tight cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:z-10 border-l-[3px] bg-vox-primary/10 text-vox-primary backdrop-blur-sm ${total > 1 ? "absolute" : "relative"}`}
-                              style={{
-                                borderLeftColor: a.agenda?.color || "#14B8A6",
-                                ...(total > 1 ? { left: `${leftPct}%`, width: `${widthPct}%`, top: 2, bottom: 2 } : {}),
-                              }}
-                            >
-                              <div className="flex items-center gap-1 overflow-hidden">
-                                <span className="font-bold tabular-nums text-[10px] opacity-70 shrink-0">{formatTime(a.date)}</span>
-                                <span className="truncate">{a.patient.name}</span>
-                              </div>
-                              {total <= 2 && a.procedures.length > 0 && (
-                                <div className="text-[9px] opacity-60 truncate mt-0.5">
-                                  {(a.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name).join(", ")}
-                                </div>
-                              )}
-                            </div>
-                          </DraggableAppointment>
+                          <div className={`z-[1] ${hasOverlap ? "relative h-[calc(100%-4px)]" : ""}`}>
+                            {dayAppts.map((a) => {
+                              const pos = overlapLayout.get(a.id) || { column: 0, totalColumns: 1 }
+                              const agendaColor = a.agenda?.color || "#14B8A6"
+                              return (
+                                <DraggableAppointment key={a.id} appointment={a}>
+                                  <div
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setSelectedAppointment({
+                                        appointment: a,
+                                        position: { top: e.clientY, left: e.clientX },
+                                      })
+                                    }}
+                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium leading-tight cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:scale-[1.02] border-l-[3px] backdrop-blur-sm overflow-hidden ${hasOverlap ? "absolute top-0 bottom-0" : ""}`}
+                                    style={{
+                                      borderLeftColor: agendaColor,
+                                      backgroundColor: agendaColorBg(a.agenda?.color, 0.1),
+                                      color: agendaColor,
+                                      ...(hasOverlap
+                                        ? {
+                                            left: `${(pos.column / pos.totalColumns) * 100}%`,
+                                            width: `${(1 / pos.totalColumns) * 100}%`,
+                                          }
+                                        : { marginBottom: "2px" }),
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold tabular-nums text-[10px] opacity-70">{formatTime(a.date)}</span>
+                                      <span className="truncate">{a.patient.name}</span>
+                                    </div>
+                                    {a.procedures.length > 0 && (
+                                      <div className="text-[9px] opacity-60 truncate mt-0.5">
+                                        {(a.procedures as any[]).map((p) => typeof p === "string" ? p : p?.name).join(", ")}
+                                      </div>
+                                    )}
+                                  </div>
+                                </DraggableAppointment>
+                              )
+                            })}
+                          </div>
                         )
-                      })}
+                      })()}
                     </DroppableCell>
                   )
                 })}

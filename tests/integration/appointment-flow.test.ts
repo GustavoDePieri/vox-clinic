@@ -36,6 +36,8 @@ describe("Fluxo de consulta — ciclo de vida completo", () => {
     mockDb.workspace.findUnique.mockResolvedValue({ id: WORKSPACE_ID, plan: "pro" })
     // Advisory lock mock
     mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
+    // Default: no blocked slots
+    mockDb.blockedSlot.findMany.mockResolvedValue([])
   })
 
   it("deve completar fluxo: agendar -> verificar conflitos -> completar -> cancelar", async () => {
