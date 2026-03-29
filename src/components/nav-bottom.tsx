@@ -8,6 +8,7 @@ import {
   Users,
   CalendarDays,
   Mic,
+  ClipboardList,
   MessageCircle,
   DollarSign,
   BarChart3,
@@ -33,17 +34,18 @@ type NavItem = {
 }
 
 const primaryNav: NavItem[] = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard, permission: null, tourId: "nav-bottom-inicio" },
+  { href: "/dashboard", label: "Início", icon: LayoutDashboard, permission: null, tourId: "nav-bottom-inicio" },
   { href: "/patients", label: "Pacientes", icon: Users, permission: "patients.list", tourId: "nav-bottom-pacientes" },
   { href: "/appointments/new", label: "Consulta", icon: Mic, accent: true, permission: "clinical.recordings", tourId: "nav-bottom-nova-consulta" },
   { href: "/calendar", label: "Agenda", icon: CalendarDays, permission: "appointments.view", tourId: "nav-bottom-agenda" },
 ]
 
 const moreNav: NavItem[] = [
+  { href: "/appointments", label: "Atendimentos", icon: ClipboardList, permission: "appointments.view" },
   { href: "/mensagens", label: "Mensagens", icon: MessageCircle, permission: "messaging.view" },
   { href: "/financial", label: "Financeiro", icon: DollarSign, permission: "financial.view" },
-  { href: "/reports", label: "Relatorios", icon: BarChart3, permission: "reports.view" },
-  { href: "/settings", label: "Configuracoes", icon: Settings, permission: "settings.view", tourId: "nav-bottom-config" },
+  { href: "/reports", label: "Relatórios", icon: BarChart3, permission: "reports.view" },
+  { href: "/settings", label: "Configurações", icon: Settings, permission: "settings.view", tourId: "nav-bottom-config" },
 ]
 
 export function NavBottom({ role = "owner" }: { role?: WorkspaceRole }) {
@@ -70,7 +72,7 @@ export function NavBottom({ role = "owner" }: { role?: WorkspaceRole }) {
     <nav
       data-nav-bottom
       data-testid="nav-bottom"
-      aria-label="Navegacao principal"
+      aria-label="Navegação principal"
       className="fixed bottom-0 left-0 w-full border-t border-border/50 bg-background/85 backdrop-blur-2xl z-50 md:hidden"
     >
       <div className="grid pb-[env(safe-area-inset-bottom)]" style={{ gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))` }}>
@@ -116,7 +118,7 @@ export function NavBottom({ role = "owner" }: { role?: WorkspaceRole }) {
         {showMore && (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
-              aria-label="Mais opcoes"
+              aria-label="Mais opções"
               className={`relative flex flex-col items-center justify-center gap-0.5 py-2.5 transition-all duration-200 active:scale-95 ${
                 isMoreActive ? "text-vox-primary" : "text-muted-foreground"
               }`}
@@ -135,7 +137,7 @@ export function NavBottom({ role = "owner" }: { role?: WorkspaceRole }) {
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <SheetHeader className="pb-2">
-                <SheetTitle className="text-left text-base">Mais opcoes</SheetTitle>
+                <SheetTitle className="text-left text-base">Mais opções</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1">
                 {visibleMoreNav.map((item) => {

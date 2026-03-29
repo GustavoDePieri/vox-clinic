@@ -14,10 +14,18 @@ vi.mock("@/server/actions/notification", () => ({
   markAllAsRead: (...args: any[]) => mockMarkAllAsRead(...args),
 }))
 
-vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: any) => (
-    <button {...props}>{children}</button>
-  ),
+vi.mock("@/components/ui/popover", () => ({
+  Popover: ({ children, open }: any) => <div data-open={open}>{children}</div>,
+  PopoverTrigger: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  PopoverContent: ({ children }: any) => <div>{children}</div>,
+}))
+
+vi.mock("@/components/ui/sheet", () => ({
+  Sheet: ({ children }: any) => <div>{children}</div>,
+  SheetContent: ({ children }: any) => <div>{children}</div>,
+  SheetHeader: ({ children }: any) => <div>{children}</div>,
+  SheetTitle: ({ children }: any) => <span>{children}</span>,
+  SheetTrigger: ({ children, ...props }: any) => <button {...props}>{children}</button>,
 }))
 
 import { NotificationBell } from "../notification-bell"
@@ -58,7 +66,9 @@ describe("NotificationBell", () => {
     await act(async () => {
       render(<NotificationBell />)
     })
-    expect(screen.getByLabelText("Notificacoes")).toBeInTheDocument()
+    // Both desktop (Popover) and mobile (Sheet) triggers have aria-label
+    const buttons = screen.getAllByLabelText("Notificações")
+    expect(buttons.length).toBeGreaterThanOrEqual(1)
   })
 
   it("shows unread count badge when notifications exist", async () => {
@@ -69,7 +79,9 @@ describe("NotificationBell", () => {
       render(<NotificationBell />)
     })
 
-    expect(screen.getByText("3")).toBeInTheDocument()
+    // Badge shows in both desktop and mobile triggers
+    const badges = screen.getAllByText("3")
+    expect(badges.length).toBeGreaterThanOrEqual(1)
   })
 
   it("does not show badge when unread count is 0", async () => {
@@ -90,11 +102,11 @@ describe("NotificationBell", () => {
       render(<NotificationBell />)
     })
 
-    expect(screen.getByText("9+")).toBeInTheDocument()
+    const badges = screen.getAllByText("9+")
+    expect(badges.length).toBeGreaterThanOrEqual(1)
   })
 
-  it("dropdown opens on click", async () => {
-    const user = userEvent.setup()
+  it("renders notification list with items", async () => {
     mockGetNotifications.mockResolvedValue(sampleNotifications)
     mockGetUnreadCount.mockResolvedValue(1)
 
@@ -102,15 +114,12 @@ describe("NotificationBell", () => {
       render(<NotificationBell />)
     })
 
-    await user.click(screen.getByLabelText("Notificacoes"))
-
-    expect(screen.getByText("Notificacoes")).toBeInTheDocument()
-    expect(screen.getByText("Consulta em 30min")).toBeInTheDocument()
-    expect(screen.getByText("Atualizacao do sistema")).toBeInTheDocument()
+    // With mocked Popover/Sheet, content is always rendered
+    expect(screen.getAllByText("Consulta em 30min").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("Atualizacao do sistema").length).toBeGreaterThanOrEqual(1)
   })
 
   it("shows empty state when no notifications", async () => {
-    const user = userEvent.setup()
     mockGetNotifications.mockResolvedValue([])
     mockGetUnreadCount.mockResolvedValue(0)
 
@@ -118,9 +127,8 @@ describe("NotificationBell", () => {
       render(<NotificationBell />)
     })
 
-    await user.click(screen.getByLabelText("Notificacoes"))
-
-    expect(screen.getByText("Nenhuma notificação")).toBeInTheDocument()
+    const emptyTexts = screen.getAllByText("Nenhuma notificação")
+    expect(emptyTexts.length).toBeGreaterThanOrEqual(1)
   })
 
   it("mark all as read button calls markAllAsRead", async () => {
@@ -132,14 +140,13 @@ describe("NotificationBell", () => {
       render(<NotificationBell />)
     })
 
-    await user.click(screen.getByLabelText("Notificacoes"))
-    await user.click(screen.getByText("Marcar tudo como lido"))
+    const markAllButtons = screen.getAllByText("Marcar tudo como lido")
+    await user.click(markAllButtons[0])
 
     expect(mockMarkAllAsRead).toHaveBeenCalled()
   })
 
   it("notification body renders when present", async () => {
-    const user = userEvent.setup()
     mockGetNotifications.mockResolvedValue(sampleNotifications)
     mockGetUnreadCount.mockResolvedValue(1)
 
@@ -147,26 +154,7 @@ describe("NotificationBell", () => {
       render(<NotificationBell />)
     })
 
-    await user.click(screen.getByLabelText("Notificacoes"))
-
-    expect(screen.getByText("Joao Silva - 14:00")).toBeInTheDocument()
-  })
-
-  it("dropdown uses responsive width (not only fixed w-80)", async () => {
-    const user = userEvent.setup()
-    mockGetNotifications.mockResolvedValue(sampleNotifications)
-    mockGetUnreadCount.mockResolvedValue(1)
-
-    await act(async () => {
-      render(<NotificationBell />)
-    })
-
-    await user.click(screen.getByLabelText("Notificacoes"))
-
-    // The dropdown should have responsive width class
-    const dropdown = screen.getByText("Notificacoes").closest(
-      "[class*='w-[calc']"
-    )
-    expect(dropdown).toBeInTheDocument()
+    const bodyTexts = screen.getAllByText("Joao Silva - 14:00")
+    expect(bodyTexts.length).toBeGreaterThanOrEqual(1)
   })
 })

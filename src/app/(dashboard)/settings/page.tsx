@@ -20,6 +20,13 @@ import {
   FileText,
   Percent,
   RotateCcw,
+  Salad,
+  Brain,
+  Scale,
+  Dumbbell,
+  PawPrint,
+  Briefcase,
+  type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -39,45 +46,49 @@ import { ProcedimentosSection } from "./sections/procedimentos-section"
 import { CamposSection } from "./sections/campos-section"
 
 // Lazy-loaded sections (not immediately visible)
+function SectionSkeleton() {
+  return <Skeleton className="h-48 w-full rounded-2xl" />
+}
+
 const TeamSection = dynamic(
   () => import("./sections/team-section").then((m) => m.TeamSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const AgendasSection = dynamic(
   () => import("./sections/agendas-section").then((m) => m.AgendasSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const BookingSection = dynamic(
   () => import("./sections/booking-section").then((m) => m.BookingSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const MessagingSection = dynamic(
   () => import("./sections/messaging-section").then((m) => m.MessagingSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const AparenciaSection = dynamic(
   () => import("./sections/aparencia-section").then((m) => m.AparenciaSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const PlanoSection = dynamic(
   () => import("./sections/plano-section").then((m) => m.PlanoSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const FiscalTab = dynamic(
   () => import("./fiscal-tab").then((m) => m.FiscalTab),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const FormulariosSection = dynamic(
   () => import("./sections/formularios-section").then((m) => m.FormulariosSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const ComissoesSection = dynamic(
   () => import("./sections/comissoes-section").then((m) => m.ComissoesSection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 const GatewaySection = dynamic(
   () => import("./sections/gateway-section").then((m) => m.GatewaySection),
-  { ssr: false }
+  { ssr: false, loading: SectionSkeleton }
 )
 
 const professionLabels: Record<string, string> = {
@@ -91,15 +102,15 @@ const professionLabels: Record<string, string> = {
   veterinario: "Veterinário",
 }
 
-const professionIcons: Record<string, string> = {
-  dentista: "🦷",
-  nutricionista: "🥗",
-  esteticista: "✨",
-  medico: "🩺",
-  advogado: "⚖️",
-  psicologo: "🧠",
-  fisioterapeuta: "💪",
-  veterinario: "🐾",
+const professionIcons: Record<string, LucideIcon> = {
+  dentista: Stethoscope,
+  nutricionista: Salad,
+  esteticista: Sparkles,
+  medico: Stethoscope,
+  advogado: Scale,
+  psicologo: Brain,
+  fisioterapeuta: Dumbbell,
+  veterinario: PawPrint,
 }
 
 export default function SettingsPage() {
@@ -139,7 +150,7 @@ export default function SettingsPage() {
         setInitialData(data)
       })
       .catch((err) => {
-        setError(friendlyError(err, "Erro ao carregar configuracoes"))
+        setError(friendlyError(err, "Erro ao carregar configurações"))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -163,10 +174,10 @@ export default function SettingsPage() {
       setSaved(true)
       setInitialData({ clinicName, procedures, customFields })
       setHasChanges(false)
-      toast.success("Configuracoes salvas com sucesso")
+      toast.success("Configurações salvas com sucesso")
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      const msg = friendlyError(err, "Erro ao salvar configuracoes")
+      const msg = friendlyError(err, "Erro ao salvar configurações")
       setError(msg)
       toast.error(msg)
     } finally {
@@ -190,19 +201,19 @@ export default function SettingsPage() {
 
   const settingsNav: SettingsNavGroup[] = [
     {
-      title: "Clinica",
+      title: "Clínica",
       items: [
-        { key: "clinica", label: "Dados da Clinica", icon: Building2 },
+        { key: "clinica", label: "Dados da Clínica", icon: Building2 },
         { key: "procedimentos", label: "Procedimentos", icon: ListChecks },
         { key: "campos", label: "Campos Customizados", icon: FormInput },
-        { key: "aparencia", label: "Aparencia", icon: Palette },
+        { key: "aparencia", label: "Aparência", icon: Palette },
       ],
     },
     {
       title: "Equipe",
       items: [
         { key: "equipe", label: "Membros", icon: Users },
-        { key: "comissoes", label: "Comissoes", icon: Percent },
+        { key: "comissoes", label: "Comissões", icon: Percent },
       ],
     },
     {
@@ -213,10 +224,10 @@ export default function SettingsPage() {
       ],
     },
     {
-      title: "Comunicacao",
+      title: "Comunicação",
       items: [
         { key: "mensagens", label: "Mensagens", icon: MessageSquare },
-        { key: "formularios", label: "Formularios", icon: FileText },
+        { key: "formularios", label: "Formulários", icon: FileText },
       ],
     },
     {
@@ -252,7 +263,7 @@ export default function SettingsPage() {
     )
   }
 
-  const profEmoji = professionIcons[professionType?.toLowerCase()] ?? "💼"
+  const ProfIcon = professionIcons[professionType?.toLowerCase()] ?? Briefcase
   const profLabel = professionLabels[professionType?.toLowerCase()] ?? profession
 
   return (
@@ -266,8 +277,8 @@ export default function SettingsPage() {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
           {/* Avatar */}
           <div className="relative">
-            <div className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-vox-primary to-vox-primary/70 text-3xl shadow-lg shadow-vox-primary/20 animate-scale-in">
-              {profEmoji}
+            <div className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-vox-primary to-vox-primary/70 shadow-lg shadow-vox-primary/20 animate-scale-in">
+              <ProfIcon className="size-9 text-white" />
             </div>
             <div className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border-2 border-card bg-vox-success text-white shadow-sm">
               <Check className="size-3.5" strokeWidth={3} />
@@ -285,7 +296,7 @@ export default function SettingsPage() {
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              Gerencie seu workspace, procedimentos e preferencias
+              Gerencie seu workspace, procedimentos e preferências
             </p>
             <div className="flex items-center gap-4 pt-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
@@ -450,7 +461,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card/95 px-5 py-3 shadow-lg backdrop-blur-xl">
               <div className="flex items-center gap-2">
                 <div className="size-2 rounded-full bg-vox-warning animate-pulse" />
-                <span className="text-sm font-medium">Alteracoes nao salvas</span>
+                <span className="text-sm font-medium">Alterações não salvas</span>
               </div>
               <Button
                 onClick={handleSave}
@@ -466,7 +477,7 @@ export default function SettingsPage() {
                 ) : (
                   <>
                     <Save className="size-3.5" />
-                    Salvar Alteracoes
+                    Salvar Alterações
                   </>
                 )}
               </Button>
