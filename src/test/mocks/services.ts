@@ -43,6 +43,7 @@ vi.mock("@/lib/plan-enforcement", () => ({
   checkAppointmentLimit: vi.fn().mockResolvedValue({ allowed: true }),
   checkAgendaLimit: vi.fn().mockResolvedValue({ allowed: true }),
   checkTeamMemberLimit: vi.fn().mockResolvedValue({ allowed: true }),
+  checkRecordingLimit: vi.fn().mockResolvedValue({ allowed: true }),
 }))
 export const mockSendEmail = vi.fn().mockResolvedValue(undefined)
 vi.mock("@/lib/email", () => ({ sendEmail: mockSendEmail }))
@@ -51,6 +52,19 @@ vi.mock("@/lib/inngest/client", () => ({
   sendInngestEvent: vi.fn().mockResolvedValue(false),
 }))
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }))
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 4, resetAt: Date.now() + 60_000 }),
+}))
+export const mockRequireWorkspaceRole = vi.fn().mockResolvedValue({
+  userId: "user_1",
+  clerkId: "clerk_test_user_123",
+  workspaceId: "ws_test_123",
+  role: "owner",
+})
+vi.mock("@/lib/auth-context", () => ({
+  resolveWorkspaceRole: vi.fn(),
+  requireWorkspaceRole: mockRequireWorkspaceRole,
+}))
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: vi.fn((fn: any) => fn) }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn((url: string) => { throw new RedirectError(url) }) }))
 

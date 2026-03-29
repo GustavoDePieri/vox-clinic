@@ -25,7 +25,7 @@ export const metadata: Metadata = {
  * ============================================================================
  */
 
-const lastUpdated = "2026-03-28"
+const lastUpdated = "2026-03-29"
 
 type FeatureStatus = "done" | "partial" | "planned"
 
@@ -73,7 +73,7 @@ function CategorySection({ icon, title, description, count, children }: { icon: 
 }
 
 const FEATURES_SUMMARY = {
-  total: 118,
+  total: 122,
   categories: 11,
 }
 
@@ -279,7 +279,7 @@ export default function DocsPage() {
         </CategorySection>
 
         {/* ── 10. INFRAESTRUTURA ── */}
-        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiência do usuário." count={14}>
+        <CategorySection icon="📱" title="Infraestrutura e UX" description="Performance, responsividade e experiência do usuário." count={18}>
           <FeatureCard title="Design Responsivo" description="Mobile-first com sidebar no desktop e bottom nav no mobile. Funciona em celular, tablet e desktop." />
           <FeatureCard title="PWA Ready" description="Manifest.json e service worker para instalação como app. Ícones configurados para iOS e Android." />
           <FeatureCard title="Performance" description="Next.js 16 com Turbopack. Server components, cache com unstable_cache. Carregamento rápido com skeletons." />
@@ -294,6 +294,10 @@ export default function DocsPage() {
           <FeatureCard title="Mensagens de Erro Amigáveis" description="Todas as mensagens de erro em português, claras e orientativas. Erros técnicos traduzidos automaticamente para linguagem acessível via helper centralizado (friendlyError)." />
           <FeatureCard title="Filtro por Convênio" description="Filtro de pacientes por convênio (plano de saúde) na lista de pacientes, complementando o filtro por tags existente." />
           <FeatureCard title="Busca Automática (Debounce)" description="Campos de busca em dialogs (NFS-e, merge de pacientes) iniciam a pesquisa automaticamente ao digitar, sem necessidade de clicar em botão. Debounce de 300ms." />
+          <FeatureCard title="Cache Redis (Upstash)" description="Cache compartilhado entre instâncias serverless via Upstash Redis. Cache-aside com graceful degradation para in-memory quando Redis indisponível. Workspace config, dashboard stats, role resolution." />
+          <FeatureCard title="Rate Limiting em Gravações" description="Limite de 5 gravações por minuto por usuário + enforcement de limite mensal do plano (free: 30, pro: 300). Previne custos descontrolados de API." />
+          <FeatureCard title="Pipeline Inngest Robusto" description="Eventos leves com referência a Storage (sem base64). Lookup direto por recordingId, sem placeholder frágil. Upload primeiro, evento depois." />
+          <FeatureCard title="Monitoramento de Audit Log" description="Falhas de escrita de audit log reportadas ao Sentry automaticamente. Non-blocking para não afetar operações, mas visível no dashboard de monitoring." />
         </CategorySection>
 
         {/* ── 11. TELEMEDICINA ── */}

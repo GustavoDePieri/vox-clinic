@@ -154,4 +154,6 @@ Decomposed modular architecture:
 | Payment | `src/lib/gateway/` | Asaas gateway (charges, PIX, boleto) |
 | TISS | `src/lib/tiss/` | ANS billing XML generation |
 | WhatsApp | `src/lib/whatsapp/` | Meta Cloud API |
-| Inngest | `src/inngest/` | Background job processing |
+| Inngest | `src/inngest/` | Background job processing (audio pipeline) |
+| Redis | `src/lib/redis.ts`, `src/lib/cache.ts` | Upstash Redis cache (graceful fallback to in-memory) |
+| Rate Limit | `src/lib/rate-limit.ts` | In-memory sliding window rate limiter |

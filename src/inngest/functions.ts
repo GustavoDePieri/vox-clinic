@@ -8,23 +8,23 @@ export const processAudio = inngest.createFunction(
       userId: string
       patientId?: string
       type: "registration" | "consultation"
-      audioBuffer: string // base64
+      recordingId: string
+      audioPath: string
       filename: string
       fileSize: number
     }
 
-    const buffer = Buffer.from(data.audioBuffer, "base64")
-
-    // Step 1: Upload audio to Supabase Storage
-    const { audioPath } = await step.run("upload-storage", async () => {
-      const { uploadAudio } = await import("@/lib/storage")
-      const path = await uploadAudio(buffer, data.filename)
-      return { audioPath: path }
+    // Step 1: Download audio from Supabase Storage
+    const { rawBuffer } = await step.run("download-storage", async () => {
+      const { getAudioBuffer } = await import("@/lib/storage")
+      const buf = await getAudioBuffer(data.audioPath)
+      return { rawBuffer: buf.toString("base64") }
     })
 
     // Step 2: Preprocess audio (FFmpeg silence removal + speed)
     const { processedBuffer } = await step.run("preprocess-ffmpeg", async () => {
       const { preprocessAudio } = await import("@/lib/audio-preprocessing")
+      const buffer = Buffer.from(rawBuffer, "base64")
       const result = await preprocessAudio(buffer, data.filename)
       return { processedBuffer: result.buffer.toString("base64") }
     })
@@ -35,7 +35,6 @@ export const processAudio = inngest.createFunction(
       const { db } = await import("@/lib/db")
       const { readProcedures } = await import("@/lib/json-helpers")
 
-      // Get workspace procedure names for vocabulary hints
       const workspace = await db.workspace.findUnique({
         where: { id: data.workspaceId },
         select: { procedures: true },
@@ -75,71 +74,41 @@ export const processAudio = inngest.createFunction(
       }
     })
 
-    // Step 5: Save recording to database
+    // Step 5: Update recording in database (direct by ID, no fragile matching)
     const { recordingId } = await step.run("save-recording", async () => {
       const { db } = await import("@/lib/db")
       const { toJsonValue } = await import("@/lib/json-helpers")
       const { logAudit } = await import("@/lib/audit")
       const { recordConsent } = await import("@/lib/consent")
 
-      // Find the placeholder recording created by the server action
-      const existing = await db.recording.findFirst({
-        where: {
-          workspaceId: data.workspaceId,
-          audioUrl: "__processing__",
-          status: "processing",
-          fileSize: data.fileSize,
+      await db.recording.update({
+        where: { id: data.recordingId },
+        data: {
+          transcript,
+          aiExtractedData: toJsonValue(extractedData),
+          status: "processed",
+          duration,
+          patientId: data.patientId || null,
         },
-        orderBy: { createdAt: "desc" },
       })
 
-      if (existing) {
-        // Update the placeholder
-        await db.recording.update({
-          where: { id: existing.id },
-          data: {
-            audioUrl: audioPath,
-            transcript,
-            aiExtractedData: toJsonValue(extractedData),
-            status: "processed",
-            duration,
-            patientId: data.patientId || null,
-          },
-        })
+      await logAudit({
+        workspaceId: data.workspaceId,
+        userId: data.userId,
+        action: "recording.created",
+        entityType: "Recording",
+        entityId: data.recordingId,
+      })
 
-        await logAudit({
-          workspaceId: data.workspaceId,
-          userId: data.userId,
-          action: "recording.created",
-          entityType: "Recording",
-          entityId: existing.id,
-        })
+      await recordConsent({
+        workspaceId: data.workspaceId,
+        patientId: data.patientId,
+        recordingId: data.recordingId,
+        consentType: "audio_recording",
+        givenBy: data.userId,
+      })
 
-        await recordConsent({
-          workspaceId: data.workspaceId,
-          patientId: data.patientId,
-          recordingId: existing.id,
-          consentType: "audio_recording",
-          givenBy: data.userId,
-        })
-
-        return { recordingId: existing.id }
-      } else {
-        // Fallback: create new recording
-        const rec = await db.recording.create({
-          data: {
-            workspaceId: data.workspaceId,
-            audioUrl: audioPath,
-            transcript,
-            aiExtractedData: toJsonValue(extractedData),
-            status: "processed",
-            fileSize: data.fileSize,
-            duration,
-            patientId: data.patientId || null,
-          },
-        })
-        return { recordingId: rec.id }
-      }
+      return { recordingId: data.recordingId }
     })
 
     return { success: true, recordingId, type: data.type }

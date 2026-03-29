@@ -41,13 +41,14 @@ export const processVoiceRegistration = safeAction(async (formData: FormData) =>
   const arrayBuffer = await audioFile.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
-  // --- Inngest path: send event and return immediately ---
+  // --- Inngest path: upload audio first, then send lightweight event ---
   if (isInngestEnabled()) {
-    // Create a placeholder recording with "processing" status
+    const audioPath = await uploadAudio(buffer, audioFile.name || "recording.webm")
+
     const recording = await db.recording.create({
       data: {
         workspaceId,
-        audioUrl: "__processing__",
+        audioUrl: audioPath,
         status: "processing",
         fileSize: audioFile.size,
       },
@@ -57,7 +58,8 @@ export const processVoiceRegistration = safeAction(async (formData: FormData) =>
       workspaceId,
       userId,
       type: "registration",
-      audioBuffer: buffer.toString("base64"),
+      recordingId: recording.id,
+      audioPath,
       filename: audioFile.name || "recording.webm",
       fileSize: audioFile.size,
     })
