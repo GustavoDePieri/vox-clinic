@@ -228,30 +228,28 @@ function WeekViewInner({
 
   const calculateMinuteFromPointer = useCallback((event: DragMoveEvent | DragEndEvent) => {
     const { over, activatorEvent, delta } = event
-    if (!over || !gridRef.current) return null
+    if (!over || !gridRef.current || !weekGridRef.current) return null
 
     const droppableId = over.id as string
     const lastDash = droppableId.lastIndexOf("-")
-    const hour = parseInt(droppableId.substring(lastDash + 1), 10)
+    const dateIso = droppableId.substring(0, lastDash)
 
-    const cellElement = gridRef.current.querySelector(`[data-cell-id="${droppableId}"]`)
-    if (!cellElement) return { hour, minute: 0, dateIso: droppableId.substring(0, lastDash) }
-
-    const rect = cellElement.getBoundingClientRect()
+    // Calculate minute from pointer Y relative to the entire grid,
+    // avoiding fragile querySelector that fails for some cell IDs.
     const pointerEvent = activatorEvent as PointerEvent
     const pointerY = pointerEvent.clientY + delta.y
-    const relativeY = pointerY - rect.top
-    const clampedY = Math.max(0, Math.min(relativeY, ROW_HEIGHT - 1))
 
-    const rawMinutes = (clampedY / ROW_HEIGHT) * 60
-    const snappedMinutes = snapToQuarter(rawMinutes)
-    const finalMinutes = Math.min(snappedMinutes, 45)
+    const gridRect = gridRef.current.getBoundingClientRect()
+    const scrollTop = weekGridRef.current.scrollTop
+    const relativeToGrid = pointerY - gridRect.top + scrollTop
 
-    return {
-      hour,
-      minute: finalMinutes,
-      dateIso: droppableId.substring(0, lastDash),
-    }
+    // Each row is ROW_HEIGHT. Compute exact position in minutes from FIRST_HOUR.
+    const totalMinutesFromStart = (relativeToGrid / ROW_HEIGHT) * 60
+    const hour = FIRST_HOUR + Math.floor(totalMinutesFromStart / 60)
+    const rawMinuteInHour = totalMinutesFromStart % 60
+    const minute = Math.min(snapToQuarter(Math.max(0, rawMinuteInHour)), 45)
+
+    return { hour, minute, dateIso }
   }, [])
 
   function handleDragMove(event: DragMoveEvent) {
@@ -262,7 +260,16 @@ function WeekViewInner({
       dropMinuteRef.current = result.minute
       dropHourRef.current = result.hour
       dropDateRef.current = result.dateIso
-      setOverCellId(event.over?.id as string || null)
+      // Use the hour from our calculation (not from over.id) to match the ghost to the correct cell
+      const overId = event.over?.id as string || null
+      if (overId) {
+        // Reconstruct cell ID with the computed hour for consistent ghost positioning
+        const lastDash = overId.lastIndexOf("-")
+        const datePartFromOver = overId.substring(0, lastDash)
+        setOverCellId(`${datePartFromOver}-${result.hour}`)
+      } else {
+        setOverCellId(null)
+      }
     } else {
       setGhostMinute(null)
       setDragOverlayTime(null)
@@ -369,7 +376,7 @@ function WeekViewInner({
                       ghostMinute={overCellId === cellId ? ghostMinute : null}
                       className={`h-[88px] border-b border-l border-border/[0.06] transition-colors hover:bg-muted/20 min-w-0 ${isToday(d) ? "bg-vox-primary/[0.015]" : ""} ${hourBlocked.length > 0 ? "bg-muted/30" : ""}`}
                     >
-                      <div data-cell-id={cellId} className="absolute inset-0 pointer-events-none" />
+                      {/* Cell ID for ghost indicator matching */}
 
                       {/* Blocked slots */}
                       {hourBlocked.length > 0 && hourAppts.length === 0 && (
