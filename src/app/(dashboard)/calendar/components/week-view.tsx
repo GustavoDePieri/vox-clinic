@@ -236,16 +236,18 @@ function WeekViewInner({
 
     // Calculate minute from pointer Y relative to the entire grid,
     // avoiding fragile querySelector that fails for some cell IDs.
+    // Note: getBoundingClientRect() already accounts for scroll position,
+    // so we must NOT add scrollTop (that would double-count the offset).
     const pointerEvent = activatorEvent as PointerEvent
     const pointerY = pointerEvent.clientY + delta.y
 
     const gridRect = gridRef.current.getBoundingClientRect()
-    const scrollTop = weekGridRef.current.scrollTop
-    const relativeToGrid = pointerY - gridRect.top + scrollTop
+    const relativeToGrid = pointerY - gridRect.top
 
     // Each row is ROW_HEIGHT. Compute exact position in minutes from FIRST_HOUR.
-    const totalMinutesFromStart = (relativeToGrid / ROW_HEIGHT) * 60
-    const hour = FIRST_HOUR + Math.floor(totalMinutesFromStart / 60)
+    const totalMinutesFromStart = Math.max(0, (relativeToGrid / ROW_HEIGHT) * 60)
+    const LAST_HOUR = HOURS[HOURS.length - 1]
+    const hour = Math.min(Math.max(FIRST_HOUR, FIRST_HOUR + Math.floor(totalMinutesFromStart / 60)), LAST_HOUR)
     const rawMinuteInHour = totalMinutesFromStart % 60
     const minute = Math.min(snapToQuarter(Math.max(0, rawMinuteInHour)), 45)
 
