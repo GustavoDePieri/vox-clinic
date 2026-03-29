@@ -209,9 +209,9 @@ function WeekViewInner({
       onDragEnd={handleDragEnd}
     >
       <Card className="rounded-2xl border border-border/40 overflow-hidden shadow-[0_1px_3px_0_rgb(0_0_0/0.04)]">
-        <div ref={weekGridRef} className="overflow-y-auto overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 max-h-[calc(100vh-220px)]" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent", scrollbarGutter: "stable" }}>
-          {/* Day headers */}
-          <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-border/30 min-w-[700px] bg-muted/20 sticky top-0 z-20 backdrop-blur-sm">
+        <div ref={weekGridRef} className="overflow-y-auto overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 max-h-[calc(100vh-220px)]" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}>
+          {/* Day headers — must match grid-cols and min-w of time grid exactly */}
+          <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-border/30 min-w-[700px] bg-muted/20 sticky top-0 z-20 backdrop-blur-sm bg-background/95">
             <div className="py-3" />
             {weekDays.map((d) => {
               const today = isToday(d)
@@ -264,10 +264,14 @@ function WeekViewInner({
                           {hourBlocked[0].title}
                         </div>
                       )}
-                      {(() => {
+                      {dayAppts.length > 0 && (() => {
                         const overlapLayout = calculateOverlapLayout(dayAppts)
+                        const hasOverlap = dayAppts.some((a) => {
+                          const pos = overlapLayout.get(a.id)
+                          return pos && pos.totalColumns > 1
+                        })
                         return (
-                          <div className="relative z-[1]" style={{ minHeight: dayAppts.length > 0 ? "3rem" : undefined }}>
+                          <div className={`z-[1] ${hasOverlap ? "relative h-[calc(100%-4px)]" : ""}`}>
                             {dayAppts.map((a) => {
                               const pos = overlapLayout.get(a.id) || { column: 0, totalColumns: 1 }
                               const agendaColor = a.agenda?.color || "#14B8A6"
@@ -281,12 +285,12 @@ function WeekViewInner({
                                         position: { top: e.clientY, left: e.clientX },
                                       })
                                     }}
-                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium leading-tight cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:scale-[1.02] border-l-[3px] backdrop-blur-sm ${pos.totalColumns > 1 ? "absolute top-0" : ""}`}
+                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium leading-tight cursor-grab active:cursor-grabbing transition-all hover:shadow-md hover:scale-[1.02] border-l-[3px] backdrop-blur-sm overflow-hidden ${hasOverlap ? "absolute top-0 bottom-0" : ""}`}
                                     style={{
                                       borderLeftColor: agendaColor,
                                       backgroundColor: agendaColorBg(a.agenda?.color, 0.1),
                                       color: agendaColor,
-                                      ...(pos.totalColumns > 1
+                                      ...(hasOverlap
                                         ? {
                                             left: `${(pos.column / pos.totalColumns) * 100}%`,
                                             width: `${(1 / pos.totalColumns) * 100}%`,
