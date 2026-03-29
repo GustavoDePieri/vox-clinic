@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { toast } from "sonner"
 import type { AppointmentItem } from "../types"
-import { formatTime, STATUS_CONFIG, STATUS_DOT } from "../helpers"
+import { formatTime, STATUS_CONFIG, STATUS_DOT, agendaColorBg } from "../helpers"
 import { createTeleconsultaRoom } from "@/server/actions/teleconsulta"
 import { sendAppointmentReminder } from "@/server/actions/reminder"
 import { friendlyError } from "@/lib/error-messages"
@@ -23,12 +23,13 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function AppointmentCardInner({
-  appointment, onStatusChange, onDelete, compact,
+  appointment, onStatusChange, onDelete, compact, agendaColor,
 }: {
   appointment: AppointmentItem
   onStatusChange: (id: string, status: string) => void
   onDelete: (id: string) => void
   compact?: boolean
+  agendaColor?: string
 }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
@@ -66,11 +67,17 @@ function AppointmentCardInner({
     return now >= oneHourBefore && now <= threeHoursAfter
   }
 
+  const resolvedAgendaColor = appointment.agenda?.color || agendaColor
+
   if (compact) {
     return (
       <Link
         href={`/patients/${appointment.patient.id}`}
-        className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] transition-all hover:shadow-sm ${STATUS_CONFIG[appointment.status]?.className ?? "bg-muted"}`}
+        className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] transition-all hover:shadow-sm border-l-[3px] ${STATUS_CONFIG[appointment.status]?.className ?? "bg-muted"}`}
+        style={{
+          borderLeftColor: resolvedAgendaColor || "transparent",
+          backgroundColor: resolvedAgendaColor ? agendaColorBg(resolvedAgendaColor, 0.06) : undefined,
+        }}
       >
         <span className="font-semibold tabular-nums">{formatTime(appointment.date)}</span>
         <span className="truncate font-medium">{appointment.patient.name}</span>
@@ -84,12 +91,19 @@ function AppointmentCardInner({
 
   return (
     <Card
-      className="group rounded-2xl border border-border/40 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] overflow-hidden cursor-pointer transition-all hover:border-border hover:shadow-[0_4px_12px_0_rgb(0_0_0/0.06)]"
+      className="group rounded-2xl border border-border/40 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] overflow-hidden cursor-pointer transition-all hover:border-border hover:shadow-[0_4px_12px_0_rgb(0_0_0/0.06)] border-l-[3px]"
+      style={{
+        borderLeftColor: resolvedAgendaColor || "transparent",
+        backgroundColor: resolvedAgendaColor ? agendaColorBg(resolvedAgendaColor, 0.04) : undefined,
+      }}
       onClick={() => setExpanded(!expanded)}
     >
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
+            {resolvedAgendaColor && (
+              <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: resolvedAgendaColor }} />
+            )}
             <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
               <Clock className="size-3.5" />
               <span className="text-xs font-medium">{formatTime(appointment.date)}</span>

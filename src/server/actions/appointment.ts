@@ -118,7 +118,7 @@ export async function getAppointmentsByDateRange(startDate: string, endDate: str
   }))
 }
 
-export async function checkAppointmentConflicts(date: string, agendaId?: string) {
+export async function checkAppointmentConflicts(date: string, agendaId?: string, patientId?: string) {
   const workspaceId = await getWorkspaceId()
   const targetDate = new Date(date)
 
@@ -208,6 +208,36 @@ export async function checkAppointmentConflicts(date: string, agendaId?: string)
     }
   }
 
+  // Cross-agenda: check if same patient has overlapping appointment in ANY agenda
+  let patientCrossAgendaConflicts: Array<{
+    id: string
+    date: string
+    agendaName: string
+    agendaColor: string | null
+  }> = []
+
+  if (patientId) {
+    const patientConflicts = await db.appointment.findMany({
+      where: {
+        workspaceId,
+        patientId,
+        status: { in: ["scheduled", "completed"] },
+        date: { gte: windowStart, lte: windowEnd },
+        // Exclude appointments in the same agenda (already covered above)
+        ...(agendaId ? { agendaId: { not: agendaId } } : {}),
+      },
+      include: { agenda: { select: { name: true, color: true } } },
+      orderBy: { date: "asc" },
+    })
+
+    patientCrossAgendaConflicts = patientConflicts.map((a) => ({
+      id: a.id,
+      date: a.date.toISOString(),
+      agendaName: a.agenda?.name ?? "Agenda removida",
+      agendaColor: a.agenda?.color ?? null,
+    }))
+  }
+
   return {
     appointments: appointmentConflicts.map((a) => ({
       id: a.id,
@@ -216,6 +246,7 @@ export async function checkAppointmentConflicts(date: string, agendaId?: string)
       status: a.status,
     })),
     blockedSlots: blockedConflicts,
+    patientCrossAgendaConflicts,
   }
 }
 
@@ -285,6 +316,36 @@ export const scheduleAppointment = safeAction(async (data: {
           `CONFLICT:Já existe consulta próxima a este horário (${names}). Deseja agendar mesmo assim?`
         )
       }
+
+      // Cross-agenda: check if same patient has overlapping appointment in ANY other agenda
+      const patientConflicts = await tx.appointment.findMany({
+        where: {
+          workspaceId,
+          patientId: data.patientId,
+          agendaId: { not: data.agendaId },
+          status: { in: ["scheduled", "completed"] },
+          date: { gte: windowStart, lte: windowEnd },
+        },
+        include: { agenda: { select: { name: true } } },
+      })
+
+      if (patientConflicts.length > 0) {
+        const details = patientConflicts.map((c) => {
+          const time = c.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+          return `${c.agenda?.name ?? "outra agenda"} às ${time}`
+        }).join(", ")
+        throw new ActionError(
+          `CONFLICT:Paciente já agendado: ${details}. Deseja agendar mesmo assim?`
+        )
+      }
+
+      // Check blocked slots (one-time + recurring weekly)
+      const blockedConflict = await findBlockedSlotConflict(tx, workspaceId, data.agendaId, targetDate, 30)
+      if (blockedConflict) {
+        throw new ActionError(
+          `CONFLICT:Horário bloqueado: ${blockedConflict}. Deseja agendar mesmo assim?`
+        )
+      }
     }
 
     return tx.appointment.create({
@@ -328,6 +389,76 @@ export const scheduleAppointment = safeAction(async (data: {
     agendaId: appointment.agendaId,
   }
 })
+
+/**
+ * Check if an appointment time conflicts with any blocked slot (one-time or recurring weekly).
+ * Returns the blocked slot title if conflict found, null otherwise.
+ */
+async function findBlockedSlotConflict(
+  tx: Parameters<Parameters<typeof db.$transaction>[0]>[0],
+  workspaceId: string,
+  agendaId: string,
+  appointmentDate: Date,
+  durationMinutes: number,
+): Promise<string | null> {
+  const appointmentStart = appointmentDate.getTime()
+  const appointmentEnd = appointmentStart + durationMinutes * 60 * 1000
+
+  // Fetch all blocked slots for this agenda (both one-time and recurring)
+  const blockedSlots = await tx.blockedSlot.findMany({
+    where: { agendaId, workspaceId },
+  })
+
+  for (const slot of blockedSlots) {
+    const slotStart = new Date(slot.startDate)
+    const slotEnd = new Date(slot.endDate)
+
+    if (slot.recurring === "weekly") {
+      // For recurring weekly slots, check if the appointment falls on the same day-of-week
+      // and the time ranges overlap
+      const slotDayOfWeek = slotStart.getUTCDay()
+      const appointmentDayOfWeek = appointmentDate.getUTCDay()
+
+      if (slotDayOfWeek !== appointmentDayOfWeek) continue
+
+      if (slot.allDay) {
+        return slot.title
+      }
+
+      // Compare time-of-day only (use UTC to avoid timezone issues)
+      const slotStartMinutes = slotStart.getUTCHours() * 60 + slotStart.getUTCMinutes()
+      const slotEndMinutes = slotEnd.getUTCHours() * 60 + slotEnd.getUTCMinutes()
+      const apptStartMinutes = appointmentDate.getUTCHours() * 60 + appointmentDate.getUTCMinutes()
+      const apptEndMinutes = apptStartMinutes + durationMinutes
+
+      // Overlap check: ranges overlap if one starts before the other ends
+      if (apptStartMinutes < slotEndMinutes && apptEndMinutes > slotStartMinutes) {
+        return slot.title
+      }
+    } else {
+      // One-time slot: direct date overlap check
+      if (slot.allDay) {
+        // allDay slot blocks the entire day — check if same calendar day (UTC)
+        const slotDate = slotStart.toISOString().slice(0, 10)
+        const apptDate = appointmentDate.toISOString().slice(0, 10)
+        if (slotDate === apptDate) {
+          return slot.title
+        }
+        // Also check if appointment spans into the blocked day
+        const apptEndDate = new Date(appointmentEnd).toISOString().slice(0, 10)
+        if (apptEndDate === slotDate) {
+          return slot.title
+        }
+      } else {
+        if (appointmentStart < slotEnd.getTime() && appointmentEnd > slotStart.getTime()) {
+          return slot.title
+        }
+      }
+    }
+  }
+
+  return null
+}
 
 function hashStringToInt(str: string): number {
   let hash = 0
@@ -455,6 +586,39 @@ export const rescheduleAppointment = safeAction(async (appointmentId: string, ne
         const names = conflicts.map((c) => c.patient.name).join(", ")
         throw new ActionError(`CONFLICT:Já existe consulta próxima a este horário (${names}). Deseja reagendar mesmo assim?`)
       }
+
+      // Cross-agenda: check if same patient has overlapping appointment in ANY other agenda
+      if (existing.patientId) {
+        const patientConflicts = await tx.appointment.findMany({
+          where: {
+            workspaceId,
+            patientId: existing.patientId,
+            agendaId: { not: existing.agendaId! },
+            id: { not: appointmentId },
+            status: { in: ["scheduled", "completed"] },
+            date: { gte: windowStart, lte: windowEnd },
+          },
+          include: { agenda: { select: { name: true } } },
+        })
+
+        if (patientConflicts.length > 0) {
+          const details = patientConflicts.map((c) => {
+            const time = c.date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+            return `${c.agenda?.name ?? "outra agenda"} às ${time}`
+          }).join(", ")
+          throw new ActionError(
+            `CONFLICT:Paciente já agendado: ${details}. Deseja reagendar mesmo assim?`
+          )
+        }
+      }
+
+      // Check blocked slots (one-time + recurring weekly)
+      const blockedConflict = await findBlockedSlotConflict(tx, workspaceId, existing.agendaId!, targetDate, 30)
+      if (blockedConflict) {
+        throw new ActionError(
+          `CONFLICT:Horário bloqueado: ${blockedConflict}. Deseja reagendar mesmo assim?`
+        )
+      }
     }
 
     return tx.appointment.update({
@@ -556,6 +720,12 @@ export const scheduleRecurringAppointments = safeAction(async (data: {
       })
       if (conflicts.length > 0) {
         throw new ActionError(`CONFLICT:Conflito no horário ${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`)
+      }
+
+      // Check blocked slots (one-time + recurring weekly)
+      const blockedConflict = await findBlockedSlotConflict(tx, workspaceId, data.agendaId, date, 30)
+      if (blockedConflict) {
+        throw new ActionError(`CONFLICT:Horário bloqueado em ${date.toLocaleDateString("pt-BR")}: ${blockedConflict}`)
       }
 
       results.push(await tx.appointment.create({

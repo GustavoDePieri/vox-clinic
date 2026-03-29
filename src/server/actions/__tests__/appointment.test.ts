@@ -73,7 +73,7 @@ describe("appointment actions", () => {
 
       const result = await checkAppointmentConflicts("2024-06-15T10:00:00Z")
 
-      expect(result).toEqual({ appointments: [], blockedSlots: [] })
+      expect(result).toMatchObject({ appointments: [], blockedSlots: [] })
       const call = mockDb.appointment.findMany.mock.calls[0][0]
       expect(call.where.workspaceId).toBe(WORKSPACE_ID)
       expect(call.where.status).toEqual({ in: ["scheduled", "completed"] })
@@ -91,6 +91,7 @@ describe("appointment actions", () => {
       // Transaction mock: tx has the same methods as mockDb
       mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       mockDb.appointment.findMany.mockResolvedValue([]) // no conflicts
+      mockDb.blockedSlot.findMany.mockResolvedValue([]) // no blocked slots
       const createdAppointment = {
         id: "a_new", date: new Date("2024-06-15T10:00:00Z"),
         patient: { id: "p1", name: "Maria" },
@@ -116,6 +117,7 @@ describe("appointment actions", () => {
     it("returns error with CONFLICT: prefix when overlap found", async () => {
       mockDb.patient.findFirst.mockResolvedValue({ id: "p1", workspaceId: WORKSPACE_ID })
       mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
+      mockDb.blockedSlot.findMany.mockResolvedValue([])
       mockDb.appointment.findMany.mockResolvedValue([
         { id: "a_existing", patient: { id: "p2", name: "Joao" }, date: new Date(), status: "scheduled" },
       ])
@@ -145,6 +147,27 @@ describe("appointment actions", () => {
       if (!('error' in result)) expect(result.id).toBe("a_forced")
       // Should not check for conflicts
       expect(mockDb.appointment.findMany).not.toHaveBeenCalled()
+    })
+
+    it("returns CONFLICT error when blocked slot overlaps", async () => {
+      mockDb.patient.findFirst.mockResolvedValue({ id: "p1", workspaceId: WORKSPACE_ID })
+      mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
+      mockDb.appointment.findMany.mockResolvedValue([]) // no appointment conflicts
+      mockDb.blockedSlot.findMany.mockResolvedValue([
+        {
+          id: "bs1",
+          title: "Almoço",
+          startDate: new Date("2024-06-15T09:30:00Z"),
+          endDate: new Date("2024-06-15T10:30:00Z"),
+          allDay: false,
+          recurring: null,
+          agendaId: AGENDA_ID,
+          workspaceId: WORKSPACE_ID,
+        },
+      ])
+
+      const result = await scheduleAppointment({ patientId: "p1", date: "2024-06-15T10:00:00Z", agendaId: AGENDA_ID })
+      expect('error' in result && result.error).toMatch(/CONFLICT:.*Almoço/)
     })
 
     it("returns error when patient not in workspace", async () => {
@@ -218,6 +241,7 @@ describe("appointment actions", () => {
       mockDb.appointment.findFirst.mockResolvedValueOnce({ id: "a1", workspaceId: WORKSPACE_ID, agendaId: AGENDA_ID })
       mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
       mockDb.appointment.findMany.mockResolvedValue([]) // no conflicts
+      mockDb.blockedSlot.findMany.mockResolvedValue([]) // no blocked slots
       const newDate = new Date("2024-07-01T14:00:00Z")
       mockDb.appointment.update.mockResolvedValue({ id: "a1", date: newDate })
 
@@ -234,6 +258,7 @@ describe("appointment actions", () => {
     it("returns error with CONFLICT: prefix when overlap found", async () => {
       mockDb.appointment.findFirst.mockResolvedValueOnce({ id: "a1", workspaceId: WORKSPACE_ID, agendaId: AGENDA_ID })
       mockDb.$executeRawUnsafe.mockResolvedValue(undefined)
+      mockDb.blockedSlot.findMany.mockResolvedValue([])
       mockDb.appointment.findMany.mockResolvedValue([
         { id: "a_existing", patient: { id: "p2", name: "Joao" }, date: new Date(), status: "scheduled" },
       ])
