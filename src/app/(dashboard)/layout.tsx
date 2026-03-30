@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { CommandPalette } from "@/components/command-palette"
 import { NotificationBell } from "@/components/notification-bell"
 import { TourProvider } from "@/components/tour/tour-provider"
+import { VoiceAssistantButton } from "@/components/voice-assistant-button"
 import { normalizeRole, type WorkspaceRole } from "@/lib/permissions"
 
 export default async function DashboardLayout({
@@ -106,6 +107,7 @@ export default async function DashboardLayout({
         </main>
       </div>
       <NavBottom role={role} />
+      <VoiceAssistantButton />
     </div>
   )
 }

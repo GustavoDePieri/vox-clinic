@@ -331,3 +331,60 @@ Transcricao da consulta:
 
   return extractToolResult(message, 'generate_consultation_summary', AppointmentSummarySchema) as AppointmentSummary
 }
+
+// ---------------------------------------------------------------------------
+// extractPatientUpdateIntents
+// ---------------------------------------------------------------------------
+const PatientUpdateIntentSchema = z.object({
+  actions: z.array(z.object({
+    type: z.enum(['ADD_NOTE', 'ADD_ALLERGY', 'ADD_MEDICAL_HISTORY', 'UNKNOWN']),
+    value: z.string(),
+    confidence: z.number().min(0).max(1),
+  })),
+})
+
+export type PatientUpdateIntents = z.infer<typeof PatientUpdateIntentSchema>
+
+export async function extractPatientUpdateIntents(
+  transcript: string,
+  patientName: string
+): Promise<PatientUpdateIntents> {
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    temperature: 0,
+    system: `You are a clinical assistant for a dental clinic. Extract structured update actions from the professional's speech about an existing patient. Always respond with valid JSON only, no explanation, no markdown.
+
+The JSON must follow this structure exactly:
+{
+  "actions": [
+    {
+      "type": "ADD_NOTE" | "ADD_ALLERGY" | "ADD_MEDICAL_HISTORY" | "UNKNOWN",
+      "value": string,
+      "confidence": number between 0 and 1
+    }
+  ]
+}
+
+Action type rules:
+- ADD_NOTE: clinical observations, procedures performed, general notes
+- ADD_ALLERGY: allergies or medication intolerances mentioned
+- ADD_MEDICAL_HISTORY: chronic diseases, conditions, ongoing medications
+- UNKNOWN: anything that cannot be mapped to the above types
+
+Always extract at least one action. If nothing clinical is mentioned, use UNKNOWN.`,
+    messages: [{
+      role: 'user',
+      content: `Patient: ${patientName}\n\nProfessional's speech: ${transcript}`,
+    }],
+  })
+
+  const textBlock = message.content.find(
+    (c): c is Anthropic.TextBlock => c.type === 'text'
+  )
+  if (!textBlock) {
+    throw new Error('Resposta da IA nao contem texto')
+  }
+
+  return parseAIResponse(textBlock.text, PatientUpdateIntentSchema)
+}
